@@ -25,12 +25,15 @@ class CallActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setLockScreenFlags()
+        //setLockScreenFlags()
         enableEdgeToEdge()
         setContent {
             CuteConnectTheme {
                 val callViewModel = koinViewModel<CallViewModel>()
                 val callUiState by callViewModel.callUiState.collectAsStateWithLifecycle()
+
+
+                if (callUiState.callState == CallState.ENDED) { finish() }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize()
@@ -38,12 +41,12 @@ class CallActivity : ComponentActivity() {
 
                     if (callUiState.callState == CallState.RINGING) {
                         IncomingScreen(
-                            callViewModel = callViewModel,
+                            onCallActions = callViewModel::onHandleCallAction,
                             callUiState = callUiState
                         )
                     } else {
                         CallScreen(
-                            callViewModel = callViewModel,
+                            onCallAction = callViewModel::onHandleCallAction,
                             callUiState = callUiState
                         )
                     }

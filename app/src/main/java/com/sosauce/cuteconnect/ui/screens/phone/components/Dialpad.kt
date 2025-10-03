@@ -1,6 +1,9 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.sosauce.cuteconnect.ui.screens.phone.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,11 +11,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Backspace
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material3.ButtonGroup
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
@@ -31,7 +40,6 @@ import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
 
 @Composable
 fun Dialpad(
-    onCloseDialpad: () -> Unit,
     onSendTone: (Char) -> Unit
 ) {
 
@@ -44,15 +52,8 @@ fun Dialpad(
 
     //LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
-    Column(
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.background)
-            .fillMaxWidth()
-            .navigationBarsPadding()
-    ) {
-
+    Column {
         Row(
-            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -61,95 +62,105 @@ fun Dialpad(
                     value = value,
                     onValueChange = { value = it },
                     singleLine = true,
-                    modifier = Modifier.focusRequester(focusRequester),
-                )
-            }
-            IconButton(
-                onClick = onCloseDialpad
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.Backspace,
-                    contentDescription = null
+                    modifier = Modifier
+                        .weight(1f)
+                        .focusRequester(focusRequester),
                 )
             }
         }
         Spacer(Modifier.height(20.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+
+        ButtonGroup(
+            overflowIndicator = {}
         ) {
             row1.forEach { number ->
-                TextButton(
-                    onClick = {
-                        value += number
-                        onSendTone(number)
+                customItem(
+                    {
+                        IconButton(
+                            onClick = {
+                                value += number
+                                onSendTone(number)
+                            },
+                            colors = IconButtonDefaults.iconButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)),
+                        ) { CuteText(number.toString()) }
                     },
-                    modifier = Modifier.width(100.dp)
-                ) {
-                    CuteText(
-                        text = number.toString(),
-                        fontSize = 20.sp
-                    )
-                }
+                    {}
+                )
             }
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+        ButtonGroup(
+            overflowIndicator = {}
         ) {
             row2.forEach { number ->
-                TextButton(
-                    onClick = {
-                        value += number
-                        onSendTone(number)
+                customItem(
+                    {
+                        IconButton(
+                            onClick = {
+                                value += number
+                                onSendTone(number)
+                            },
+                            colors = IconButtonDefaults.iconButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)),
+                        ) { CuteText(number.toString()) }
                     },
-                    modifier = Modifier.width(100.dp)
-                ) {
-                    CuteText(
-                        text = number.toString(),
-                        fontSize = 20.sp
-                    )
-                }
+                    {}
+                )
             }
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+        ButtonGroup(
+            overflowIndicator = {}
         ) {
             row3.forEach { number ->
-                TextButton(
-                    onClick = {
-                        value += number
-                        onSendTone(number)
+                customItem(
+                    {
+                        IconButton(
+                            onClick = {
+                                value += number
+                                onSendTone(number)
+                            },
+                            colors = IconButtonDefaults.iconButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)),
+                        ) { CuteText(number.toString()) }
                     },
-                    modifier = Modifier.width(100.dp)
-                ) {
-                    CuteText(
-                        text = number.toString(),
-                        fontSize = 20.sp
-                    )
-                }
+                    {}
+                )
             }
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ){
+        ButtonGroup(
+            overflowIndicator = {}
+        ) {
             row4.forEach { number ->
-                TextButton(
-                    onClick = {
-                        value += number
-                        onSendTone(number)
+                customItem(
+                    {
+                        IconButton(
+                            onClick = {
+                                value += number
+                                onSendTone(number)
+                            },
+                            colors = IconButtonDefaults.iconButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)),
+                        ) { CuteText(number.toString()) }
                     },
-                    modifier = Modifier.width(100.dp)
-                ) {
-                    CuteText(
-                        text = number.toString(),
-                        fontSize = 20.sp
-                    )
-                }
+                    {}
+                )
             }
         }
-
     }
 }

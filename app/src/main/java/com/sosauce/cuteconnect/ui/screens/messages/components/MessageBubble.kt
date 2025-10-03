@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalFoundationApi::class)
+@file:OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
 
 package com.sosauce.cuteconnect.ui.screens.messages.components
 
@@ -22,18 +22,24 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,8 +61,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.compose.PlayerSurface
+import androidx.media3.ui.compose.SURFACE_TYPE_TEXTURE_VIEW
 import coil3.compose.AsyncImage
 import com.sosauce.cuteconnect.R
+import com.sosauce.cuteconnect.data.actions.CommonAction
 import com.sosauce.cuteconnect.domain.model.CuteContact
 import com.sosauce.cuteconnect.domain.model.CuteMessage
 import com.sosauce.cuteconnect.ui.shared_components.AnimatedSlider
@@ -67,9 +80,12 @@ import com.sosauce.cuteconnect.utils.isEmoji
 import com.sosauce.cuteconnect.utils.isLink
 import com.sosauce.cuteconnect.utils.rememberInteractionSource
 import com.sosauce.cuteconnect.utils.thenIf
+import com.sosauce.cuteconnect.utils.toReadableDuration
 import com.sosauce.cuteconnect.utils.toReadableTime
 import java.io.File
+import kotlin.time.DurationUnit
 
+@UnstableApi
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun MessageBubble(
@@ -79,19 +95,17 @@ fun MessageBubble(
     onAddMessageToSelected: () -> Unit = {},
     isSelected: Boolean = false,
     isInSelectMode: Boolean = false,
-    sandwichPosition: SandwichPosition = SandwichPosition.SOLO
+    sandwichPosition: SandwichPosition = SandwichPosition.SOLO,
+    onHandleCommonAction: (CommonAction) -> Unit,
 ) {
 
     val configuration = LocalConfiguration.current
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val bubbleColor = when {
         cuteMessage.body.isEmoji() -> Color.Transparent
-        cuteMessage.type == Telephony.Sms.MESSAGE_TYPE_SENT -> MaterialTheme.colorScheme.secondary
-        else -> MaterialTheme.colorScheme.surfaceContainerHigh
-    }
-    val textColor = when {
-        cuteMessage.type == Telephony.Sms.MESSAGE_TYPE_SENT -> MaterialTheme.colorScheme.onSecondary
-        else -> MaterialTheme.colorScheme.onSurface
+        cuteMessage.type == Telephony.Sms.MESSAGE_TYPE_SENT -> MaterialTheme.colorScheme.primaryFixedDim
+        else -> MaterialTheme.colorScheme.tertiaryFixedDim
     }
     var isTimestampVisible by remember { mutableStateOf(false) }
     val alignment = remember {
@@ -100,8 +114,13 @@ fun MessageBubble(
         } else Alignment.Start
     }
 
+    LaunchedEffect(cuteMessage.id) {
+        if (!cuteMessage.read) {
+            onHandleCommonAction(CommonAction.MarkMessageAsRead(cuteMessage.id))
+        }
+    }
 
-    val uriHandler = LocalUriHandler.current
+
 
     Column(
         modifier = modifier
@@ -119,14 +138,16 @@ fun MessageBubble(
             .background(if (isSelected) MaterialTheme.colorScheme.surfaceContainerHighest else Color.Transparent)
     ) {
 
-        cuteMessage.attachment?.dataUri?.let {
-            it.fastForEachIndexed { index, uri ->
+        cuteMessage.attachment?.attachmentDetails?.let {
 
-                CompositionLocalProvider(LocalContentColor provides textColor) {
+            it.fastForEachIndexed { index, details ->
+            println("Attachment: ${context.contentResolver.getType(details.uri)}")
+
+                CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.contentColorFor(bubbleColor)) {
                     // TODO: have separate components for each
-                    if (context.contentResolver.getType(uri)?.startsWith("image/") == true) {
+                    if (context.contentResolver.getType(details.uri)?.startsWith("image/") == true) {
                         AsyncImage(
-                            model = ImageUtils.imageRequester(uri, context, true),
+                            model = ImageUtils.imageRequester(details.uri, context, true),
                             contentDescription = null,
                             modifier = Modifier
                                 .padding(
@@ -136,7 +157,7 @@ fun MessageBubble(
                                 .widthIn(max = configuration.screenWidthDp.dp * 0.7f)
                                 .align(alignment)
                         )
-                    } else if (context.contentResolver.getType(uri)?.startsWith("audio/") == true) {
+                    } else if (context.contentResolver.getType(details.uri)?.startsWith("audio/") == true) {
                         // TODO Rewrite with Media3
                         var mediaPlayer: MediaPlayer? = remember { null }
                         var isPlaying by remember { mutableStateOf(false) }
@@ -152,7 +173,7 @@ fun MessageBubble(
 
                         DisposableEffect(Unit) {
                             mediaPlayer = MediaPlayer().apply {
-                                setDataSource(context, uri)
+                                setDataSource(context, details.uri)
                                 prepareAsync()
                                 handler.post(checkPlayback)
                             }
@@ -204,8 +225,40 @@ fun MessageBubble(
                                 )
                             }
                         }
+                    } else if (context.contentResolver.getType(details.uri)?.startsWith("video/") == true) {
+
+                        val player = remember {
+                            ExoPlayer
+                                .Builder(context)
+                                .build()
+                                .apply {
+                                    setMediaItem(MediaItem.fromUri(details.uri))
+                                }
+                        }
+
+                        Box(
+                            modifier = Modifier.align(alignment)
+                        ) {
+                            PlayerSurface(
+                                player = player,
+                                modifier = Modifier
+                                    .size(400.dp)
+                                    //.widthIn(max = configuration.screenWidthDp.dp * 0.7f)
+                                    .clip(RoundedCornerShape(24.dp)),
+                                surfaceType = SURFACE_TYPE_TEXTURE_VIEW
+                            )
+
+                            IconButton(
+                                onClick = { player.play() }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.PlayArrow,
+                                    contentDescription = null
+                                )
+                            }
+                        }
                     } else {
-                        val fileSize = remember { context.getMMSSize(cuteMessage.attachment.dataUri[index]) }
+                        val fileSize = remember { context.getMMSSize(cuteMessage.attachment.attachmentDetails[index].uri) }
 
 
                         Box(
@@ -230,7 +283,7 @@ fun MessageBubble(
                                 )
                                 Column {
                                     CuteText(
-                                        text = cuteMessage.attachment.filenames[index],
+                                        text = cuteMessage.attachment.attachmentDetails[index].filename,
                                         maxLines = 1,
                                         modifier = Modifier.basicMarquee()
                                     )
@@ -277,9 +330,11 @@ fun MessageBubble(
                     text = if (!cuteMessage.isMms) cuteMessage.body else cuteMessage.attachment?.body ?: "",
                     modifier = Modifier
                         .padding(10.dp),
-                    textDecoration = if (cuteMessage.body.isLink()) TextDecoration.Underline else null,
-                    fontSize = if (cuteMessage.body.isEmoji()) 35.sp else TextUnit.Unspecified,
-                    color = textColor
+                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(
+                        fontSize = if (cuteMessage.body.isEmoji()) 35.sp else TextUnit.Unspecified,
+                        color = MaterialTheme.colorScheme.contentColorFor(bubbleColor),
+                        textDecoration = if (cuteMessage.body.isLink()) TextDecoration.Underline else null,
+                    )
                 )
             }
         }
@@ -291,7 +346,7 @@ fun MessageBubble(
                 .padding(horizontal = 10.dp)
         ) {
             CuteText(
-                text = cuteMessage.date.toReadableTime(context),
+                text = cuteMessage.date.toReadableDuration(DurationUnit.MILLISECONDS),
                 color = MaterialTheme.colorScheme.onBackground.copy(0.85f),
                 fontSize = 13.sp,
                 modifier = Modifier
@@ -310,39 +365,37 @@ enum class SandwichPosition {
     SOLO, TOP, MIDDLE, BOTTOM
 }
 
-@Composable
 fun BubbleShape(
     sandwichPosition: SandwichPosition,
     messageType: Int
 ): Shape {
-    return remember(sandwichPosition) {
-        if (messageType == Telephony.Sms.MESSAGE_TYPE_SENT) {
-            RoundedCornerShape(
-                topStart = 24.dp,
-                bottomStart = 24.dp,
-                topEnd = when (sandwichPosition) {
-                    SandwichPosition.SOLO, SandwichPosition.TOP -> 24.dp
-                    else -> 4.dp
-                },
-                bottomEnd = when (sandwichPosition) {
-                    SandwichPosition.SOLO, SandwichPosition.BOTTOM -> 24.dp
-                    else -> 4.dp
-                }
-            )
-        } else {
-            RoundedCornerShape(
-                topStart = when (sandwichPosition) {
-                    SandwichPosition.SOLO, SandwichPosition.TOP -> 24.dp
-                    else -> 4.dp
-                },
-                bottomStart = when (sandwichPosition) {
-                    SandwichPosition.SOLO, SandwichPosition.BOTTOM -> 24.dp
-                    else -> 4.dp
-                },
-                topEnd = 24.dp,
-                bottomEnd = 24.dp
-            )
-        }
+
+    return if (messageType == Telephony.Sms.MESSAGE_TYPE_SENT) {
+        RoundedCornerShape(
+            topStart = 24.dp,
+            bottomStart = 24.dp,
+            topEnd = when (sandwichPosition) {
+                SandwichPosition.SOLO, SandwichPosition.TOP -> 24.dp
+                else -> 4.dp
+            },
+            bottomEnd = when (sandwichPosition) {
+                SandwichPosition.SOLO, SandwichPosition.BOTTOM -> 24.dp
+                else -> 4.dp
+            }
+        )
+    } else {
+        RoundedCornerShape(
+            topStart = when (sandwichPosition) {
+                SandwichPosition.SOLO, SandwichPosition.TOP -> 24.dp
+                else -> 4.dp
+            },
+            bottomStart = when (sandwichPosition) {
+                SandwichPosition.SOLO, SandwichPosition.BOTTOM -> 24.dp
+                else -> 4.dp
+            },
+            topEnd = 24.dp,
+            bottomEnd = 24.dp
+        )
     }
 }
 

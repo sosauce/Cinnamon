@@ -35,11 +35,15 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.repeatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,10 +72,12 @@ import java.util.Locale
 import kotlin.random.Random
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.core.content.contentValuesOf
 import com.sosauce.cuteconnect.ui.navigation.Screen
 import dev.chrisbanes.haze.HazeEffectScope
@@ -91,10 +97,15 @@ import java.io.FileNotFoundException
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.MonthDay
 import java.time.Year
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.time.format.TextStyle
 import java.util.TimeZone
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -110,6 +121,29 @@ fun Int.toReadableTime(): String {
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
+}
+
+fun Long.toDate(): String {
+    val date = LocalDate.ofInstant(
+        Instant.ofEpochMilli(this),
+        ZoneId.systemDefault()
+    )
+    val currentYear = Year.now().value
+    val isFromPreviousYear = date.year != currentYear
+    val formatStyle = if (!isFromPreviousYear) {
+        FormatStyle.MEDIUM
+    } else FormatStyle.SHORT
+
+    return date.format(DateTimeFormatter.ofLocalizedDate(formatStyle))
+
+}
+
+// I have way too many functions to convert time and date lmao needs cleanup
+fun Long.toStopwatch(
+    durationUnit: DurationUnit = DurationUnit.MILLISECONDS
+): String {
+    val duration = this.toDuration(durationUnit)
+    return duration.toString()
 }
 
 /**
@@ -162,11 +196,9 @@ fun String.betterFormatNumber(): String {
 /**
  * Gets or creates a thread ID based on the number this function is called on. Wrapper around Threads.getThreadIdOrCreate
  */
-fun String.getThreadIdOrCreate(context: Context): Long {
-    return Telephony.Threads.getOrCreateThreadId(context, this)
-}
+fun String.getThreadIdOrCreate(context: Context) = Telephony.Threads.getOrCreateThreadId(context, setOf(this))
 
-fun Int.getAddressFromThreadId(context: Context): String {
+fun Long.getAddressFromThreadId(context: Context): String {
     context.contentResolver.query(
         Sms.CONTENT_URI,
         arrayOf(Sms.ADDRESS),
@@ -185,6 +217,10 @@ fun Int.getAddressFromThreadId(context: Context): String {
  * Return the contact ID of the number it's called on. -1 if contact doesn't exist.
  */
 fun String.getContactId(context: Context): Long {
+
+
+    if (isNullOrEmpty() || isNullOrBlank()) return -1
+
     context.contentResolver.query(
         Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(this)),
         arrayOf(PhoneLookup._ID),
@@ -276,9 +312,16 @@ fun Long.toReadableDate(): String {
 }
 
 
-fun Long.toReadableTime(context: Context): String {
-    val timeFormat = DateFormat.getTimeFormat(context)
-    return timeFormat.format(Date(this))
+
+fun Long.millisToDate(
+    pattern: String = "MMMM d, yyyy"
+): String {
+    val formatter = SimpleDateFormat(pattern, Locale.getDefault())
+    val calendar = Calendar.getInstance().apply {
+        timeInMillis = this@millisToDate
+    }
+
+    return formatter.format(calendar.time)
 }
 
 fun Long.toReadableDuration(
@@ -286,7 +329,7 @@ fun Long.toReadableDuration(
 ): String {
     val duration = this.toDuration(durationUnit)
 
-    return duration.toComponents { minutes, seconds, _ ->
+    return duration.toComponents { _, minutes, seconds, _, _ ->
         "%02d:%02d".format(minutes, seconds)
     }
 }
@@ -380,7 +423,6 @@ fun Long.usePart(
         }
     } catch (e: IOException) {
         return ""
-        e.printStackTrace()
     }
 }
 
@@ -392,12 +434,6 @@ fun String.isEmoji(): Boolean {
 fun String.isLink(): Boolean {
     val regex = LINK_REGEX.toRegex()
     return this.matches(regex)
-}
-
-
-
-object CurrentScreen {
-    var screen by mutableStateOf<NavKey>(Screen.Messages)
 }
 
 @Composable
@@ -560,6 +596,19 @@ inline fun <E> List<E>.copyMutate(block: MutableList<E>.() -> Unit): List<E> {
 inline fun <E> Set<E>.copyMutate(block: MutableSet<E>.() -> Unit): Set<E> {
     return toMutableSet().apply(block)
 }
+fun String.formateEventDate(): String {
+    return when {
+        startsWith("--") -> {
+            val monthDay = MonthDay.parse(this)
+            monthDay.format(DateTimeFormatter.ofPattern("MMMM d", Locale.getDefault()))
+        }
+        length == 10 -> {
+            val parsedDate = LocalDate.parse(this)
+            parsedDate.format(DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.getDefault()))
+        }
+        else -> this
+    }
+}
 
 
 //fun Uri.fileSize(context: Context): Long {
@@ -638,4 +687,10 @@ fun rememberSearchbarRightPadding(
 @Composable
 fun rememberInteractionSource(): MutableInteractionSource {
     return remember { MutableInteractionSource() }
+}
+
+@Composable
+fun keyboardAsState(): State<Boolean> {
+    val isImeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    return rememberUpdatedState(isImeVisible)
 }

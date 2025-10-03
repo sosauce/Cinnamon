@@ -35,9 +35,9 @@ import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.activities.CallActivity
 import com.sosauce.cuteconnect.data.receivers.CallReceiver
 import com.sosauce.cuteconnect.data.services.CallService
+import com.sosauce.cuteconnect.domain.model.AudioRoute
 import com.sosauce.cuteconnect.domain.states.CallState
 import com.sosauce.cuteconnect.domain.states.CallUiState
-import com.sosauce.cuteconnect.domain.states.CompatCallEndpoint
 import com.sosauce.cuteconnect.main.MainActivity
 import com.sosauce.cuteconnect.utils.ACCEPT_INCOMING_CALL
 import com.sosauce.cuteconnect.utils.AUDIO_SOURCE
@@ -63,6 +63,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.seconds
 
 // Inspired by Fossify's call manager!
@@ -71,79 +72,55 @@ import kotlin.time.Duration.Companion.seconds
  * A bridge between an InCallService (CallService) and the ViewModel.
  * It's easier having it as an object as InCallService has a hard time with DI
  */
-@SuppressLint("StaticFieldLeak")
 object CallManager {
 
-    var cuteCall: Call? = null
-    var inCallService: InCallService? = null
-    //var inCallService: InCallService? = null
+    private var callServiceCallback: CallServiceCallback? = null
+    private var androidCallCallback : AndroidCallCallback? = null
+
 
     private val _callUIState = MutableStateFlow(CallUiState())
     val callUiState = _callUIState.asStateFlow()
 
-    fun answerCall() {
-        cuteCall?.answer(VideoProfile.STATE_AUDIO_ONLY)
+    fun registerCallServiceCallback(cb: CallServiceCallback) {
+        callServiceCallback = cb
     }
 
-    fun declineCall() {
-        cuteCall?.reject(false, null)
+    fun registerAndroidCallCallback(cb: AndroidCallCallback) {
+        androidCallCallback = cb
     }
 
-    fun hangupOngoingCall() {
-        cuteCall?.disconnect()
-        //callNotificationManager.clearNotification()
+    fun unregisterCallServiceCallback() {
+        callServiceCallback = null
     }
 
-    fun shouldMute(mute: Boolean) {
-        inCallService!!.setMuted(mute)
+    fun unregisterAndroidCallCallback() {
+        androidCallCallback = null
     }
 
-    fun startTone(char: Char) {
-        cuteCall?.playDtmfTone(char)
-        cuteCall?.stopDtmfTone()
-    }
+    fun answerCall() = androidCallCallback?.answerCall()
 
-    fun holdOrUnhold() {
-        val isHolding = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            cuteCall?.details?.state == Call.STATE_HOLDING
-        } else cuteCall?.state == Call.STATE_HOLDING
+    fun declineCall() = androidCallCallback?.declineCall()
 
-         if (isHolding) {
-             cuteCall?.unhold()
-         } else {
-             cuteCall?.hold()
-         }
 
-    }
+    fun hangupOngoingCall() = androidCallCallback?.hangupOngoingCall()
 
-    fun switchEndpoint(
-        context: Context,
-        endpoint: Int
-    ) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            callUiState.value.availableEndpoints.find { it?.endpointType == endpoint }?.let {
-                inCallService?.requestCallEndpointChange(
-                    it,
-                    context.mainExecutor
-                ) {}
-            }
-        } else {
-            when (endpoint) {
-                CompatCallEndpoint.TYPE_SPEAKER -> inCallService?.setAudioRoute(CallAudioState.ROUTE_SPEAKER)
-                CompatCallEndpoint.TYPE_EARPIECE -> inCallService?.setAudioRoute(CallAudioState.ROUTE_EARPIECE)
-            }
+    fun toggleMute(mute: Boolean) = callServiceCallback?.toggleMute(mute)
+
+    fun startTone(char: Char) = androidCallCallback?.startTone(char)
+
+    fun toggleHold() = androidCallCallback?.toggleHold()
+
+    fun switchAudioRoute(route: AudioRoute) = callServiceCallback?.switchAudioRoute(route)
+
+    fun updateAvailableAudioRoutes(routes: List<AudioRoute>) {
+        _callUIState.update {
+            it.copy(availableAudioRoutes = routes)
         }
     }
 
-    fun updateAvailableEndpoints(endpoints: List<CallEndpoint?>) {
+    fun updateCurrentAudioRoute(route: AudioRoute) {
         _callUIState.update {
-            it.copy(availableEndpoints = endpoints)
-        }
-    }
-
-    fun updateCurrentEndpoint(endpoint: Int) {
-        _callUIState.update {
-            it.copy(currentEndpoint = endpoint)
+            it.copy(currentAudioRoute = route)
         }
     }
 
@@ -165,7 +142,7 @@ object CallManager {
         }
     }
 
-    fun updateTimeSpent(time: Int) {
+    fun updateTimeSpent(time: Long) {
         _callUIState.update {
             it.copy(timeSpentInCall = time)
         }
@@ -176,5 +153,18 @@ object CallManager {
             it.copy(number = number)
         }
     }
+}
 
- }
+
+// Idk if this is best practice, but I'd rather have as less references as possible in the CallManager since its a singleton and it can easily leak
+interface AndroidCallCallback {
+    fun answerCall()
+    fun declineCall()
+    fun hangupOngoingCall()
+    fun startTone(char: Char)
+    fun toggleHold()
+}
+interface CallServiceCallback {
+    fun toggleMute(mute: Boolean)
+    fun switchAudioRoute(route: AudioRoute)
+}

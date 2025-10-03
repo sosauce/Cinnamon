@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.sosauce.cuteconnect.ui.screens.contacts.components
 
 import android.content.Intent
@@ -16,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +40,11 @@ import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
 import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
 import com.sosauce.cuteconnect.ui.shared_components.text.HeaderText
 import com.sosauce.cuteconnect.utils.ICON_TEXT_SPACING
+import com.sosauce.cuteconnect.utils.formateEventDate
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun ContactInfos(
@@ -45,6 +54,7 @@ fun ContactInfos(
 
     val resources = LocalResources.current
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
 
     Column {
         HeaderText("Contact info")
@@ -83,8 +93,9 @@ fun ContactInfos(
                                             append(" · Default")
                                         }
                                     },
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 13.sp
+                                    style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 )
                             }
                         },
@@ -130,11 +141,12 @@ fun ContactInfos(
                             context.startActivity(intent)
                         },
                         leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.email),
-                                contentDescription = null,
-                                tint = if (index == 0) LocalContentColor.current else Color.Transparent
-                            )
+                            if (index == 0) {
+                                Icon(
+                                    painter = painterResource(R.drawable.email),
+                                    contentDescription = null
+                                )
+                            }
                         },
                         text = {
                             Column {
@@ -146,8 +158,9 @@ fun ContactInfos(
                                             append(" · Default")
                                         }
                                     },
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 13.sp
+                                    style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 )
                             }
                         }
@@ -164,11 +177,12 @@ fun ContactInfos(
                             context.startActivity(intent)
                         },
                         leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.address),
-                                contentDescription = null,
-                                tint = if (index == 0) LocalContentColor.current else Color.Transparent
-                            )
+                            if (index == 0) {
+                                Icon(
+                                    painter = painterResource(R.drawable.address),
+                                    contentDescription = null
+                                )
+                            }
                         },
                         text = {
                             Column {
@@ -180,8 +194,9 @@ fun ContactInfos(
                                             append(" · Default")
                                         }
                                     },
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 13.sp
+                                    style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 )
                             }
                         }
@@ -201,32 +216,64 @@ fun ContactInfos(
             ),
             shape = RoundedCornerShape(24.dp)
         ) {
-            contact.websites.forEachIndexed { index, website ->
-                CuteDropdownMenuItem(
-                    onClick = {},
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.address),
-                            contentDescription = null,
-                            tint = if (index == 0) LocalContentColor.current else Color.Transparent
-                        )
-                    },
-                    text = {
-                        Column {
-                            CuteText(website.website)
-                            CuteText(
-                                text = buildString {
-                                    append(ContactsContract.CommonDataKinds.StructuredPostal.getTypeLabel(resources, website.type, "Custom"))
-                                    if (website.isDefault) {
-                                        append(" · Default")
-                                    }
-                                },
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 13.sp
-                            )
+            Column(
+                modifier = Modifier.padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(15.dp)
+            ) {
+                contact.websites.forEachIndexed { index, website ->
+                    CuteDropdownMenuItem(
+                        onClick = { uriHandler.openUri(website.website) },
+                        leadingIcon = {
+                            if (index == 0) {
+                                Icon(
+                                    painter = painterResource(R.drawable.website),
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        text = { CuteText(website.website) }
+                    )
+                }
+
+                contact.events.forEachIndexed { index, event ->
+
+                    CuteDropdownMenuItem(
+                        onClick = {},
+                        leadingIcon = {
+                            if (index == 0) {
+                                Icon(
+                                    painter = painterResource(R.drawable.event),
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        text = {
+                            Column {
+                                CuteText(event.date.formateEventDate())
+                                CuteText(
+                                    text = ContactsContract.CommonDataKinds.Event.getTypeLabel(resources, event.type, "Custom").toString(),
+                                    style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
+                contact.notes.forEachIndexed { index, note ->
+                    CuteDropdownMenuItem(
+                        onClick = {},
+                        leadingIcon = {
+                            if (index == 0) {
+                                Icon(
+                                    painter = painterResource(R.drawable.note),
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        text = { CuteText(note.note) }
+                    )
+                }
             }
         }
     }

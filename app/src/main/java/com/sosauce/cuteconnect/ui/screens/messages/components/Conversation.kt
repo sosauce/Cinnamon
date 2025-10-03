@@ -53,6 +53,7 @@ import com.sosauce.cuteconnect.ui.shared_components.DefaultGroupChatIcon
 import com.sosauce.cuteconnect.utils.betterFormatNumber
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
 import com.sosauce.cuteconnect.utils.getContactPfpUri
+import com.sosauce.cuteconnect.utils.toDate
 import com.sosauce.cuteconnect.utils.toShortDate
 
 @Composable
@@ -69,6 +70,7 @@ fun Conversation(
         cuteConversation.recipients.map { it.getContactNameOrNothing(context).betterFormatNumber() }
     }
     var showUnblockDialog by remember { mutableStateOf(false) }
+
 
 
     if (showUnblockDialog) {
@@ -116,7 +118,7 @@ fun Conversation(
     CuteDropdownMenuItem(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
-        onClick = { onClick(Screen.Conversation(cuteConversation.threadId)) },
+        onClick = { onClick(Screen.Conversation(cuteConversation.recipients.first())) },
         onLongClick = onLongClick,
         leadingIcon = {
             if (cuteConversation.isGroupChat) {
@@ -134,8 +136,10 @@ fun Conversation(
             ) {
 
                 CuteText(
-                    text = cuteConversation.date.toShortDate(context),
-                    fontSize = 12.sp
+                    text = cuteConversation.date.toDate(),
+                    style = MaterialTheme.typography.bodySmallEmphasized.copy(
+                        color = if (cuteConversation.read) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onBackground
+                    )
                 )
 
                 Row(
@@ -196,16 +200,19 @@ fun Conversation(
                             cuteConversation.snippet
                         }
                     },
-                    maxLines = 1,
+                    maxLines = if (cuteConversation.read) 1 else Int.MAX_VALUE,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = TextStyle(
                         fontStyle = if (cuteConversation.isSenderBlocked) FontStyle.Italic else FontStyle.Normal,
+                        color = if (cuteConversation.read) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onBackground,
                     )
                 )
             }
         }
     )
 }
+
+
+
 
 

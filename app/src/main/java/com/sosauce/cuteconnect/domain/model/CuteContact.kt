@@ -12,7 +12,9 @@ data class CuteContact(
     val phoneNumbers: List<Phone>,
     val emails: List<Email>,
     val addresses: List<Address>,
-    val websites: List<Website>
+    val websites: List<Website>,
+    val notes: List<Note>,
+    val events: List<Event>
 ) {
     data class Email(
         val email: String,
@@ -33,9 +35,16 @@ data class CuteContact(
     )
 
     data class Website(
-        val website: String,
-        val type: Int,
-        val isDefault: Boolean
+        val website: String
+    )
+
+    data class Note(
+        val note: String
+    )
+
+    data class Event(
+        val date: String,
+        val type: Int
     )
 
 }

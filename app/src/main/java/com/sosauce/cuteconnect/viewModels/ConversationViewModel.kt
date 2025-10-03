@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -31,35 +32,28 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class ConversationViewModel(
-    private val conversationSettingsDao: ConversationSettingsDao
+    private val conversationSettingsDao: ConversationSettingsDao,
+    private val threadId: Long = 0
 ): ViewModel() {
 
 
-    fun getConversationSettings(threadId: Long): Flow<ConversationSettings> {
+    val settings = conversationSettingsDao.getConversationSettings(threadId)
+        .map { it ?: ConversationSettings(threadId) }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            ConversationSettings(threadId)
+        )
 
-        return conversationSettingsDao.getConversationSettings(threadId)
-            .map { it ?: ConversationSettings(threadId) }
-    }
 
-    fun getPinnedConversations(): StateFlow<List<Int>> {
-        return conversationSettingsDao.getPinnedConversations()
-            .stateIn(
-                viewModelScope,
-                SharingStarted.WhileSubscribed(5000),
-                emptyList()
-            )
-    }
 
     fun handleConversationSettingsActions(action: ConversationSettingActions) {
         when(action) {
             is ConversationSettingActions.UpsertConversationSettings -> {
-                viewModelScope.launch {
-                    println("upserting settings: ${action.conversationSettings}")
+                viewModelScope.launch(Dispatchers.IO) {
                     conversationSettingsDao.upsertConversation(action.conversationSettings)
                 }
             }
         }
     }
-
-
 }

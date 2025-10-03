@@ -1,8 +1,11 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.sosauce.cuteconnect.ui.screens.wallpaper
 
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,6 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -32,10 +37,7 @@ import com.sosauce.cuteconnect.domain.model.ConversationSettings
 import com.sosauce.cuteconnect.utils.ImageUtils
 
 @Composable
-fun AddWallpaperItem(
-    modifier: Modifier = Modifier,
-    onAddNewWallpaper: (Uri) -> Unit
-) {
+fun AddWallpaperItem(onAddNewWallpaper: (Uri) -> Unit) {
 
 
     val context = LocalContext.current
@@ -49,22 +51,16 @@ fun AddWallpaperItem(
         }
     }
 
-    Box(
-        modifier = modifier
-            .height(150.dp)
-            .width(100.dp),
-        contentAlignment = Alignment.Center
+
+    FilledIconButton(
+        onClick = { imagePicker.launch(arrayOf("image/*")) },
+        shapes = IconButtonDefaults.shapes(),
+        modifier = Modifier.size(IconButtonDefaults.smallContainerSize(
+            IconButtonDefaults.IconButtonWidthOption.Wide))
     ) {
-        IconButton(
-            onClick = { imagePicker.launch(arrayOf("image/*")) },
-            colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceTint
-            )
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Add,
-                contentDescription = null
-            )
-        }
+        Icon(
+            imageVector = Icons.Rounded.Add,
+            contentDescription = null
+        )
     }
 }

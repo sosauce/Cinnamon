@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -27,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.domain.model.CuteContact
 import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.ui.screens.contacts.ContactListItem
-import com.sosauce.cuteconnect.ui.shared_components.MiniCuteSearchbar
+import com.sosauce.cuteconnect.ui.shared_components.searchbars.MiniCuteSearchbar
 import com.sosauce.cuteconnect.utils.getThreadIdOrCreate
 import com.sosauce.cuteconnect.utils.rememberSearchbarAlignment
 import com.sosauce.cuteconnect.utils.rememberSearchbarMaxFloatValue
@@ -41,8 +42,8 @@ fun StartConversation(
     onNavigate: (Screen) -> Unit
 ) {
     val context = LocalContext.current
-    var query by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+    val textState = rememberTextFieldState()
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -54,7 +55,7 @@ fun StartConversation(
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(
-                    items = contacts.filter { it.name.lowercase().contains(query.lowercase()) || it.phoneNumbers.firstOrNull()?.number?.contains(query) == true },
+                    items = contacts.filter { it.name.lowercase().contains(textState.text.toString().lowercase()) || it.phoneNumbers.firstOrNull()?.number?.contains(textState.text) == true },
                     key = { it.id }
                 ) { contact ->
                     ContactListItem(
@@ -65,7 +66,11 @@ fun StartConversation(
                                 horizontal = 4.dp
                             ),
                         contact = contact,
-                        onContactClick = { onNavigate(Screen.Conversation(contact.phoneNumbers.first().number.getThreadIdOrCreate(context))) },
+                        onContactClick = {
+                            try {
+                                onNavigate(Screen.Conversation(contact.phoneNumbers.first().number))
+                            } catch (_: Exception) {}
+                        },
                         showNumber = true
                     )
                 }
@@ -76,16 +81,10 @@ fun StartConversation(
             visible = listState.showCuteSearchbar,
             enter = slideInVertically { it },
             exit = slideOutVertically { it },
-            modifier = Modifier
-                .navigationBarsPadding()
-                .align(rememberSearchbarAlignment())
-                .fillMaxWidth(rememberSearchbarMaxFloatValue())
-                .padding(end = rememberSearchbarRightPadding())
-                .imePadding()
+            modifier = Modifier.align(rememberSearchbarAlignment())
         ) {
             MiniCuteSearchbar(
-                query = query,
-                onQueryChange = { query = it },
+                textFieldState = textState,
                 onNavigateUp = onNavigateUp
             )
         }

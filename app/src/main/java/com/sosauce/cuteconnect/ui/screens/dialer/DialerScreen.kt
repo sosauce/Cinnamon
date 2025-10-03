@@ -1,6 +1,10 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.sosauce.cuteconnect.ui.screens.dialer
 
-import android.telephony.PhoneNumberUtils
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -13,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowOutward
@@ -21,11 +26,14 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Voicemail
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,10 +45,11 @@ import com.sosauce.cuteconnect.data.actions.CallAction
 import com.sosauce.cuteconnect.data.actions.CommonAction
 import com.sosauce.cuteconnect.domain.model.CuteCallLog
 import com.sosauce.cuteconnect.ui.navigation.Screen
-import com.sosauce.cuteconnect.ui.shared_components.CuteSearchbar
+import com.sosauce.cuteconnect.ui.shared_components.searchbars.CuteSearchbar
 import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
 import com.sosauce.cuteconnect.utils.groupSubsequentlyBy
 import com.sosauce.cuteconnect.utils.rememberSearchbarAlignment
+import com.sosauce.cuteconnect.utils.showCuteSearchbar
 import com.sosauce.cuteconnect.utils.toReadableDate
 
 @Composable
@@ -48,8 +57,11 @@ fun DialerScreen(
     onNavigate: (Screen) -> Unit,
     callLogs: List<CuteCallLog>,
     onHandleCallActions: (CallAction) -> Unit,
-    onHandleCommonAction: (CommonAction) -> Unit
+    onHandleCommonAction: (CommonAction) -> Unit,
+    onCallAction: (CallAction) -> Unit
 ) {
+
+    val listState = rememberLazyListState()
 
     Scaffold { paddingValues ->
         Box {
@@ -88,7 +100,7 @@ fun DialerScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 CuteText(
-                                    text = date.toString(),
+                                    text = date,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(start = 10.dp)
                                 )
@@ -103,6 +115,7 @@ fun DialerScreen(
                                 callLog = callLog,
                                 numberOfAppearance = appearances,
                                 onHandleCommonAction = onHandleCommonAction,
+                                onCallAction = onCallAction,
                                 modifier = Modifier
                                     .animateItem()
                                     .clip(RoundedCornerShape(24.dp))
@@ -112,40 +125,30 @@ fun DialerScreen(
                     }
             }
 
-            CuteSearchbar(
+            AnimatedVisibility(
+                visible = listState.showCuteSearchbar,
                 modifier = Modifier.align(rememberSearchbarAlignment()),
-                trailingIcon = {
-                    Row {
-                        IconButton(
-                            onClick = {}
+                enter = slideInVertically { it },
+                exit = slideOutVertically { it }
+            ) {
+                CuteSearchbar(
+                    sortingMenu = {},
+                    fab = {
+                        SmallFloatingActionButton(
+                            onClick = { onNavigate(Screen.Dialpad) },
+                            shape = MaterialShapes.Cookie7Sided.toShape()
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.ArrowOutward,
-                                contentDescription = "sort"
+                                imageVector = Icons.Rounded.Dialpad,
+                                contentDescription = null
                             )
                         }
-                        IconButton(
-                            onClick = {}
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Settings,
-                                contentDescription = "settings"
-                            )
-                        }
-                    }
-                },
-                fab = {
-                    SmallFloatingActionButton(
-                        onClick = { onNavigate(Screen.Dialpad) }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Dialpad,
-                            contentDescription = null
-                        )
-                    }
-                },
-                onNavigate = onNavigate
-            )
+                    },
+                    onNavigate = onNavigate
+                )
+
+            }
+
 
         }
     }

@@ -7,7 +7,12 @@ import kotlinx.serialization.Serializable
 data class CuteAttachment(
     val id: Long = 0,
     val body: String = "",
-    val dataUri: List<Uri> = emptyList(),
-    val filenames: List<String> = emptyList()
-)
+    val attachmentDetails: List<AttachmentDetails> = emptyList()
+) {
+    data class AttachmentDetails(
+        val id: Long,
+        val uri: Uri,
+        val filename: String
+    )
+}
 

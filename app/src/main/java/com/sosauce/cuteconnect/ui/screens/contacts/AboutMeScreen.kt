@@ -46,8 +46,7 @@ fun AboutMeScreen(
                 DefaultContactIcon(
                     firstLetter = aboutMe.name.first(),
                     modifier = Modifier.padding(start = 10.dp),
-                    size = 170.dp,
-                    fontSize = 80.sp
+                    size = 170.dp
                 )
                 Spacer(Modifier.height(20.dp))
                 CuteText(

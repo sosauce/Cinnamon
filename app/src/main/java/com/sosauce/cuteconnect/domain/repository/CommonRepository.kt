@@ -29,6 +29,7 @@ import android.telephony.SubscriptionManager
 import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
 import android.util.SparseArray
+import android.util.Xml
 import androidx.compose.ui.graphics.decodeToImageBitmap
 import androidx.compose.ui.res.booleanResource
 import androidx.compose.ui.util.fastForEach
@@ -49,6 +50,7 @@ import com.sosauce.cuteconnect.domain.model.CuteSimCard
 import com.sosauce.cuteconnect.domain.model.CuteVoicemail
 import com.sosauce.cuteconnect.utils.PermissionUtils
 import com.sosauce.cuteconnect.utils.copyMutate
+import com.sosauce.cuteconnect.utils.getThreadIdOrCreate
 import com.sosauce.cuteconnect.utils.observe
 import com.sosauce.cuteconnect.utils.observeSims
 import kotlinx.coroutines.CoroutineScope
@@ -60,13 +62,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.koin.androidContext
+import org.xmlpull.v1.XmlPullParser
 import java.io.File
 import java.util.Locale
+import kotlin.toString
 
 class CommonRepository(
     private val context: Context
@@ -81,45 +86,42 @@ class CommonRepository(
 
 
 
-    // CommonRepo is sometimes called from non DI'ed class' such as NotificationManagers, so just inject this here
-//    private val conversationSettingsDao by lazy {
-//        Room.databaseBuilder(
-//            context = context,
-//            klass = ConversationSettingsDatabase::class.java,
-//            name = "conversationSettings.db"
-//        ).allowMainThreadQueries().build().dao
-//        // Should be safe to get draft snippet on main thread
+
+
+//    fun fetchLatestMessages(): Flow<List<CuteMessage>> {
+//        return context.contentResolver.observe(Sms.CONTENT_URI).map {
+//            fetchMessages()
+//        }.flowOn(Dispatchers.IO)
 //    }
 
-
-    fun fetchLatestMessages(): Flow<List<CuteMessage>> {
+    fun fetchLatestMessagesForThread(threadId: Long): Flow<List<CuteMessage>> {
         return context.contentResolver.observe(Sms.CONTENT_URI).map {
-            fetchMessages()
-        }
+            fetchMessagesForThread(threadId)
+        }.flowOn(Dispatchers.IO)
     }
 
     fun fetchLatestConversations(): Flow<List<CuteConversation>> {
         return context.contentResolver.observe(Telephony.Threads.CONTENT_URI).map {
             fetchConversations()
-        }
+        }.flowOn(Dispatchers.IO)
     }
 
     fun fetchLatestContacts(): Flow<List<CuteContact>> {
         return context.contentResolver.observe(ContactsContract.Data.CONTENT_URI).map {
             fetchContacts()
-        }
+        }.flowOn(Dispatchers.IO)
     }
 
     fun fetchLatestCallLog(): Flow<List<CuteCallLog>> {
         return context.contentResolver.observe(CallLog.Calls.CONTENT_URI).map {
             fetchCallLogs()
-        }
+        }.flowOn(Dispatchers.IO)
     }
 
     fun fetchLatestVoicemails(): Flow<List<CuteVoicemail>> {
         return context.contentResolver.observe(VoicemailContract.Voicemails.CONTENT_URI).map {
             fetchVoicemails()
-        }
+        }.flowOn(Dispatchers.IO)
     }
 
     fun fetchLatestSims(): Flow<List<CuteSimCard>> {
@@ -182,9 +184,120 @@ class CommonRepository(
         return messages
     }
 
-    /* I think RCS messages from Google Messages are stored as MMS, same goes for group chat messages
-    We also use this to retrieve attachments maybeee ?
-    */
+    private fun fetchMessagesForThread(threadId: Long): List<CuteMessage> {
+
+        if (!PermissionUtils.hasSmsPermission(context)) return emptyList()
+
+
+
+        val messages = mutableListOf<CuteMessage>()
+
+        val projection = arrayOf(
+            Sms._ID,
+            Sms.THREAD_ID,
+            Sms.ADDRESS,
+            Sms.DATE,
+            Sms.BODY,
+            Sms.TYPE,
+            Sms.READ,
+        )
+
+        val selection = "${Sms.THREAD_ID} = ?"
+        val selectionArgs = arrayOf(threadId.toString())
+
+        context.contentResolver.query(
+            Sms.CONTENT_URI,
+            projection,
+            selection,
+            selectionArgs,
+            null,
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(Sms._ID)
+            val threadIdColumn = cursor.getColumnIndexOrThrow(Sms.THREAD_ID)
+            val addressColumn = cursor.getColumnIndexOrThrow(Sms.ADDRESS)
+            val dateColumn = cursor.getColumnIndexOrThrow(Sms.DATE)
+            val bodyColumn = cursor.getColumnIndexOrThrow(Sms.BODY)
+            val typeColumn = cursor.getColumnIndexOrThrow(Sms.TYPE)
+            val readColumn = cursor.getColumnIndexOrThrow(Sms.READ)
+
+
+            while (cursor.moveToNext()) {
+                messages.add(
+                    CuteMessage(
+                        id = cursor.getLong(idColumn),
+                        body = cursor.getString(bodyColumn),
+                        type = cursor.getInt(typeColumn),
+                        threadId = cursor.getLong(threadIdColumn),
+                        address = cursor.getString(addressColumn),
+                        date = cursor.getLong(dateColumn),
+                        read = cursor.getInt(readColumn) == 1
+                    )
+                )
+            }
+
+            messages.addAll(fetchThreadMms(threadId))
+        }
+        return messages.sortedBy { it.date }
+    }
+
+    private fun fetchThreadMms(threadId: Long): List<CuteMessage> {
+        val mms = mutableListOf<CuteMessage>()
+
+        val projection = arrayOf(
+            Mms._ID,
+            Mms.THREAD_ID,
+            Mms.MESSAGE_BOX,
+            Mms.READ,
+            Mms.DATE
+        )
+
+        val selection = "${Mms.THREAD_ID} = ?"
+
+        val selectionArgs = arrayOf(threadId.toString())
+
+
+        context.contentResolver.query(
+            Mms.CONTENT_URI,
+            projection,
+            selection,
+            selectionArgs,
+            null
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(Mms._ID)
+            val threadIdColumn = cursor.getColumnIndexOrThrow(Mms.THREAD_ID)
+            val typeColumn = cursor.getColumnIndexOrThrow(Mms.MESSAGE_BOX)
+            val dateColumn = cursor.getColumnIndexOrThrow(Mms.DATE)
+            val readColumn = cursor.getColumnIndexOrThrow(Mms.READ)
+
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idColumn)
+                val threadId = cursor.getLong(threadIdColumn)
+                val type = cursor.getInt(typeColumn)
+                val rawDate = cursor.getLong(dateColumn)
+                val date = if (rawDate > 1_000L) rawDate * 1000 else System.currentTimeMillis()
+                val attachment = getMmsAttachment(id)
+                val read = cursor.getInt(readColumn) == 1
+
+                mms.add(
+                    CuteMessage(
+                        id = id,
+                        body = attachment.body,
+                        type = type,
+                        threadId = threadId,
+                        address = "", // TODO() get address
+                        date = date,
+                        read = read,
+                        attachment = attachment,
+                        isMms = true
+                    )
+                )
+            }
+        }
+        return mms
+    }
+
+
+
     private fun fetchMms(threadId: Long = -1): List<CuteMessage> {
         val mms = mutableListOf<CuteMessage>()
 
@@ -193,10 +306,7 @@ class CommonRepository(
             Mms.THREAD_ID,
             Mms.MESSAGE_BOX,
             Mms.READ,
-            Mms.DATE,
-//            Sms.BODY,
-//            Sms.TYPE,
-//            Sms.READ,
+            Mms.DATE
         )
 
         val selection = if (threadId != -1L) {
@@ -251,6 +361,81 @@ class CommonRepository(
         return mms
     }
 
+    /**
+     * Gets a creates a conversation for a phone number
+     */
+    fun getOrCreateConversation(number: String): CuteConversation {
+
+        val threadId = number.getThreadIdOrCreate(context)
+
+
+        val projection = arrayOf(
+            Telephony.Threads._ID,
+            Telephony.Threads.SNIPPET,
+            Telephony.Threads.DATE,
+            Telephony.Threads.READ,
+            Telephony.Threads.RECIPIENT_IDS
+        )
+
+        val selection = "${Telephony.Threads._ID} = ?"
+
+        context.contentResolver.query(
+            "${Telephony.Threads.CONTENT_URI}?simple=true".toUri(),
+            projection,
+            selection,
+            arrayOf(threadId.toString()),
+            "${Telephony.Threads.DATE} DESC",
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(Telephony.Threads._ID)
+            val snippetColumn = cursor.getColumnIndexOrThrow(Telephony.Threads.SNIPPET)
+            val recipientIdsColumn = cursor.getColumnIndexOrThrow(Telephony.Threads.RECIPIENT_IDS)
+            val dateColumn = cursor.getColumnIndexOrThrow(Telephony.Threads.DATE)
+            val readColumn = cursor.getColumnIndexOrThrow(Telephony.Threads.READ)
+
+
+            while (cursor.moveToNext()) {
+
+                val threadId = cursor.getLong(idColumn)
+                val recipientIds = cursor.getString(recipientIdsColumn)
+                val recipientIdsAsLongs = recipientIds.split(" ").map { it.toLongOrNull() ?: 0 }
+                val recipientsPhoneNumber = getListOfAddresses(recipientIdsAsLongs)
+                val snippet = (cursor.getString(snippetColumn) ?: "").ifEmpty { getMmsThreadSnippet(threadId) }
+                val date = cursor.getLong(dateColumn)
+                val read = cursor.getInt(readColumn)
+                val isGroupChat = recipientsPhoneNumber.size > 1
+                val contactsId = recipientsPhoneNumber.map { getContactIdForThread(it) }
+                val threadContact = if (!isGroupChat) { // TODO: allow this for group chats
+                    fetchContacts(
+                        selection = "${ContactsContract.Data.CONTACT_ID} = ?",
+                        selectionArgs = arrayOf(contactsId.first().toString())
+                    )
+                } else emptyList()
+
+                return CuteConversation(
+                    threadId = threadId,
+                    snippet = snippet,
+                    recipients = recipientsPhoneNumber,
+                    contacts = threadContact,
+                    isSenderBlocked = if (recipientsPhoneNumber.size > 1) false else BlockedNumbersManager.isNumberBlocked(recipientsPhoneNumber.first(), context), // TODO: Checked if anyone in the group chat is blocked
+                    date = date,
+                    read = read == 1,
+                    isGroupChat = isGroupChat
+                )
+            }
+        }
+
+        return CuteConversation(
+            threadId = threadId,
+            snippet = "",
+            recipients = listOf(number),
+            contacts = emptyList(),
+            isSenderBlocked = false,
+            date = System.currentTimeMillis(),
+            read = true,
+            isGroupChat = false
+        )
+    }
+
     private fun fetchConversations(
         onlyPinned: Boolean = false
     ): List<CuteConversation> {
@@ -263,6 +448,8 @@ class CommonRepository(
             Telephony.Threads.READ,
             Telephony.Threads.RECIPIENT_IDS
         )
+
+
 
         val selection = "${Telephony.Threads.MESSAGE_COUNT} > ?"
 
@@ -289,17 +476,25 @@ class CommonRepository(
                 val snippet = (cursor.getString(snippetColumn) ?: "").ifEmpty { getMmsThreadSnippet(threadId) }
                 val date = cursor.getLong(dateColumn)
                 val read = cursor.getInt(readColumn)
+                val isGroupChat = recipientsPhoneNumber.size > 1
+                val contactsId = recipientsPhoneNumber.map { getContactIdForThread(it) }
+                val threadContact = if (!isGroupChat) { // TODO: allow this for GC
+                    fetchContacts(
+                        selection = "${ContactsContract.Data.CONTACT_ID} = ?",
+                        selectionArgs = arrayOf(contactsId.first().toString())
+                    )
+                } else emptyList()
 
                 conversations.add(
                     CuteConversation(
                         threadId = threadId,
                         snippet = snippet,
                         recipients = recipientsPhoneNumber,
-                        contactsId = recipientsPhoneNumber.map { getContactIdForThread(it) },
+                        contacts = threadContact,
                         isSenderBlocked = if (recipientsPhoneNumber.size > 1) false else BlockedNumbersManager.isNumberBlocked(recipientsPhoneNumber.first(), context), // TODO: Checked if anyone in the group chat is blocked
                         date = date,
                         read = read == 1,
-                        isGroupChat = recipientsPhoneNumber.size > 1
+                        isGroupChat = isGroupChat
                     )
                 )
             }
@@ -350,7 +545,6 @@ class CommonRepository(
 
         return callLogs
     }
-    // May or may not be the same feature Google Phone has
     private fun fetchVoicemails(): List<CuteVoicemail> {
 
         val voicemails = mutableListOf<CuteVoicemail>()
@@ -419,48 +613,91 @@ class CommonRepository(
     }
 
 
-    private fun fetchContacts(): List<CuteContact> {
+    private fun fetchContacts(
+        selection: String? = null,
+        selectionArgs: Array<String>? = null
+    ): List<CuteContact> {
 
 
-        val contacts = mutableListOf<CuteContact>()
+        val contactsMap = mutableMapOf<Long, CuteContact>()
+
+
+        // This can be a bit confusing, but it's so much faster than having individual queries for each data, no more ANR and super fast loading ^_^
         val projection = arrayOf(
-            ContactsContract.RawContacts.CONTACT_ID,
+            ContactsContract.Data.CONTACT_ID,
             ContactsContract.Data.DISPLAY_NAME,
-            ContactsContract.RawContacts.STARRED
+            ContactsContract.Data.STARRED,
+            ContactsContract.Data.MIMETYPE,
+            ContactsContract.Data.DATA1,
+            ContactsContract.Data.DATA2,
+            ContactsContract.Data.IS_PRIMARY,
         )
+
         context.contentResolver.query(
             ContactsContract.Data.CONTENT_URI,
             projection,
-            null,
-            null,
+            selection,
+            selectionArgs,
             "${ContactsContract.Data.DISPLAY_NAME} ASC"
         )?.use { cursor ->
-            val idColumn = cursor.getColumnIndexOrThrow(ContactsContract.RawContacts.CONTACT_ID)
+            val idColumn = cursor.getColumnIndexOrThrow(ContactsContract.Data.CONTACT_ID)
             val nameColumn = cursor.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME)
-            val starredColumn = cursor.getColumnIndexOrThrow(ContactsContract.RawContacts.STARRED)
+            val starredColumn = cursor.getColumnIndexOrThrow(ContactsContract.Data.STARRED)
+            val data1Column = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA1)
+            val mimeColumn = cursor.getColumnIndexOrThrow(ContactsContract.Data.MIMETYPE)
+            val data2Column = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA2)
+            val isPrimaryColumn = cursor.getColumnIndexOrThrow(ContactsContract.Data.IS_PRIMARY)
 
             while (cursor.moveToNext()) {
+
+
                 val id = cursor.getLong(idColumn)
                 val name = cursor.getString(nameColumn)
-                val phoneNumbers = getContactPhoneNumbers(id)
                 val isFavorite = cursor.getInt(starredColumn) != 0
+                val mimeType = cursor.getString(mimeColumn)
+                val data1 = cursor.getString(data1Column)
+                val data2 = cursor.getInt(data2Column)
+                val isPrimary = cursor.getInt(isPrimaryColumn) != 0
 
 
-                contacts.add(
-                    CuteContact(
-                        id = id,
-                        name = name,
-                        photo = getContactPhoto(id),
-                        phoneNumbers = phoneNumbers,
-                        emails = getContactEmails(id),
-                        addresses = getContactAddresses(id),
-                        websites = getContactWebsites(id),
-                        isFavorite = isFavorite,
-                    )
+                val oldContact = contactsMap[id] ?: CuteContact(
+                    id = id,
+                    name = name,
+                    photo = getContactPhoto(id),
+                    phoneNumbers = emptyList(),
+                    emails = emptyList(),
+                    addresses = emptyList(),
+                    websites = emptyList(),
+                    notes = emptyList(),
+                    events = emptyList(),
+                    isFavorite = isFavorite,
                 )
+
+                val newContact = if (data1.isNullOrBlank()) {
+                    oldContact
+                } else {
+                    when (mimeType) {
+                        ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE ->
+                            oldContact.copy(phoneNumbers = oldContact.phoneNumbers + CuteContact.Phone(data1, data2, isPrimary))
+                        ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE ->
+                            oldContact.copy(emails = oldContact.emails + CuteContact.Email(data1, data2, isPrimary))
+                        ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE ->
+                            oldContact.copy(addresses = oldContact.addresses + CuteContact.Address(data1, data2, isPrimary))
+                        ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE ->
+                            oldContact.copy(websites = oldContact.websites + CuteContact.Website(data1))
+                        ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE ->
+                            oldContact.copy(notes = oldContact.notes + CuteContact.Note(data1))
+                        ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE ->
+                            oldContact.copy(events = oldContact.events + CuteContact.Event(data1, data2))
+                        else -> oldContact
+                    }
+                }
+
+
+                contactsMap[id] = newContact
             }
         }
-        return contacts
+        return contactsMap.values.toList()
     }
 
     private fun getListOfAddresses(ids: List<Long>): List<String> {
@@ -497,10 +734,27 @@ class CommonRepository(
         return -1
     }
 
+
+    private fun fetchLatestMmsId(threadId: Long): Int {
+
+        context.contentResolver.query(
+            Mms.CONTENT_URI,
+            arrayOf(Mms._ID),
+            "${Mms.THREAD_ID} = ?",
+            arrayOf(threadId.toString()),
+            "${Mms.DATE} DESC LIMIT 1"
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(Mms._ID)
+
+            while (cursor.moveToFirst()) {
+                return cursor.getInt(idColumn)
+            }
+        }
+        return 0
+    }
     private fun getMmsThreadSnippet(threadId: Long): String {
-        val latestMms = fetchMms(threadId).firstOrNull()
-        val latestMessageId = latestMms?.id ?: 0
-        var snippet = latestMms?.body ?: ""
+        val latestMmsId = fetchLatestMmsId(threadId)
+        var snippet = ""
 
 
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -515,7 +769,7 @@ class CommonRepository(
             Mms.Part.TEXT
         )
         val selection = "${Mms.Part.MSG_ID} = ?"
-        val selectionArgs = arrayOf(latestMessageId.toString())
+        val selectionArgs = arrayOf(latestMmsId.toString())
 
         context.contentResolver.query(
             uri,
@@ -525,7 +779,7 @@ class CommonRepository(
             null
         )?.use { cursor ->
 
-            while (cursor.moveToNext()) {
+            while (cursor.moveToFirst()) {
                 val mimeType = cursor.getString(cursor.getColumnIndexOrThrow(Mms.Part.CONTENT_TYPE))
 
                 when {
@@ -585,146 +839,11 @@ class CommonRepository(
         } else Uri.EMPTY
     }
 
-    private fun getContactPhoneNumbers(contactId: Long): List<CuteContact.Phone> {
-        val phoneNumbers = mutableListOf<CuteContact.Phone>()
-
-        val projection = arrayOf(
-            ContactsContract.CommonDataKinds.Phone.NUMBER,
-            ContactsContract.CommonDataKinds.Phone.TYPE,
-            ContactsContract.CommonDataKinds.Phone.IS_PRIMARY
-        )
-
-        context.contentResolver.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            projection,
-            "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
-            arrayOf(contactId.toString()),
-            null
-        )?.use { cursor ->
-            while (cursor.moveToNext()) {
-                val number = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
-                val type = cursor.getInt(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.TYPE))
-                val isDefault = cursor.getInt(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.IS_PRIMARY)) != 0
-
-                phoneNumbers.add(
-                    CuteContact.Phone(
-                        number = number,
-                        type = type,
-                        isDefault = isDefault
-                    )
-                )
-            }
-        }
-
-        return phoneNumbers
-    }
-
-    private fun getContactEmails(contactId: Long): List<CuteContact.Email> {
-        val emails = mutableListOf<CuteContact.Email>()
-
-        val projection = arrayOf(
-            ContactsContract.CommonDataKinds.Email.ADDRESS,
-            ContactsContract.CommonDataKinds.Email.TYPE,
-            ContactsContract.CommonDataKinds.Email.IS_PRIMARY
-        )
-
-        context.contentResolver.query(
-            ContactsContract.CommonDataKinds.Email.CONTENT_URI,
-            projection,
-            "${ContactsContract.CommonDataKinds.Email.CONTACT_ID} = ?",
-            arrayOf(contactId.toString()),
-            null
-        )?.use { cursor ->
-            while (cursor.moveToNext()) {
-                val address = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.ADDRESS))
-                val type = cursor.getInt(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.TYPE))
-                val isDefault = cursor.getInt(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.IS_PRIMARY)) != 0
-
-                emails.add(
-                    CuteContact.Email(
-                        email = address,
-                        type = type,
-                        isDefault = isDefault
-                    )
-                )
-            }
-        }
-
-        return emails
-    }
-
-    private fun getContactAddresses(contactId: Long): List<CuteContact.Address> {
-        val addresses = mutableListOf<CuteContact.Address>()
-
-        val projection = arrayOf(
-            ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS,
-            ContactsContract.CommonDataKinds.StructuredPostal.TYPE,
-            ContactsContract.CommonDataKinds.StructuredPostal.IS_PRIMARY
-        )
-
-        context.contentResolver.query(
-            ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_URI,
-            projection,
-            "${ContactsContract.CommonDataKinds.StructuredPostal.CONTACT_ID} = ?",
-            arrayOf(contactId.toString()),
-            null
-        )?.use { cursor ->
-            while (cursor.moveToNext()) {
-                val address = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS))
-                val type = cursor.getInt(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.TYPE))
-                val isDefault = cursor.getInt(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.IS_PRIMARY)) != 0
-
-                addresses.add(
-                    CuteContact.Address(
-                        address = address,
-                        type = type,
-                        isDefault = isDefault
-                    )
-                )
-            }
-        }
-        return addresses
-    }
-
-    private fun getContactWebsites(contactId: Long): List<CuteContact.Website> {
-
-        val websites = mutableListOf<CuteContact.Website>()
-
-        val projection = arrayOf(
-            ContactsContract.CommonDataKinds.Website.URL,
-            ContactsContract.CommonDataKinds.Website.TYPE,
-            ContactsContract.CommonDataKinds.Website.IS_PRIMARY
-        )
-
-        context.contentResolver.query(
-            ContactsContract.Data.CONTENT_URI,
-            projection,
-            "${ContactsContract.RawContacts.CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
-            arrayOf(contactId.toString(), "'${ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE}'"),
-            null
-        )?.use { cursor ->
-            while (cursor.moveToNext()) {
-                val website = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Website.URL)) ?: "test"
-                val type = cursor.getInt(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Website.TYPE))
-                val isDefault = cursor.getInt(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Website.IS_PRIMARY)) != 0
-
-                websites.add(
-                    CuteContact.Website(
-                        website = website,
-                        type = type,
-                        isDefault = isDefault
-                    )
-                )
-            }
-        }
-
-        return websites
-    }
-
 
     // Inspired by https://github.com/FossifyOrg/Messages/blob/8c5bb9a32c990773259b4d95d698b83d31939171/app/src/main/kotlin/org/fossify/messages/extensions/Context.kt#L477
-    private fun getMmsAttachment(messageId: Long): CuteAttachment {
-
+    private fun getMmsAttachment(
+        messageId: Long,
+    ): CuteAttachment {
         var attachment = CuteAttachment(messageId)
 
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -736,11 +855,13 @@ class CommonRepository(
         val projection = arrayOf(
             Mms.Part._ID,
             Mms.Part.CONTENT_TYPE,
-            Mms.Part.TEXT,
-            Mms.Part.NAME,
+            Mms.Part.TEXT
         )
         val selection = "${Mms.Part.MSG_ID} = ?"
         val selectionArgs = arrayOf(messageId.toString())
+
+        var attachmentNames: List<String>? = null
+        var attachmentCount = 0
 
         context.contentResolver.query(
             uri,
@@ -753,32 +874,116 @@ class CommonRepository(
             while (cursor.moveToNext()) {
                 val partId = cursor.getLong(cursor.getColumnIndexOrThrow(Mms._ID)) // Id meant to get the data uri of MMS if any
                 val mimeType = cursor.getString(cursor.getColumnIndexOrThrow(Mms.Part.CONTENT_TYPE))
-                val filename = (cursor.getString(cursor.getColumnIndexOrThrow(Mms.Part.NAME)) ?: "").ifEmpty { "Unknown" }
 
-                when (mimeType) {
-                    "text/plain" -> {
-                        val bodyText = cursor.getString(cursor.getColumnIndexOrThrow(Mms.Part.TEXT))
-                        attachment = attachment.copy(
-                            body = bodyText,
-                        )
-                    }
-                    "application/smil" -> continue
-                    else -> {
-                        val fileUri = ContentUris.withAppendedId(uri, partId)
+                if (mimeType == "text/plain") {
+                    val bodyText = cursor.getString(cursor.getColumnIndexOrThrow(Mms.Part.TEXT))
+                    attachment = attachment.copy(
+                        body = bodyText
+                    )
+                } else if (mimeType.startsWith("image/") || mimeType.startsWith("video/")) {
+                    val fileUri = Uri.withAppendedPath(uri, partId.toString())
+                    val attachmentDetail = CuteAttachment.AttachmentDetails(
+                        id = partId,
+                        uri = fileUri,
+                        filename = ""
+                    )
 
-                        attachment = attachment.copy(
-                            dataUri = attachment.dataUri.copyMutate { add(fileUri) },
-                            filenames = attachment.filenames.copyMutate { add(filename) }
-                        )
-                    }
+                    attachment = attachment.copy(
+                        attachmentDetails = attachment.attachmentDetails.copyMutate { add(attachmentDetail) },
+                    )
+                } else if (mimeType != "application/smil") {
+                    val fileUri = Uri.withAppendedPath(uri, partId.toString())
+                    val attachmentName = attachmentNames?.getOrNull(attachmentCount) ?: ""
+
+                    val attachmentDetail = CuteAttachment.AttachmentDetails(
+                        id = partId,
+                        uri = fileUri,
+                        filename = attachmentName
+                    )
+
+                    attachment = attachment.copy(
+                        attachmentDetails = attachment.attachmentDetails.copyMutate { add(attachmentDetail) }
+                    )
+                    attachmentCount++
+                } else {
+                    val text = cursor.getString(cursor.getColumnIndexOrThrow(Mms.Part.TEXT))
+                    attachmentNames = parseAttachmentNames(text)
+
                 }
-
             }
-
         }
         return attachment
-
     }
+
+    private fun parseAttachmentNames(text: String): List<String> {
+        val parser = Xml.newPullParser()
+        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+        parser.setInput(text.reader())
+        parser.nextTag()
+        return readSmil(parser)
+    }
+
+    private fun readSmil(parser: XmlPullParser): List<String> {
+        parser.require(XmlPullParser.START_TAG, null, "smil")
+        while (parser.next() != XmlPullParser.END_TAG) {
+            if (parser.eventType != XmlPullParser.START_TAG) {
+                continue
+            }
+
+            if (parser.name == "body") {
+                return readBody(parser)
+            } else {
+                skip(parser)
+            }
+        }
+
+        return emptyList()
+    }
+
+    private fun readBody(parser: XmlPullParser): List<String> {
+        val names = mutableListOf<String>()
+        parser.require(XmlPullParser.START_TAG, null, "body")
+        while (parser.next() != XmlPullParser.END_TAG) {
+            if (parser.eventType != XmlPullParser.START_TAG) {
+                continue
+            }
+
+            if (parser.name == "par") {
+                parser.require(XmlPullParser.START_TAG, null, "par")
+                while (parser.next() != XmlPullParser.END_TAG) {
+                    if (parser.eventType != XmlPullParser.START_TAG) {
+                        continue
+                    }
+
+                    if (parser.name in listOf("img", "audio", "video", "vcard", "ref")) {
+                        names.add(parser.getAttributeValue(null, "src"))
+                        skip(parser)
+                    } else {
+                        skip(parser)
+                    }
+                }
+            } else {
+                skip(parser)
+            }
+        }
+        return names
+    }
+
+    private fun skip(parser: XmlPullParser) {
+        if (parser.eventType != XmlPullParser.START_TAG) {
+            throw IllegalStateException()
+        }
+
+        var depth = 1
+        while (depth != 0) {
+            when (parser.next()) {
+                XmlPullParser.END_TAG -> depth--
+                XmlPullParser.START_TAG -> depth++
+            }
+        }
+    }
+
+
 
     fun saveSmsToDevice(
         cuteMessage: CuteMessage
@@ -809,7 +1014,6 @@ class CommonRepository(
         message: String
     ) {
         smsManager.sendTextMessage(address, null, message, null, null)
-
     }
 
     fun sendMms(
@@ -835,7 +1039,6 @@ class CommonRepository(
     }
 
 
-    val messages = fetchMessages()
     val conversations = fetchConversations()
 
 }

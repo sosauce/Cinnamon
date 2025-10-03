@@ -13,7 +13,7 @@ data class ConversationSettings(
     val draft: String = "",
     val isPinned: Boolean = false,
     val wallpaper: String = "", // Wallpaper's Uri as a String
-    val wallpaperBlurIntensity: Dp = 0.dp,
+    val wallpaperBlurIntensity: Int = 0,
     val allWallpapers: List<String> = emptyList(),
     val color: Int = 0,
     val allColors: List<Int> = emptyList()

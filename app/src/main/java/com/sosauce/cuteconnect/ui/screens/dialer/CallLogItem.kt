@@ -1,5 +1,8 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.sosauce.cuteconnect.ui.screens.dialer
 
+import android.content.ClipData
 import android.provider.CallLog
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Column
@@ -17,18 +20,23 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.NorthEast
 import androidx.compose.material.icons.rounded.SouthWest
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -39,6 +47,7 @@ import com.google.i18n.phonenumbers.NumberParseException
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import com.google.i18n.phonenumbers.geocoding.PhoneNumberOfflineGeocoder
 import com.sosauce.cuteconnect.R
+import com.sosauce.cuteconnect.data.actions.CallAction
 import com.sosauce.cuteconnect.data.actions.CommonAction
 import com.sosauce.cuteconnect.domain.model.CuteCallLog
 import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
@@ -47,9 +56,12 @@ import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
 import com.sosauce.cuteconnect.ui.shared_components.DropdownItemDelete
 import com.sosauce.cuteconnect.utils.betterFormatNumber
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
+import com.sosauce.cuteconnect.utils.toReadableDate
 import com.sosauce.cuteconnect.utils.toReadableDuration
 import com.sosauce.cuteconnect.utils.toReadableTime
+import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.time.DurationUnit
 
 
 @Composable
@@ -57,11 +69,13 @@ fun CallLogItem(
     modifier: Modifier = Modifier,
     callLog: CuteCallLog,
     numberOfAppearance: Int,
-    onHandleCommonAction: (CommonAction) -> Unit
+    onHandleCommonAction: (CommonAction) -> Unit,
+    onCallAction: (CallAction) -> Unit
 ) {
 
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
     val phoneUtil = remember(context) { PhoneNumberUtil.getInstance(context) }
     val geocodingUtil = remember(context) { PhoneNumberOfflineGeocoder.getInstance(context) }
     val numberCountry = remember {
@@ -77,7 +91,7 @@ fun CallLogItem(
     }
     var showMoreOptions by remember { mutableStateOf(false) }
 
-    val timestampColor = when(callLog.callType) {
+    val iconColor = when(callLog.callType) {
         CallLog.Calls.INCOMING_TYPE, CallLog.Calls.MISSED_TYPE -> Color.Red.copy(0.85f)
         CallLog.Calls.OUTGOING_TYPE -> Color.Green.copy(0.85f)
         CallLog.Calls.REJECTED_TYPE -> Color.Cyan.copy(0.85f)
@@ -93,19 +107,27 @@ fun CallLogItem(
 
     val actions = listOf(
         CallLogAction(
-            onClick = { /* TODO: Call */ },
+            onClick = { onCallAction(CallAction.LaunchCall(callLog.number)) },
             icon = R.drawable.phone,
             text = R.string.call
         ),
         CallLogAction(
-            onClick = { /* TODO: Send message */ },
+            onClick = {  },
             icon = R.drawable.message_rounded,
             text = R.string.send_msg
         ),
         CallLogAction(
-            onClick = { clipboardManager.setText(AnnotatedString(callLog.number)) },
+            onClick = {
+                scope.launch {
+                    clipboard.setClipEntry(
+                        ClipEntry(
+                            ClipData.newPlainText(callLog.number, callLog.number)
+                        )
+                    )
+                }
+            },
             icon = R.drawable.copy,
-            text = R.string.copy_no_clipboard
+            text = R.string.copy_number
         )
     )
 
@@ -142,22 +164,23 @@ fun CallLogItem(
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = timestampColor,
+                        tint = iconColor,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(Modifier.width(5.dp))
                     CuteText(
                         text = buildString {
-                            append(callLog.date.toReadableTime(context))
+                            append(callLog.date.toReadableDuration(DurationUnit.MILLISECONDS))
                             append(" · ")
                             append("${callLog.duration.toReadableDuration()}s")
                             numberCountry?.let {
                                 append(" ($it)")
                             }
                         },
-                        maxLines = 1,
                         modifier = Modifier.basicMarquee(),
-                        color = timestampColor
+                        style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
                 }
             }

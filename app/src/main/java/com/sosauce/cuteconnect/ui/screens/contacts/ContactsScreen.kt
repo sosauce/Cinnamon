@@ -1,19 +1,17 @@
-@file:OptIn(ExperimentalUuidApi::class)
+@file:OptIn(ExperimentalUuidApi::class, ExperimentalMaterial3ExpressiveApi::class)
 
 package com.sosauce.cuteconnect.ui.screens.contacts
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.ArrowOutward
-import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.runtime.Composable
@@ -22,10 +20,9 @@ import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.domain.model.CuteContact
 import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.ui.screens.contacts.components.AboutMeCard
-import com.sosauce.cuteconnect.ui.shared_components.CuteSearchbar
+import com.sosauce.cuteconnect.ui.shared_components.searchbars.CuteSearchbar
 import com.sosauce.cuteconnect.utils.rememberSearchbarAlignment
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @Composable
 fun ContactsScreen(
@@ -33,6 +30,7 @@ fun ContactsScreen(
     onNavigate: (Screen) -> Unit,
 ) {
 
+    val textFieldState = rememberTextFieldState()
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -64,26 +62,8 @@ fun ContactsScreen(
 
         CuteSearchbar(
             modifier = Modifier.align(rememberSearchbarAlignment()),
-            trailingIcon = {
-                Row {
-                    IconButton(
-                        onClick = {}
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowOutward,
-                            contentDescription = "sort"
-                        )
-                    }
-                    IconButton(
-                        onClick = {}
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Settings,
-                            contentDescription = "settings"
-                        )
-                    }
-                }
-            },
+            textFieldState = textFieldState,
+            sortingMenu = {},
             fab = {
                 SmallFloatingActionButton(
                     onClick = {}

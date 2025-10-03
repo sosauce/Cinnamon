@@ -30,6 +30,12 @@ fun DropdownItemDelete(
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
+            icon = {
+                Icon(
+                    painter = painterResource(R.drawable.delete),
+                    contentDescription = stringResource(R.string.delete)
+                )
+            },
             dismissButton = {
                 TextButton(
                     onClick = { showDialog = false }

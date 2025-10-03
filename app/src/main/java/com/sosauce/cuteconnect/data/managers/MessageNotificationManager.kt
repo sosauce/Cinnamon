@@ -43,12 +43,12 @@ class MessageNotificationManager(
      * @param message String message given by the remote input, NOT a CuteMessage
      */
     fun reply(
-        threadId: Int,
+        threadId: Long,
         message: String,
         person: Person
     ) {
         // Nullable tho if we're replying to a notification obviously it should exist
-        val threadIdAsNotif = notificationManager.activeNotifications.find { it.id == threadId }
+        val threadIdAsNotif = notificationManager.activeNotifications.find { it.id == threadId.toInt() }
         val messageStyle = NotificationCompat.MessagingStyle.Message(message, System.currentTimeMillis(), person)
 
         threadIdAsNotif?.let { notification ->
@@ -57,7 +57,7 @@ class MessageNotificationManager(
                 .extractMessagingStyleFromNotification(notification.notification)
                 ?.addMessage(messageStyle)
             notificationManager.notify(
-                threadId,
+                threadId.toInt(),
                 NotificationCompat.Builder(context, MESSAGES_CHANNEL_ID)
                     .setContentIntent(contentIntent)
                     .setChannelId(MESSAGES_CHANNEL_ID)
@@ -75,7 +75,7 @@ class MessageNotificationManager(
             commonRepository.saveSmsToDevice(
                 CuteMessage(
                     body = message,
-                    threadId = threadId.toLong(),
+                    threadId = threadId,
                     address = threadId.getAddressFromThreadId(context),
                     type = Telephony.Sms.MESSAGE_TYPE_SENT
                 )
@@ -86,7 +86,7 @@ class MessageNotificationManager(
 
 
     fun sendOrAppendMessageNotification(
-        threadId: Int,
+        threadId: Long,
         message: CuteMessage,
         number: String?,
         imageUri: Uri? = null
@@ -103,13 +103,13 @@ class MessageNotificationManager(
         val notificationStyle = NotificationCompat.MessagingStyle(person)
             .addMessage(receivedMessage)
 
-        val threadIdAsNotif = notificationManager.activeNotifications.find { it.id == threadId }
+        val threadIdAsNotif = notificationManager.activeNotifications.find { it.id == threadId.toInt() }
 
         threadIdAsNotif?.let { notification ->
             val activeStyle = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(notification.notification)?.addMessage(receivedMessage)
 
             notificationManager.notify(
-                threadId,
+                threadId.toInt(),
                 NotificationCompat.Builder(context, MESSAGES_CHANNEL_ID)
                     .setContentIntent(contentIntent)
                     .setChannelId(MESSAGES_CHANNEL_ID)
@@ -121,7 +121,7 @@ class MessageNotificationManager(
                     .build()
             )
         } ?: notificationManager.notify(
-            threadId,
+            threadId.toInt(),
             NotificationCompat.Builder(context, MESSAGES_CHANNEL_ID)
                 .setContentIntent(contentIntent)
                 .setChannelId(MESSAGES_CHANNEL_ID)
@@ -146,7 +146,7 @@ class MessageNotificationManager(
     }
 
     private fun replyAction(
-        threadId: Int
+        threadId: Long
     ): NotificationCompat.Action {
         val replyIntent = Intent(context, MessageReplyReceiver::class.java).apply {
             putExtra(THREAD_ID, threadId)

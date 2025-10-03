@@ -2,19 +2,29 @@
 
 package com.sosauce.cuteconnect.ui.screens.contacts
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -34,13 +44,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.data.actions.CallAction
+import com.sosauce.cuteconnect.data.contact_settings.ContactSettingsActions
+import com.sosauce.cuteconnect.data.conversation_settings.ConversationSettingActions
 import com.sosauce.cuteconnect.domain.model.CuteContact
 import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.ui.screens.contacts.components.ContactActionsRow
@@ -49,6 +64,11 @@ import com.sosauce.cuteconnect.ui.shared_components.BottomActionButtons
 import com.sosauce.cuteconnect.ui.shared_components.CuteNavigationButton
 import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
+import com.sosauce.cuteconnect.utils.addOrNot
+import com.sosauce.cuteconnect.utils.copyMutate
+import com.sosauce.cuteconnect.viewModels.ContactViewModel
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Composable
 fun ContactDetails(
@@ -58,18 +78,49 @@ fun ContactDetails(
     onHandleCallAction: (CallAction) -> Unit
 ) {
 
+    val context = LocalContext.current
     var isEditMode by rememberSaveable { mutableStateOf(false) }
-    Scaffold { pv ->
+    val scrollState = rememberScrollState()
+    val contactViewModel = koinViewModel<ContactViewModel>(
+        parameters = { parametersOf(contact.id) }
+    )
+    val contactSettings by contactViewModel.contactSettings.collectAsStateWithLifecycle()
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
+        it?.let { uri ->
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+            //
+            contactViewModel.handleContactSettingsActions(
+                ContactSettingsActions.UpsertContactSettings(
+                    contactSettings.copy(
+                        poster = uri.toString(),
+                    )
+                )
+            )
+        }
+    }
 
+
+    Scaffold { pv ->
         Box(
-            modifier = Modifier
-                .padding(pv)
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .verticalScroll(scrollState)
+                    .padding(pv)
             ) {
+                IconButton(
+                    onClick = { imagePicker.launch(arrayOf("image/*")) }
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = null
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 10.dp)
@@ -77,11 +128,11 @@ fun ContactDetails(
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
-                        model = R.drawable.wallpaper_test,
+                        model = contactSettings.poster.toUri(),
                         contentDescription = null,
                         modifier = Modifier
                             .height(200.dp)
-                            .cloudy(15),
+                            .cloudy(30),
                         contentScale = ContentScale.FillWidth
                     )
                     DefaultContactIcon(
@@ -89,7 +140,6 @@ fun ContactDetails(
                         modifier = Modifier
                             .padding(start = 10.dp),
                         size = 170.dp,
-                        fontSize = 80.sp,
                         contactPfp = contact.photo,
                         shape = MaterialShapes.Cookie12Sided.toShape()
                     )
@@ -115,43 +165,58 @@ fun ContactDetails(
 
             }
 
-            CuteNavigationButton(
-                modifier = Modifier.align(Alignment.BottomStart)
-            ) { onNavigateBack() }
-            BottomActionButtons(
-                modifier = Modifier.align(Alignment.BottomEnd)
+            AnimatedVisibility(
+                visible = scrollState.canScrollForward,
+                enter = slideInVertically { it },
+                exit = slideOutVertically { it },
+                modifier = Modifier.align(Alignment.BottomCenter)
+
             ) {
-                Row {
-                    IconButton(
-                        onClick = { isEditMode = !isEditMode }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    CuteNavigationButton(
+                        modifier = Modifier.navigationBarsPadding()
+                    ) { onNavigateBack() }
+                    BottomActionButtons(
+                        modifier = Modifier.navigationBarsPadding()
                     ) {
-                        AnimatedContent(
-                            targetState = isEditMode
-                        ) { editMode ->
-                            if (editMode) {
+                        Row {
+                            IconButton(
+                                onClick = { isEditMode = !isEditMode }
+                            ) {
+                                AnimatedContent(
+                                    targetState = isEditMode
+                                ) { editMode ->
+                                    if (editMode) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Close,
+                                            contentDescription = null
+                                        )
+                                    } else {
+                                        Icon(
+                                            painter = painterResource(R.drawable.edit_filled),
+                                            contentDescription = null
+                                        )
+                                    }
+                                }
+                            }
+                            IconButton(
+                                onClick = {}
+                            ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.Close,
-                                    contentDescription = null
-                                )
-                            } else {
-                                Icon(
-                                    painter = painterResource(R.drawable.edit_filled),
-                                    contentDescription = null
+                                    painter = painterResource(R.drawable.delete_filled),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
                                 )
                             }
                         }
                     }
-                    IconButton(
-                        onClick = {}
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.delete_filled),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
                 }
+
             }
+
         }
     }
 

@@ -23,7 +23,8 @@ fun CuteNavigationButton(
 ) {
     SmallFloatingActionButton(
         onClick = onNavigateUp,
-        modifier = modifier.padding(start = 15.dp),
+        modifier = modifier
+            .padding(start = 15.dp),
         shape = RoundedCornerShape(14.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainer
     ) {

@@ -9,6 +9,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -41,10 +42,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
+import com.sosauce.cuteconnect.ui.navigation.LocalHazeState
 import com.sosauce.cuteconnect.utils.ImageUtils
 import com.sosauce.cuteconnect.utils.cuteHazeEffect
 import com.sosauce.cuteconnect.utils.rememberHazeState
 import com.sosauce.cuteconnect.utils.thenIf
+import dev.chrisbanes.haze.LocalHazeStyle
+import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 
 @Composable
@@ -52,26 +56,28 @@ fun CarouselItemScope.WallpaperItem(
     wallpaper: String,
     isCurrentWallpaper: Boolean,
     onSetAsWallpaper: () -> Unit,
-    blurIntensity: Dp
+    onDeleteWallpaper: () -> Unit,
+    blurIntensity: Int
 ) {
     val context = LocalContext.current
-    val animateBlur by animateIntAsState(blurIntensity.value.toInt())
+    //val animateBlur by animateIntAsState(blurIntensity)
     Box(
         modifier = Modifier
             .height(180.dp)
             .maskClip(MaterialTheme.shapes.extraLarge)
-            .clickable { onSetAsWallpaper() },
+            .clickable {
+                if (isCurrentWallpaper) {
+                    onDeleteWallpaper()
+                } else {
+                    onSetAsWallpaper()
+                }
+            },
         contentAlignment = Alignment.Center
     ) {
         AsyncImage(
             model = remember { ImageUtils.imageRequester(wallpaper, context) },
             contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .cloudy(
-                    radius = animateBlur,
-                    enabled = isCurrentWallpaper
-                )
+            contentScale = ContentScale.Crop
         )
         androidx.compose.animation.AnimatedVisibility(
             visible = isCurrentWallpaper,

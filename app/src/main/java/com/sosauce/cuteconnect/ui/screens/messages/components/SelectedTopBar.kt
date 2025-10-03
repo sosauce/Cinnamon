@@ -1,7 +1,10 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class,
+    ExperimentalHazeMaterialsApi::class
+)
 
 package com.sosauce.cuteconnect.ui.screens.messages.components
 
+import android.content.ClipData
 import android.provider.Telephony
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Row
@@ -12,21 +15,29 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.CopyAll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -37,7 +48,14 @@ import androidx.compose.ui.util.fastForEach
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.data.actions.CommonAction
 import com.sosauce.cuteconnect.domain.model.CuteMessage
+import com.sosauce.cuteconnect.ui.navigation.LocalHazeState
+import com.sosauce.cuteconnect.ui.shared_components.sheets.DeleteMessageSheet
 import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
+import dev.chrisbanes.haze.materials.HazeMaterials
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun SelectedTopBar(
@@ -46,55 +64,43 @@ fun SelectedTopBar(
     onHandleCommonAction: (CommonAction) -> Unit,
 ) {
 
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     var showDeleteMsgDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     if (showDeleteMsgDialog) {
-        AlertDialog(
+        DeleteMessageSheet(
             onDismissRequest = { showDeleteMsgDialog = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        selectedCuteMessages.fastForEach { cuteMessage ->
-                            onHandleCommonAction(
-                                CommonAction.DeleteFromContentUri(
-                                    Telephony.Sms.CONTENT_URI,
-                                    cuteMessage.id
-                                )
-                            )
-                        }
-                        onUnselectAll()
-                        showDeleteMsgDialog = false
-                    }
-                ) {
-                    CuteText(stringResource(R.string.delete))
+            selectedMessages = selectedCuteMessages.size,
+            onDelete = {
+                selectedCuteMessages.fastForEach { cuteMessage ->
+                    onHandleCommonAction(
+                        CommonAction.DeleteFromContentUri(
+                            Telephony.Sms.CONTENT_URI,
+                            cuteMessage.id
+                        )
+                    )
                 }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDeleteMsgDialog = false }
-                ) {
-                    CuteText(stringResource(R.string.cancel))
-                }
-            },
-            text = {
-                CuteText(
-                    text = pluralStringResource(R.plurals.delete_msg_u_sure, selectedCuteMessages.size, selectedCuteMessages.size)
-                )
-            },
-            title = {
-                CuteText(
-                    text = pluralStringResource(R.plurals.delete_msg, selectedCuteMessages.size, selectedCuteMessages.size)
-                )
+                onUnselectAll()
+                showDeleteMsgDialog = false
             }
         )
     }
     HorizontalFloatingToolbar(
         modifier = Modifier
             .padding(horizontal = 5.dp)
-            .statusBarsPadding(),
-        expanded = false,
-        shape = RoundedCornerShape(24.dp)
+            .statusBarsPadding()
+            .clip(FloatingToolbarDefaults.ContainerShape)
+            .hazeEffect(
+                state = LocalHazeState.current,
+                style = HazeMaterials.regular(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            ),
+        colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
+            toolbarContainerColor = Color.Transparent
+        ),
+        expanded = false
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -113,14 +119,18 @@ fun SelectedTopBar(
             AnimatedVisibility(selectedCuteMessages.size == 1) {
                 IconButton(
                     onClick = {
-                        clipboardManager.setText(
-                            AnnotatedString(selectedCuteMessages.first().body)
-                        )
+                        scope.launch(Dispatchers.IO) {
+                            clipboard.setClipEntry(
+                                ClipEntry(
+                                    ClipData.newPlainText("",selectedCuteMessages.first().body)
+                                )
+                            )
+                        }
                         onUnselectAll()
                     }
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.CopyAll,
+                        painter = painterResource(R.drawable.copy_filled),
                         contentDescription = null
                     )
                 }
@@ -130,7 +140,8 @@ fun SelectedTopBar(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.delete_filled),
-                    contentDescription = null
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }

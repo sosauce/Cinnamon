@@ -42,8 +42,13 @@ android {
                 "proguard-rules.pro"
             )
         }
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "debug"
+        }
     }
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -83,6 +88,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.coil.compose)
     implementation(libs.haze)
+    implementation(libs.haze.materials)
+    implementation(libs.androidx.foundation.layout)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.material.icons.extended)
@@ -94,9 +101,11 @@ dependencies {
     implementation(libs.colorpicker.compose)
     implementation(libs.material.kolor)
     implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui.compose)
     implementation(libs.coil.video)
-    implementation("com.lionscribe.open.libphonenumber:geocoder:8.12.18.1")
+    implementation(libs.geocoder)
     implementation("com.klinkerapps:android-smsmms:5.2.6")
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
 
 

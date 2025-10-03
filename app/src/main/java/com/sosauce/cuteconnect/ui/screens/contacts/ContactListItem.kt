@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.domain.model.CuteContact
 import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
+import com.sosauce.cuteconnect.utils.betterFormatNumber
 import com.sosauce.cuteconnect.utils.thenIf
 
 @Composable
@@ -60,10 +61,10 @@ fun ContactListItem(
                 )
                 if (showNumber) {
                     CuteText(
-                        text = contact.phoneNumbers.first().number,
+                        text = contact.phoneNumbers.first().number.betterFormatNumber(),
                         maxLines = 1,
                         modifier = Modifier.basicMarquee(),
-                        color = MaterialTheme.colorScheme.onBackground.copy(0.85f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

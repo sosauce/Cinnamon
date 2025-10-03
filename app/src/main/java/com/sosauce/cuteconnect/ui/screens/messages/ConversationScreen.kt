@@ -1,5 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
-    ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class
+    ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class,
+    ExperimentalHazeMaterialsApi::class
 )
 
 package com.sosauce.cuteconnect.ui.screens.messages
@@ -10,27 +11,38 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.content.consume
 import androidx.compose.foundation.content.contentReceiver
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -40,6 +52,8 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.SimCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,6 +66,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,7 +76,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirst
 import androidx.compose.ui.util.fastForEach
@@ -82,6 +102,7 @@ import org.koin.androidx.compose.koinViewModel
 import androidx.core.net.toUri
 import com.materialkolor.DynamicMaterialTheme
 import com.materialkolor.rememberDynamicMaterialThemeState
+import com.skydoves.cloudy.cloudy
 import com.sosauce.cuteconnect.data.actions.CallAction
 import com.sosauce.cuteconnect.data.conversation_settings.ConversationSettingActions
 import com.sosauce.cuteconnect.data.datastore.rememberDefaultSimCard
@@ -89,15 +110,25 @@ import com.sosauce.cuteconnect.domain.model.ConversationSettings
 import com.sosauce.cuteconnect.domain.model.CuteContact
 import com.sosauce.cuteconnect.domain.model.CuteConversation
 import com.sosauce.cuteconnect.domain.model.CuteSimCard
+import com.sosauce.cuteconnect.ui.navigation.LocalHazeState
 import com.sosauce.cuteconnect.ui.screens.messages.components.ActionPicker
+import com.sosauce.cuteconnect.ui.screens.messages.components.ConversationBottomBar
 import com.sosauce.cuteconnect.ui.screens.messages.components.GenericThumbnail
 import com.sosauce.cuteconnect.ui.screens.messages.components.MediaThumbnail
 import com.sosauce.cuteconnect.ui.screens.messages.components.SandwichPosition
 import com.sosauce.cuteconnect.ui.shared_components.SimSelector
 import com.sosauce.cuteconnect.utils.addOrNot
 import com.sosauce.cuteconnect.utils.addOrRemove
+import com.sosauce.cuteconnect.utils.keyboardAsState
 import com.sosauce.cuteconnect.utils.rememberHazeState
 import com.sosauce.cuteconnect.utils.toReadableDate
+import dev.chrisbanes.haze.LocalHazeStyle
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
+import dev.chrisbanes.haze.materials.HazeMaterials
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.koin.core.parameter.parametersOf
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -112,51 +143,39 @@ fun ConversationScreen(
     onNavigate: (Screen) -> Unit,
 ) {
     val context = LocalContext.current
-    val convoViewModel = koinViewModel<ConversationViewModel>()
-    val convoSettings by convoViewModel.getConversationSettings(threadId).collectAsStateWithLifecycle(ConversationSettings(threadId))
-    val allMessages = remember(cuteMessages) { cuteMessages.sortedBy { it.date }.groupBy { it.date.toReadableDate() }}
-    var selectedMessages = remember { mutableStateListOf<CuteMessage>() }
-
+    val convoViewModel = koinViewModel<ConversationViewModel>(
+        parameters = { parametersOf(threadId) }
+    )
+    val convoSettings by convoViewModel.settings.collectAsStateWithLifecycle()
+    val selectedMessages = remember { mutableStateListOf<CuteMessage>() }
     val listState = rememberLazyListState()
-    val hazeState = rememberHazeState()
+    val chatWallpaperState = rememberHazeState()
 
-    LaunchedEffect(cuteMessages) {
-        cuteMessages.fastForEach {
-            if (!it.read) {
-                onHandleCommonAction(CommonAction.MarkMessageAsRead(it.id))
-            }
-        }
-    }
+    LaunchedEffect(cuteMessages) { listState.scrollToItem(listState.layoutInfo.totalItemsCount) }
 
-
-    LaunchedEffect(cuteMessages) {
-        // Don't use animateScrollToItem because when initially loading in the screen, the user will actually see the scrolling, we don't want that
-        listState.scrollToItem(listState.layoutInfo.totalItemsCount)
-    }
 
     DynamicMaterialTheme(
         state = rememberDynamicMaterialThemeState(
             seedColor = if (convoSettings.color == 0) MaterialTheme.colorScheme.primary else Color(convoSettings.color),
-            isDark = true // NEED TO CHANGE THIS WHEN I HAVE APP THEME
+            isDark = isSystemInDarkTheme() // NEED TO CHANGE THIS WHEN I HAVE APP THEME
         ),
     ) {
 
         Box {
-            // wallpaper
+            // Wallpaper
             AsyncImage(
                 model = ImageUtils.imageRequester(convoSettings.wallpaper.toUri(), context),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxSize()
-                    .hazeSource(hazeState)
+                    .hazeSource(chatWallpaperState)
             )
 
             Scaffold(
                 topBar = {
                     AnimatedContent(
-                        targetState = selectedMessages.isEmpty(),
-                        transitionSpec = { scaleIn() togetherWith scaleOut() }
+                        targetState = selectedMessages.isEmpty()
                     ) {
                         if (it) {
                             ConversationTopBar(
@@ -189,12 +208,7 @@ fun ConversationScreen(
                     }
                 },
                 bottomBar = {
-//                    if (isSenderShortCode) {
-//                        ShortCodeBottomBar()
-//                    } else {
-//                    }
-//                    TextingUnavailableBar(TextingUnavailableReason.AIRPLANE_MODE_ON)
-                    MessageTextActions(
+                    ConversationBottomBar(
                         onSendMessage = { message ->
                             val cuteMessage = CuteMessage(
                                 body = message,
@@ -204,26 +218,36 @@ fun ConversationScreen(
                             )
                             onHandleCommonAction(CommonAction.SendMessage(cuteMessage))
                         },
-                        conversationSettings = convoSettings,
-                        onEditConversationSettings = { convoViewModel.handleConversationSettingsActions(it) },
+                        onSaveDraft = { draft ->
+                            convoViewModel.handleConversationSettingsActions(
+                                ConversationSettingActions.UpsertConversationSettings(
+                                    convoSettings.copy(
+                                        draft = draft
+                                    )
+                                )
+                            )
+                        },
                         cuteSimCards = cuteSimCards
                     )
                 },
                 containerColor = Color.Transparent
-
             ) { paddingValues ->
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .cuteHazeEffect(
-                            state = hazeState,
-                            intensity = convoSettings.wallpaperBlurIntensity
-                        ),
+                        .hazeSource(LocalHazeState.current)
+                        .hazeEffect(
+                            state = chatWallpaperState
+                        ) { blurRadius = convoSettings.wallpaperBlurIntensity.dp },
                     state = listState,
                     contentPadding = paddingValues
                 ) {
-                    allMessages.forEach { (date, cuteMessages) ->
-                        item {
+
+
+                    cuteMessages.groupBy { it.date.toReadableDate() }.forEach { (date, cuteMessages) ->
+                        item(
+                            key = date
+                        ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -236,7 +260,7 @@ fun ConversationScreen(
                                     modifier = Modifier
                                         .background(
                                             color = MaterialTheme.colorScheme.background,
-                                            shape = RoundedCornerShape(10.dp)
+                                            shape = CircleShape
                                         )
                                         .padding(5.dp)
                                 )
@@ -268,7 +292,8 @@ fun ConversationScreen(
                                 isSelected = selectedMessages.contains(cuteMessage),
                                 isInSelectMode = selectedMessages.isNotEmpty(),
                                 sandwichPosition = sandwichPosition,
-                                allMedias = emptyList()
+                                allMedias = emptyList(),
+                                onHandleCommonAction = onHandleCommonAction
                             )
 
                         }
@@ -277,157 +302,4 @@ fun ConversationScreen(
             }
         }
     }
-
-
-
-
-}
-
-@Composable
-private fun MessageTextActions(
-    conversationSettings: ConversationSettings,
-    onEditConversationSettings: (ConversationSettingActions) -> Unit,
-    onSendMessage: (message: String) -> Unit,
-    cuteSimCards: List<CuteSimCard>,
-) {
-
-    val context = LocalContext.current
-    var value by remember { mutableStateOf("") }
-    val textFieldState = rememberTextFieldState()
-    val mediasToSend = rememberSaveable { mutableStateListOf<Uri>() }
-    var isActionPickerExpanded by remember { mutableStateOf(false) }
-    val defaultSimCard by rememberDefaultSimCard()
-    var simSelectorVisible by remember { mutableStateOf(false) }
-
-    SimSelector(
-        visible = simSelectorVisible,
-        onDismissRequest = { simSelectorVisible = false },
-        cuteSimCards = cuteSimCards
-    )
-
-    DisposableEffect(Unit) {
-        onDispose {
-            if (value.isNotEmpty()) {
-                onEditConversationSettings(
-                    ConversationSettingActions.UpsertConversationSettings(
-                        conversationSettings.copy(
-                            draft = value
-                        )
-                    )
-                )
-            }
-
-        }
-    }
-
-    ActionPicker(
-        expanded = isActionPickerExpanded,
-        onDismissRequest = { isActionPickerExpanded = false },
-        onUpdateMediasToSend = { mediasToSend.addOrNot(it) }
-    )
-    HorizontalFloatingToolbar(
-        expanded = false,
-        modifier = Modifier
-            .padding(horizontal = 5.dp)
-            .imePadding()
-            .navigationBarsPadding(),
-        shape = RoundedCornerShape(24.dp)
-    ) {
-        Column {
-            LazyRow {
-                items(
-                    items = mediasToSend,
-                    key = { it.path.toString() }
-                ) { media ->
-                    val mediaType = remember { context.contentResolver.getType(media) ?: "" }
-
-                    if (mediaType.startsWith("video/") || mediaType.startsWith("image/")) {
-                        MediaThumbnail(
-                            modifier = Modifier.animateItem(),
-                            media = media,
-                            mediaType = mediaType,
-                            onRemoveFromList = { mediasToSend.remove(media) }
-                        )
-                    } else {
-                        GenericThumbnail(
-                            modifier = Modifier.animateItem(),
-                            mediaType = mediaType,
-                            onRemoveFromList = { mediasToSend.remove(media) }
-                        )
-                    }
-
-                }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                TextField(
-                    state = textFieldState,
-                    placeholder = {
-                        CuteText(
-                            text = "Message",
-                            color = MaterialTheme.colorScheme.onBackground.copy(0.85f)
-                        )
-                    },
-                    colors = TextFieldDefaults.colors(
-                        unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(
-                            0.5f
-                        ),
-                        focusedContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(
-                            0.5f
-                        ),
-                        disabledIndicatorColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    ),
-                    leadingIcon = {
-                        IconButton(
-                            onClick = { isActionPickerExpanded = true }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Add,
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    trailingIcon = {
-                        val defaultSim = cuteSimCards.fastFirst { it.subId == defaultSimCard }
-
-                        IconButton(
-                            onClick = { simSelectorVisible = true }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.SimCard,
-                                contentDescription = null,
-                                tint = Color(defaultSim.color)
-                            )
-                        }
-                    },
-                    shape = RoundedCornerShape(24.dp),
-                    lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 4),
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                )
-                IconButton(
-                    onClick = {
-                        onSendMessage(value)
-                        value = ""
-                    },
-                    enabled = value.isNotEmpty() && value.isNotBlank()
-                ) {
-                    val tint by animateColorAsState(
-                        targetValue = if (value.isNotEmpty() && value.isNotBlank()) LocalContentColor.current else MaterialTheme.colorScheme.surfaceVariant
-                    )
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.Send,
-                        contentDescription = null,
-                        tint = tint
-                    )
-                }
-            }
-        }
-    }
-
 }

@@ -6,6 +6,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class Screen: NavKey {
 
+
+    @Serializable
+    data object Test : Screen()
     @Serializable
     data object Messages : Screen()
 
@@ -32,6 +35,9 @@ sealed class Screen: NavKey {
     data object AboutMe : Screen()
 
     @Serializable
+    data object Settings : Screen()
+
+    @Serializable
     data class ConversationTheming(
         val threadId: Long
     ) : Screen()
@@ -49,7 +55,7 @@ sealed class Screen: NavKey {
      */
     @Serializable
     data class Conversation(
-        val threadId: Long
+        val number: String
     ) : Screen()
 
 }

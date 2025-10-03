@@ -54,7 +54,7 @@ fun PinnedConversation(
                 .clip(RoundedCornerShape(10.dp))
                 .background(if (isSelected) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerLow)
                 .combinedClickable(
-                    onClick = { onNavigate(Screen.Conversation(cuteConversation.threadId)) },
+                    onClick = { onNavigate(Screen.Conversation(cuteConversation.recipients.first())) },
                     onLongClick = onLongClick
                 ),
             contentAlignment = Alignment.Center
@@ -66,8 +66,7 @@ fun PinnedConversation(
             ) {
                 DefaultContactIcon(
                     firstLetter = senderOrNumber.firstOrNull(),
-                    size = 70.dp,
-                    fontSize = 30.sp
+                    size = 70.dp
                 )
                 CuteText(
                     text = senderOrNumber,

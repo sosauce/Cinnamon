@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.sosauce.cuteconnect.ui.screens.setup
 
 import android.annotation.SuppressLint
@@ -18,7 +20,9 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -33,7 +37,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -74,16 +80,44 @@ fun SetupScreen(
         Column(
             modifier = Modifier
                 .padding(paddingValues)
+                .padding(10.dp)
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                painter = painterResource(R.drawable.app_icon),
-                contentDescription = null,
-                modifier = Modifier.size(64.dp)
+//            Icon(
+//                painter = painterResource(R.drawable.app_icon),
+//                contentDescription = null,
+//                modifier = Modifier.size(64.dp)
+//            )
+            CuteText(
+                text = "Welcome to CuteConnect !",
+                style = MaterialTheme.typography.displayLargeEmphasized.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 42.sp,
+                     lineHeight = 1.1.em
+                )
             )
-            CuteText("Welcome to CuteConnect !")
+            Spacer(Modifier.height(20.dp))
+
+            LinearWavyProgressIndicator(
+                progress = {
+                    val progress = mapOf(
+                        isDialerRoleHeld to 0.5f,
+                        isSmsRoleHeld to 0.5f
+                    )
+
+                    progress.filter { it.key }
+                        .values
+                        .sum()
+
+                },
+                stopSize = 0.dp,
+                waveSpeed = 15.dp,
+                modifier = Modifier.fillMaxWidth()
+            )
+
             Spacer(Modifier.height(30.dp))
+
             Card(
                 onClick = { activity.requestRole(RoleManager.ROLE_SMS) },
                 colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceContainer),
@@ -95,7 +129,7 @@ fun SetupScreen(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 2.dp)
+                    .padding(vertical = 2.dp)
             ) {
                 Row(
                     modifier = Modifier.padding(10.dp),
@@ -130,7 +164,7 @@ fun SetupScreen(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 2.dp),
+                    .padding(vertical = 2.dp),
             ) {
                 Row(
                     modifier = Modifier.padding(10.dp),

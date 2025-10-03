@@ -53,7 +53,7 @@ class SmsReceiver : BroadcastReceiver() {
 
             commonRepository.saveSmsToDevice(cuteMessage)
             messagesNotificationManager.sendOrAppendMessageNotification(
-                threadId = threadId.toInt(),
+                threadId = threadId,
                 message = cuteMessage,
                 number = message.displayOriginatingAddress
             )

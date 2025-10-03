@@ -14,8 +14,8 @@ import com.sosauce.cuteconnect.utils.THREAD_ID
 class MessageReplyReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val messagesNotificationManager by lazy { MessageNotificationManager(context) }
-        val threadId = intent.getIntExtra(THREAD_ID, -1)
-        if (threadId == -1) return
+        val threadId = intent.getLongExtra(THREAD_ID, -1L)
+        if (threadId == -1L) return
 
         val remoteInput = RemoteInput.getResultsFromIntent(intent)
         val input = remoteInput?.getCharSequence(RESULT_KEY).toString()

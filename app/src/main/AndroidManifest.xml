@@ -67,17 +67,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- BroadcastReceiver that listens for incoming MMS messages -->
-        <receiver
-            android:name=".data.receivers.MmsReceiver"
-            android:exported="true"
-            android:permission="android.permission.BROADCAST_WAP_PUSH">
-            <intent-filter>
-                <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
-                <data android:mimeType="application/vnd.wap.mms-message" />
-            </intent-filter>
-        </receiver>
-
 
         <!-- Service that delivers messages from the phone "quick response" -->
         <service
@@ -132,6 +121,21 @@
                 <action android:name="android.telecom.CallScreeningService" />
             </intent-filter>
         </service>
+
+        <service android:name="com.android.mms.transaction.TransactionService"/>
+
+        <receiver
+            android:name="com.klinker.android.send_message.SentReceiver"
+            android:taskAffinity="com.sosauce.cuteconnect.SMS_SENT"/>
+
+        <receiver
+            android:name="com.klinker.android.send_message.DeliveredReceiver"
+            android:taskAffinity="com.sosauce.cuteconnect.SMS_DELIVERED"/>
+        <!-- Your custom receiver which is child of com.klinker.android.send_message.MmsSentReceiver -->
+        <receiver
+            android:name=".data.receivers.MmsReceiver"
+            android:exported="true"
+            android:taskAffinity="com.klinker.android.messaging.MMS_SENT"/>
 
         <receiver android:name=".data.receivers.CallReceiver"/>
 
