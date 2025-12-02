@@ -59,12 +59,6 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
-      - name: Update CHANGELOG
-        id: changelog
-        uses: requarks/changelog-action@v1.10.3
-        with:
-          token: ${{ github.token }}
-          tag: ${{ github.ref_name }}
       - uses: actions/download-artifact@v4
         with:
           name: CuteConnect Release
@@ -72,18 +66,12 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v2
         with:
-          name: Version ${{ needs.build.outputs.versionName }}
-          body_path: ${{ steps.changelog.outputs.changes }}
+          name: CM_${{ needs.build.outputs.versionName }}
+          body_path: ${{ needs.build.outputs.versionName }}-changelog.txt
           prerelease: false
           tag_name: ${{ needs.build.outputs.versionName }}
           files: |
             ./**/*.apk
-      - name: Commit CHANGELOG.md
-        uses: stefanzweifel/git-auto-commit-action@v7
-        with:
-          branch: main
-          commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
-          file_pattern: CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
