@@ -1,2 +1,2 @@
-# CuteConnect
+# Cinnamon
 WIP description
