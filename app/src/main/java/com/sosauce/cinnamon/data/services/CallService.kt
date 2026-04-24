@@ -24,6 +24,7 @@ import com.sosauce.cinnamon.domain.model.AudioRoute
 import com.sosauce.cinnamon.domain.model.CuteSimCard
 import com.sosauce.cinnamon.domain.states.CallState
 import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.awaitCancellation
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.uuid.ExperimentalUuidApi
@@ -119,7 +120,6 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback, Ko
 
 
         val subId = call.details.accountHandle?.id?.toIntOrNull() ?: -1
-        println("luffy duffy: accountHandle id = ${call.details.accountHandle?.id}")
         val activeSubInfo = subscriptionManager.getActiveSubscriptionInfo(subId)
         val sim = CuteSimCard(
             subId = activeSubInfo.subscriptionId,

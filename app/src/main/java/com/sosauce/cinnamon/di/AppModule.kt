@@ -15,28 +15,28 @@ import com.sosauce.cinnamon.data.managers.MessageNotificationManager
 import com.sosauce.cinnamon.data.schedulers.scheduled_messages.ScheduledMessagesDao
 import com.sosauce.cinnamon.data.schedulers.scheduled_messages.ScheduledMessagesDatabase
 import com.sosauce.cinnamon.data.telephony.CuteTelephonyManager
-import com.sosauce.cinnamon.domain.repository.ArchivedThreadsRepository
 import com.sosauce.cinnamon.domain.repository.BlockedNumbersManager
-import com.sosauce.cinnamon.domain.repository.ContactDetailsRepository
 import com.sosauce.cinnamon.domain.repository.ContactsRepository
 import com.sosauce.cinnamon.domain.repository.ConversationsRepository
 import com.sosauce.cinnamon.domain.repository.DialerRepository
 import com.sosauce.cinnamon.domain.repository.MessagesRepository
 import com.sosauce.cinnamon.domain.repository.SimsRepository
 import com.sosauce.cinnamon.domain.repository.VoicemailsRepository
-import com.sosauce.cinnamon.ui.screens.archived.ArchivedViewModel
-import com.sosauce.cinnamon.ui.screens.contacts.ContactDetailsViewModel
-import com.sosauce.cinnamon.ui.screens.contacts.ContactsViewModel
-import com.sosauce.cinnamon.ui.screens.dialer.DialerViewModel
-import com.sosauce.cinnamon.ui.screens.dialer.DialpadViewModel
-import com.sosauce.cinnamon.ui.screens.messages.ConversationDetailsViewModel
-import com.sosauce.cinnamon.ui.screens.messages.MessagesViewModel
-import com.sosauce.cinnamon.ui.screens.messages.components.bottombar.BottomBarViewModel
-import com.sosauce.cinnamon.ui.screens.phone.CallingViewModel
-import com.sosauce.cinnamon.ui.screens.settings.MigrationViewModel
-import com.sosauce.cinnamon.ui.screens.voicemail.VoicemailViewModel
-import com.sosauce.cinnamon.ui.screens.wallpaper.ThemingViewModel
-import com.sosauce.cinnamon.ui.shared_components.SimsViewModel
+import com.sosauce.cinnamon.presentation.screens.archived.ArchivedViewModel
+import com.sosauce.cinnamon.presentation.screens.contacts.ContactDetailsViewModel
+import com.sosauce.cinnamon.presentation.screens.contacts.ContactsViewModel
+import com.sosauce.cinnamon.presentation.screens.contacts.editor.EditContactViewModel
+import com.sosauce.cinnamon.presentation.screens.dialer.DialerViewModel
+import com.sosauce.cinnamon.presentation.screens.dialer.DialpadViewModel
+import com.sosauce.cinnamon.presentation.screens.messages.ConversationDetailsViewModel
+import com.sosauce.cinnamon.presentation.screens.messages.ConversationsViewModel
+import com.sosauce.cinnamon.presentation.screens.messages.components.bottombar.BottomBarViewModel
+import com.sosauce.cinnamon.presentation.screens.phone.CallingViewModel
+import com.sosauce.cinnamon.presentation.screens.settings.MigrationViewModel
+import com.sosauce.cinnamon.presentation.screens.starter.StartConversationViewModel
+import com.sosauce.cinnamon.presentation.screens.voicemail.VoicemailViewModel
+import com.sosauce.cinnamon.presentation.screens.wallpaper.ThemingViewModel
+import com.sosauce.cinnamon.presentation.shared_components.SimsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
@@ -71,8 +71,6 @@ val appModule = module {
     }
 
     single { CoroutineScope(SupervisorJob()) }
-    single { PhoneNumberOfflineGeocoder.getInstance(androidContext()) }
-    single { PhoneNumberUtil.getInstance(androidContext()) }
     single { WorkManager.getInstance(androidContext()) }
 
     singleOf(::UserPreferences)
@@ -84,9 +82,7 @@ val appModule = module {
     singleOf(::ConversationsRepository)
     singleOf(::SimsRepository)
     singleOf(::ContactsRepository)
-    singleOf(::ContactDetailsRepository)
     singleOf(::MessagesRepository)
-    singleOf(::ArchivedThreadsRepository)
     singleOf(::DialerRepository)
     singleOf(::VoicemailsRepository)
 
@@ -95,7 +91,7 @@ val appModule = module {
     viewModelOf(::ContactDetailsViewModel)
     viewModelOf(::ConversationDetailsViewModel)
     viewModelOf(::ThemingViewModel)
-    viewModelOf(::MessagesViewModel)
+    viewModelOf(::ConversationsViewModel)
     viewModelOf(::ArchivedViewModel)
     viewModelOf(::DialerViewModel)
     viewModelOf(::VoicemailViewModel)
@@ -104,4 +100,6 @@ val appModule = module {
     viewModelOf(::BottomBarViewModel)
     viewModelOf(::SimsViewModel)
     viewModelOf(::MigrationViewModel)
+    viewModelOf(::StartConversationViewModel)
+    viewModelOf(::EditContactViewModel)
 }

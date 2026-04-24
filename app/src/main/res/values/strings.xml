@@ -3,10 +3,11 @@
         name="app_name"
         translatable="false">Cinnamon</string>
     <string name="empty" />
-    <string name="ccnt_by_sosauce">CuteConnect by sosauce</string>
+    <string name="cinnamon_by_sosauce">Cinnamon by sosauce</string>
     <string name="version">Version</string>
     <string name="check_updates">Check updates</string>
     <string name="support">Support</string>
+    <string name="welcome">Welcome to Cinnamon!</string>
     <string name="reply">Reply</string>
     <string name="okay">Okay</string>
     <string name="me">Me</string>
@@ -33,10 +34,10 @@
     <string name="delete_convo_u_sure">Are you sure you want to delete this conversation ? This action cannot be undone !</string>
     <string name="delete_call_log">Delete call log ?</string>
     <string name="delete_call_log_u_sure">Are you sure you want to delete this call log ? This action cannot be undone !</string>
-    <string name="not_default_sms">CuteConnect is not your default SMS app.</string>
-    <string name="not_default_dialer">CuteConnect is not your default dialer app.</string>
-    <string name="is_default_sms">CuteConnect is your default SMS app!</string>
-    <string name="is_default_dialer">CuteConnect is your default dialer app!</string>
+    <string name="not_default_sms">Cinnamon is not your default SMS app.</string>
+    <string name="not_default_dialer">Cinnamon is not your default dialer app.</string>
+    <string name="is_default_sms">Cinnamon is your default SMS app!</string>
+    <string name="is_default_dialer">Cinnamon is your default dialer app!</string>
     <string name="set_as_sms_app">Set as default SMS app</string>
     <string name="set_as_dialer_app">Set as default dialer app</string>
     <string name="capture">Capture</string>
@@ -77,8 +78,32 @@
     <string name="dialpad">Dialpad</string>
     <string name="phone">Phone</string>
     <string name="migration">Migration</string>
-    <string name="migration_desc">Migrate everything to get going with CuteConnect!</string>
+    <string name="migration_desc">Migrate everything to get going with Cinnamon!</string>
     <string name="select_number">Select a phone number</string>
+    <string name="next_step">Next step</string>
+    <string name="select_all">Select all</string>
+    <string name="unselect_all">Unselect all</string>
+    <string name="email">Email</string>
+    <string name="first_name">First name</string>
+    <string name="last_name">Last name</string>
+    <string name="address">Address</string>
+    <string name="add_phone">Add phone</string>
+    <string name="add_address">Add address</string>
+    <string name="add_note">Add note</string>
+    <string name="add_email">Add email</string>
+    <string name="add_website">Add website</string>
+    <string name="company">Company</string>
+    <string name="string_default">Default</string>
+    <string name="contact_info">Contact info</string>
+    <string name="about">About</string>
+    <string name="website">Website</string>
+    <string name="notes">Notes</string>
+    <string name="on_hold">On hold</string>
+    <string name="call_ended">Call ended</string>
+    <string name="via">via</string>
+    <string name="private_number">Private number</string>
+    <string name="save">Save</string>
+    <string name="color_picker">Color picker</string>
 
 
 

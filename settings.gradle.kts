@@ -24,5 +24,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "CuteConnect"
+rootProject.name = "Cinnamon"
 include(":app")

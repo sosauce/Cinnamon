@@ -14,9 +14,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import com.sosauce.cinnamon.data.datastore.rememberAppTheme
-import com.sosauce.cinnamon.ui.navigation.Nav
-import com.sosauce.cinnamon.ui.screens.setup.SetupScreen
-import com.sosauce.cinnamon.ui.theme.CuteConnectTheme
+import com.sosauce.cinnamon.presentation.navigation.Nav
+import com.sosauce.cinnamon.presentation.screens.setup.SetupPermissions
+import com.sosauce.cinnamon.presentation.theme.CinnamonTheme
 import com.sosauce.cinnamon.utils.CuteTheme
 import com.sosauce.cinnamon.utils.getAdaptivePrimaryColor
 import com.sosauce.cinnamon.utils.hasBothRoles
@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
             val primary = MaterialTheme.colorScheme.primary
             var seedColor by remember { mutableStateOf(context.getAdaptivePrimaryColor(primary)) }
 
-            CuteConnectTheme(seedColor) {
+            CinnamonTheme(seedColor) {
 
                 WindowCompat
                     .getInsetsController(window, window.decorView)
@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
                         onUpdateSeedColor = { seedColor = it }
                     )
                 } else {
-                    SetupScreen { hasBothRoles = hasBothRoles() }
+                    SetupPermissions { hasBothRoles = hasBothRoles() }
                 }
             }
         }

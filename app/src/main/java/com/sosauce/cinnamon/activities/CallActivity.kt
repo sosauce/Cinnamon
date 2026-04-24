@@ -11,9 +11,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.domain.states.CallState
-import com.sosauce.cinnamon.ui.screens.phone.CallScreen
-import com.sosauce.cinnamon.ui.screens.phone.CallingViewModel
-import com.sosauce.cinnamon.ui.theme.CuteConnectTheme
+import com.sosauce.cinnamon.presentation.screens.phone.CallScreen
+import com.sosauce.cinnamon.presentation.screens.phone.CallingViewModel
+import com.sosauce.cinnamon.presentation.theme.CinnamonTheme
 import com.sosauce.cinnamon.utils.APP_PACKAGE
 import org.koin.androidx.compose.koinViewModel
 
@@ -24,11 +24,11 @@ class CallActivity : ComponentActivity() {
         //setLockScreenFlags()
         enableEdgeToEdge()
         setContent {
-            CuteConnectTheme {
+            CinnamonTheme {
                 val callViewModel = koinViewModel<CallingViewModel>()
                 val callUiState by callViewModel.state.collectAsStateWithLifecycle()
 
-                if (callUiState.callState == CallState.ENDED) { finish() }
+                if (callUiState.callState == CallState.ENDED) { finishAndRemoveTask() }
 
                 CallScreen(
                     onCallAction = callViewModel::handleCallAction,

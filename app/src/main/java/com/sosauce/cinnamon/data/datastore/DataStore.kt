@@ -23,6 +23,8 @@ import com.sosauce.cinnamon.data.datastore.PreferencesKeys.PINNED_CONVOS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SEND_GROUP_AS_MMS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SEND_LONG_AS_MMS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SHOW_CHAR_COUNT
+import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SORT_CONTACTS_ASCENDING
+import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SORT_CONVERSATIONS_ASCENDING
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.THEME
 import com.sosauce.cinnamon.utils.CuteTheme
 import com.sosauce.cinnamon.utils.DefaultTabOption
@@ -48,6 +50,8 @@ data object PreferencesKeys {
     val DEFAULT_TAB = stringPreferencesKey("DEFAULT_TAB")
 
     val GROUP_SUBSEQUENT_CALLS = booleanPreferencesKey("GROUP_SUBSEQUENT_CALLS")
+    val SORT_CONVERSATIONS_ASCENDING = booleanPreferencesKey("SORT_CONVERSATIONS_ASCENDING")
+    val SORT_CONTACTS_ASCENDING = booleanPreferencesKey("SORT_CONTACTS_ASCENDING")
 }
 
 
@@ -91,3 +95,10 @@ fun rememberDefaultTab() = rememberPreference(DEFAULT_TAB, DefaultTabOption.MESS
 
 @Composable
 fun rememberGroupSubsequentCalls() = rememberPreference(GROUP_SUBSEQUENT_CALLS, false)
+
+@Composable
+fun rememberSortConversationsAscending() = rememberPreference(SORT_CONVERSATIONS_ASCENDING, true)
+
+@Composable
+fun rememberSortContactsAscending() = rememberPreference(SORT_CONTACTS_ASCENDING, true)
+

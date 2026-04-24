@@ -26,12 +26,16 @@ import android.text.format.DateFormat
 import android.text.format.DateUtils
 import android.util.Patterns
 import android.widget.Toast
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.delete
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
@@ -55,9 +59,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.contentValuesOf
 import androidx.core.net.toUri
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.datastore.rememberIsLandscape
-import com.sosauce.cinnamon.ui.navigation.Screen
+import com.sosauce.cinnamon.presentation.navigation.Screen
 import dev.chrisbanes.haze.HazeEffectScope
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -664,7 +670,19 @@ fun MenuDefaults.getItemShape(
 fun Uri.isImage(context: Context): Boolean = context.contentResolver.getType(this)?.startsWith("image/") == true
 fun Uri.isAudio(context: Context): Boolean = context.contentResolver.getType(this)?.startsWith("audio/") == true
 fun Uri.isVideo(context: Context): Boolean = context.contentResolver.getType(this)?.startsWith("video/") == true
+fun Uri.isVcard(context: Context): Boolean = context.contentResolver.getType(this)?.endsWith("vCard") == true || context.contentResolver.getType(this)?.endsWith("x-vCard") == true
 
+
+fun Uri.getVcfName(context: Context): String? {
+    context.contentResolver.openInputStream(this)?.bufferedReader()?.useLines { lines ->
+        lines.forEach { line ->
+            if (line.startsWith("FN:")) {
+                return line.removePrefix("FN:").trim()
+            }
+        }
+    }
+    return null
+}
 // Source - https://stackoverflow.com/a/25005243
 // Posted by Stefan Haustein
 // Retrieved 2026-02-25, License - CC BY-SA 3.0
@@ -704,3 +722,23 @@ fun String.tabToScreen(): Screen {
         DefaultTabOption.DIALPAD -> Screen.Dialpad
         else -> throw IllegalArgumentException("Not a valid tab!")
     }}
+
+
+fun NavBackStack<NavKey>.navigateBack() {
+    // Popping the only screen will crash so this avoids it
+    if (size == 1) return
+    removeLastOrNull()
+}
+
+fun TextFieldState.backspace() {
+    if (selection.collapsed) {
+        edit {
+            delete(length - 1, length)
+        }
+    }
+}
+
+fun <T> bouncySpec() = spring<T>(
+    dampingRatio = Spring.DampingRatioMediumBouncy,
+    stiffness = Spring.StiffnessLow
+)

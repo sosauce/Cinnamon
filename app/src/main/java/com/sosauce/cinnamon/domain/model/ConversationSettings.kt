@@ -11,6 +11,5 @@ data class ConversationSettings(
     val draft: String = "",
     val wallpaper: String = "", // Wallpaper's Uri as a String
     val wallpaperBlurIntensity: Int = 0,
-    val color: Int = -1,
-    val allColors: List<Int> = emptyList()
+    val color: Int = -1
 )

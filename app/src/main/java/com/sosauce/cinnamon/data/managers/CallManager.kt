@@ -6,8 +6,11 @@ import android.telecom.TelecomManager
 import com.sosauce.cinnamon.domain.model.AudioRoute
 import com.sosauce.cinnamon.domain.model.CuteSimCard
 import com.sosauce.cinnamon.domain.states.CallState
-import com.sosauce.cinnamon.ui.screens.phone.CallingState
+import com.sosauce.cinnamon.presentation.screens.phone.CallingState
+import com.sosauce.cinnamon.utils.beautifyNumber
+import com.sosauce.cinnamon.utils.getContactNameOrNothing
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 // Inspired by Fossify's call manager!
@@ -25,7 +28,8 @@ class CallManager(
     val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
 
 
-    val _callingState = MutableStateFlow(CallingState())
+    private val _callingState = MutableStateFlow(CallingState())
+    val callingState = _callingState.asStateFlow()
 
 
     fun registerCallServiceCallback(cb: CallServiceCallback) {
@@ -99,7 +103,10 @@ class CallManager(
 
     fun updateNumber(number: String) {
         _callingState.update {
-            it.copy(number = number)
+            it.copy(
+                number = number,
+                displayName = number.getContactNameOrNothing(context).beautifyNumber()
+            )
         }
     }
 

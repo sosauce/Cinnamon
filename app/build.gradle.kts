@@ -8,31 +8,22 @@ plugins {
 android {
     namespace = "com.sosauce.cinnamon"
     compileSdk {
-        version = release(36)
+        version = release(37)
     }
 
-    val keystoreFile = file("release_key.jks")
-    signingConfigs {
-        create("release") {
-            if (keystoreFile.exists()) {
-                storeFile = keystoreFile
-                storePassword = System.getenv("SIGNING_STORE_PASSWORD")
-                keyAlias = System.getenv("SIGNING_KEY_ALIAS")
-                keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
-            } else {
-                println("No keystore found, APK will be unsigned")
-            }
-        }
-    }
 
     defaultConfig {
         applicationId = "com.sosauce.cinnamon"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            //noinspection ChromeOsAbiSupport
+            abiFilters += arrayOf("arm64-v8a", "armeabi-v7a")
+        }
     }
 
 //    applicationVariants.all {
@@ -49,7 +40,6 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -112,10 +102,13 @@ dependencies {
     implementation(libs.geocoder)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.sweetselect.compose)
-    implementation("androidx.paging:paging-compose:3.4.2")
-    implementation("androidx.paging:paging-runtime:3.4.2")
+    implementation(libs.androidx.paging.compose)
+    implementation(libs.androidx.paging.runtime)
     implementation(libs.sweetselect.compose)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.ez.vcard)
-    implementation("com.github.kelvinlaw:android-smsmms:0.1.3")
+    implementation(libs.android.smsmms)
+    implementation(libs.squircle.shape)
+    implementation("com.airbnb.android:lottie-compose:6.7.1")
+
 }

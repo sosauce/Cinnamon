@@ -1,24 +1,34 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package com.sosauce.cinnamon.domain.repository
 
 import android.content.Context
 import android.net.Uri
 import android.os.Build
-import android.provider.ContactsContract
 import android.provider.Telephony
 import android.provider.Telephony.Mms
 import android.provider.Telephony.MmsSms
-import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.PagingSource
+import androidx.paging.PagingState
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.domain.model.CuteCallLog
 import com.sosauce.cinnamon.domain.model.CuteConversation
+import com.sosauce.cinnamon.domain.model.CuteMessage
 import com.sosauce.cinnamon.utils.beautifyNumber
+import com.sosauce.cinnamon.utils.getContactNameOrNothing
 import com.sosauce.cinnamon.utils.observe
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
+
 
 class MessagesRepository(
     private val context: Context,
@@ -26,22 +36,23 @@ class MessagesRepository(
 ) {
 
 
-    fun fetchLatestConversations(): Flow<List<CuteConversation>> {
-        return context.contentResolver.observe(Telephony.Threads.CONTENT_URI).map {
-            fetchConversations()
+    fun fetchLatestConversations(
+        extraSelection: String? = null,
+        extraSelectionArgs: Array<String> = emptyArray(),
+        extraSortOrder: String = "${Telephony.Threads.DATE} DESC"
+    ): Flow<List<CuteConversation>> {
+        return context.contentResolver.observe(Telephony.Threads.CONTENT_URI).mapLatest {
+            fetchConversations(extraSelection, extraSelectionArgs, extraSortOrder)
         }.flowOn(Dispatchers.IO)
     }
 
-    private fun fetchConversations(): List<CuteConversation> {
-        data class Row(
-            val threadId: Long,
-            val recipientIds: List<Long>,
-            val snippet: String?,
-            val date: Long,
-            val read: Boolean,
-        )
 
-        val rows = mutableListOf<Row>()
+    private fun fetchConversations(
+        extraSelection: String?,
+        extraSelectionArgs: Array<String>,
+        extraSortOrder: String
+    ): List<CuteConversation> {
+        val conversations = mutableListOf<CuteConversation>()
 
         val projection = arrayOf(
             Telephony.Threads._ID,
@@ -51,13 +62,28 @@ class MessagesRepository(
             Telephony.Threads.RECIPIENT_IDS
         )
 
+        val selection = buildString {
+            append("${Telephony.Threads.MESSAGE_COUNT} > ?")
+            extraSelection?.let {
+                append(" AND ")
+                append(it)
+            }
+        }
+
+        val selectionArgs = buildList {
+            add("0")
+            if (extraSelectionArgs.isNotEmpty()) {
+                addAll(extraSelectionArgs)
+            }
+        }.toTypedArray()
+
 
         context.contentResolver.query(
             "${Telephony.Threads.CONTENT_URI}?simple=true".toUri(),
             projection,
-            "${Telephony.Threads.MESSAGE_COUNT} > ?",
-            arrayOf("0"),
-            "${Telephony.Threads.DATE} DESC",
+            selection,
+            selectionArgs,
+            extraSortOrder,
         )?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(Telephony.Threads._ID)
             val snippetColumn = cursor.getColumnIndexOrThrow(Telephony.Threads.SNIPPET)
@@ -66,100 +92,56 @@ class MessagesRepository(
             val readColumn = cursor.getColumnIndexOrThrow(Telephony.Threads.READ)
 
             while (cursor.moveToNext()) {
+                val threadId = cursor.getLong(idColumn)
                 val recipientIds = cursor.getString(recipientIdColumn)
                     .split(" ")
                     .fastMap { it.toLongOrNull() ?: 0 }
+                val date = cursor.getLong(dateColumn)
+                val read = cursor.getInt(readColumn) != 0
+                val rawRecipients = recipientIds.fastMap { it.getNumberForId() }
+                val recipients = rawRecipients.fastMap { it.getContactNameOrNothing(context).beautifyNumber() }
+                val isGroupChat = rawRecipients.size > 1
+                val snippet = cursor.getString(snippetColumn) ?: getMmsThreadSnippet(threadId)
 
-                rows.add(
-                    Row(
-                        threadId = cursor.getLong(idColumn),
-                        recipientIds = recipientIds,
-                        snippet = cursor.getString(snippetColumn),
-                        date = cursor.getLong(dateColumn),
-                        read = cursor.getInt(readColumn) == 1,
+                conversations.add(
+                    CuteConversation(
+                        threadId = threadId,
+                        rawRecipients = rawRecipients,
+                        recipients = recipients,
+                        snippet = snippet.trimIndent(),
+                        date = date,
+                        read = read,
+                        isGroupChat = isGroupChat,
+                        isSenderBlocked = if (isGroupChat) false else blockedNumbersManager.isNumberBlocked(rawRecipients.first()),
                     )
                 )
             }
         }
 
-        if (rows.isEmpty()) return emptyList()
-
-        val allRecipientIds = rows.flatMapTo(mutableListOf()) { it.recipientIds }
-        val phoneById = fetchPhoneNumbersByRecipientIds(allRecipientIds)
-        val nameByPhoneNumber = fetchContactNames(phoneById.values.toList())
-
-        val threadsNeedingSnippet = rows.fastFilter { it.snippet == null }.fastMap { it.threadId }
-        val mmsSnippetToThreadId = threadsNeedingSnippet.associateWith { getMmsThreadSnippet(it) }
-
-        return rows.fastMap { row ->
-            val rawRecipients = row.recipientIds.fastMap { phoneById[it] ?: "" }
-            val recipients = rawRecipients.fastMap { phone ->
-                nameByPhoneNumber[phone]?.beautifyNumber() ?: phone.beautifyNumber()
-            }
-            val isGroupChat = rawRecipients.size > 1
-
-            CuteConversation(
-                threadId = row.threadId,
-                snippet = row.snippet ?: mmsSnippetToThreadId[row.threadId] ?: "",
-                rawRecipients = rawRecipients,
-                recipients = recipients,
-                isSenderBlocked = if (isGroupChat) false else blockedNumbersManager.isNumberBlocked(rawRecipients.first()),
-                date = row.date,
-                read = row.read,
-                isGroupChat = isGroupChat,
-            )
-        }
+       return conversations
     }
 
-    private fun fetchPhoneNumbersByRecipientIds(ids: List<Long>): Map<Long, String> {
-        if (ids.isEmpty()) return emptyMap()
-        val result = mutableMapOf<Long, String>()
+    private fun Long.getNumberForId(): String {
 
         val uri = Uri.withAppendedPath(MmsSms.CONTENT_URI, "canonical-addresses")
 
-
         context.contentResolver.query(
             uri,
-            null,
-            null,
-            null,
+            arrayOf(Mms.Addr.ADDRESS),
+            "${Mms._ID} = ?",
+            arrayOf(this.toString()),
             null
         )?.use { cursor ->
-            val idColumn = cursor.getColumnIndexOrThrow(Mms.Addr._ID)
-            val addrColumn = cursor.getColumnIndexOrThrow(Mms.Addr.ADDRESS)
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idColumn)
-                if (id in ids) result[id] = cursor.getString(addrColumn) ?: ""
+            val addressColumn = cursor.getColumnIndexOrThrow(Mms.Addr.ADDRESS)
+            if (cursor.moveToFirst()) {
+                val address = cursor.getString(addressColumn)
+                return address
             }
         }
-        return result
+        return ""
     }
 
-    private fun fetchContactNames(phoneNumbers: List<String>): Map<String, String> {
-        if (phoneNumbers.isEmpty()) return emptyMap()
-        val result = mutableMapOf<String, String>()
-        val placeholders = phoneNumbers.joinToString(",") { "?" }
-        context.contentResolver.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(
-                ContactsContract.CommonDataKinds.Phone.NUMBER,
-                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-            ),
-            "${ContactsContract.CommonDataKinds.Phone.NUMBER} IN ($placeholders)",
-            phoneNumbers.toTypedArray(),
-            null,
-        )?.use { cursor ->
-            val numberColumn = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
-            val nameColumn = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-            while (cursor.moveToNext()) {
-                val number = cursor.getString(numberColumn)
-                val name = cursor.getString(nameColumn)
 
-                result[number] = name
-            }
-        }
-        return result
-    }
 
 private fun getMmsThreadSnippet(threadId: Long): String {
     val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
