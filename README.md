@@ -34,7 +34,7 @@
 - Device level blocking!
 - Full dialer capabilities!
 - Voicemail support!
-
+- Multi-sim support along side separation of choice to choose default sim for messages and calls!
 
 ---
 <h1>💬 Contact Me</h1>
