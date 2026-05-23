@@ -3,7 +3,6 @@
 package com.sosauce.cinnamon.presentation.screens.dialer
 
 import android.content.ClipData
-import android.net.Uri
 import android.provider.CallLog
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
@@ -27,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -51,14 +49,12 @@ import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedMo
 import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedSelectedIcon
 import com.sosauce.cinnamon.presentation.shared_components.items.CuteListItem
 import com.sosauce.cinnamon.utils.beautifyNumber
-import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.getItemShape
 import com.sosauce.cinnamon.utils.getThreadIdOrCreate
 import com.sosauce.cinnamon.utils.secondsToDuration
 import com.sosauce.cinnamon.utils.toTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 
 @Composable
@@ -83,14 +79,9 @@ fun CallLogItem(
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 0.95f else 1f
     )
-    val pfp by produceState(Uri.EMPTY) {
-        value = withContext(Dispatchers.IO) {
-            callLog.rawNumber.getContactPfpFromNumber(context, false)
-        }
-    }
 
 
-    val icon = when(callLog.callType) {
+    val icon = when (callLog.callType) {
         CallLog.Calls.INCOMING_TYPE -> R.drawable.arrow_315
         CallLog.Calls.OUTGOING_TYPE -> R.drawable.arrow_45
         CallLog.Calls.MISSED_TYPE -> R.drawable.call_missed
@@ -167,7 +158,7 @@ fun CallLogItem(
             ) {
                 DefaultContactIcon(
                     firstLetter = displayNameOrNumber.firstOrNull(),
-                    contactPfp = pfp
+                    contactPhoneNumber = callLog.rawNumber
                 )
             }
         },
@@ -219,7 +210,8 @@ fun CallLogItem(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val providedColor = if (callLog.callType == CallLog.Calls.MISSED_TYPE) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+            val providedColor =
+                if (callLog.callType == CallLog.Calls.MISSED_TYPE) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
             CompositionLocalProvider(LocalContentColor provides providedColor) {
                 Icon(
                     painter = painterResource(icon),

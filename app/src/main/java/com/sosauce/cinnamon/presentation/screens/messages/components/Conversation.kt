@@ -2,23 +2,15 @@
 
 package com.sosauce.cinnamon.presentation.screens.messages.components
 
-import android.net.Uri
 import android.provider.BlockedNumberContract
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ButtonShapes
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,7 +20,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -45,22 +36,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
-import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.domain.model.CuteConversation
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationsAction
 import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
 import com.sosauce.cinnamon.presentation.shared_components.DefaultGroupChatIcon
-import com.sosauce.cinnamon.presentation.shared_components.SelectedItemLogo
 import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedSelectedIcon
 import com.sosauce.cinnamon.presentation.shared_components.items.CuteListItem
-import com.sosauce.cinnamon.utils.SharedTransitionKeys
-import com.sosauce.cinnamon.utils.bouncySpec
-import com.sosauce.cinnamon.utils.getContactId
-import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.toDate
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @Composable
 fun SharedTransitionScope.Conversation(
@@ -76,11 +59,6 @@ fun SharedTransitionScope.Conversation(
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 0.95f else 1f
     )
-    val pfp by produceState(Uri.EMPTY) {
-        value = withContext(Dispatchers.IO) {
-            conversation.rawRecipients.firstOrNull()?.getContactPfpFromNumber(context, false) ?: Uri.EMPTY
-        }
-    }
 
 
 
@@ -96,9 +74,12 @@ fun SharedTransitionScope.Conversation(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        BlockedNumberContract.unblock(context, conversation.rawRecipients.firstOrNull())
+                        BlockedNumberContract.unblock(
+                            context,
+                            conversation.rawRecipients.firstOrNull()
+                        )
                         showUnblockDialog = false
-                              },
+                    },
                     shapes = ButtonDefaults.shapes()
                 ) {
                     Text(
@@ -149,7 +130,7 @@ fun SharedTransitionScope.Conversation(
                 } else {
                     DefaultContactIcon(
                         firstLetter = conversation.recipients.firstOrNull()?.firstOrNull(),
-                        contactPfp = pfp
+                        contactPhoneNumber = conversation.rawRecipients.firstOrNull()
                     )
                 }
             }
@@ -214,6 +195,7 @@ fun SharedTransitionScope.Conversation(
                     }
                 }
             }
+
             conversation.draft.isNotEmpty() -> {
                 buildAnnotatedString {
                     withStyle(
@@ -226,6 +208,7 @@ fun SharedTransitionScope.Conversation(
                     append(conversation.draft)
                 }
             }
+
             else -> AnnotatedString(conversation.snippet)
         }
 

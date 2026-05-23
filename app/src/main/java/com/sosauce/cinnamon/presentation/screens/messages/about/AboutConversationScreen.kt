@@ -2,7 +2,6 @@
 
 package com.sosauce.cinnamon.presentation.screens.messages.about
 
-import android.net.Uri
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -35,30 +34,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastFlatMap
 import androidx.compose.ui.util.fastForEachIndexed
-import androidx.compose.ui.util.fastMap
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.domain.model.AttachmentType
-import com.sosauce.cinnamon.domain.model.CuteConversation
-import com.sosauce.cinnamon.domain.states.ConversationState
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationActions
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationDetailsState
 import com.sosauce.cinnamon.presentation.screens.messages.components.bubble.ImageAttachment
-import com.sosauce.cinnamon.presentation.screens.settings.components.SettingsWithTitle
 import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
 import com.sosauce.cinnamon.presentation.shared_components.DefaultGroupChatIcon
 import com.sosauce.cinnamon.presentation.shared_components.buttons.CuteNavigationButton
 import com.sosauce.cinnamon.utils.SharedTransitionKeys
-import com.sosauce.cinnamon.utils.getContactId
-import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.selfAlignHorizontally
 
 @Composable
@@ -129,7 +120,7 @@ fun SharedTransitionScope.AboutConversationScreen(
                     DefaultContactIcon(
                         firstLetter = state.nameOrBeautifiedRecipients.firstOrNull()?.firstOrNull(),
                         size = 170.dp,
-                        contactPfp = state.recipients.firstOrNull()?.getContactPfpFromNumber(context) ?: Uri.EMPTY,
+                        contactPhoneNumber = state.recipients.firstOrNull(),
                         shape = MaterialShapes.Cookie9Sided.toShape()
                     )
                 }
@@ -157,7 +148,12 @@ fun SharedTransitionScope.AboutConversationScreen(
 
             if (medias.isNotEmpty()) {
                 Text(
-                    text = "${pluralStringResource(id = R.plurals.medias_plural, medias.size)}: ${medias.size}",
+                    text = "${
+                        pluralStringResource(
+                            id = R.plurals.medias_plural,
+                            medias.size
+                        )
+                    }: ${medias.size}",
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(horizontal = 34.dp, vertical = 8.dp)
                 )
@@ -191,6 +187,6 @@ fun SharedTransitionScope.AboutConversationScreen(
             }
 
 
-    }
+        }
     }
 }

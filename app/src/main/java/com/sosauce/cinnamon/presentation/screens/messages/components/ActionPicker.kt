@@ -26,17 +26,19 @@ fun ActionPicker(
     onUpdateMediasToSend: (Uri) -> Unit,
 ) {
 
-    val photoPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) {
-        it?.let { uri ->
-            onUpdateMediasToSend(uri)
+    val photoPickerLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) {
+            it?.let { uri ->
+                onUpdateMediasToSend(uri)
+            }
         }
-    }
 
-    val filePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
-        it?.let { uri ->
-            onUpdateMediasToSend(uri)
+    val filePickerLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
+            it?.let { uri ->
+                onUpdateMediasToSend(uri)
+            }
         }
-    }
 
 
     val actionPickerItems = listOf(

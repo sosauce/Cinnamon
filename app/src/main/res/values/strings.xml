@@ -1,7 +1,5 @@
 <resources>
-    <string
-        name="app_name"
-        translatable="false">Cinnamon</string>
+    <string name="app_name" translatable="false">Cinnamon</string>
     <string name="empty" />
     <string name="cinnamon_by_sosauce">Cinnamon by sosauce</string>
     <string name="version">Version</string>
@@ -128,9 +126,9 @@
     <string name="missed">Missed</string>
     <string name="no_calls_found">No calls found!</string>
     <string name="no_calls_found_desc">Why would you buy a phone if you\'re not gonna call anyone??</string>
-    <string name="messages_settings_desc">WIP_MESSAGES_DESC</string>
-    <string name="contacts_settings_desc">WIP_CONTACTS_DESC</string>
-    <string name="phone_settings_desc">"Make calls peaceful again! "</string>
+    <string name="messages_settings_desc">Hate texting, love customizing !</string>
+    <string name="contacts_settings_desc">Pimp up your loved ones !</string>
+    <string name="phone_settings_desc">"Make calls peaceful again !"</string>
     <string name="no_result_found">No result found !</string>
     <string name="no_result_found_desc">Better luck next time !</string>
     <string name="not_sent">Not sent</string>
@@ -140,6 +138,12 @@
     <string name="font">Font</string>
     <string name="default_text">Default</string>
     <string name="palette">Palette</string>
+    <string name="no_voicemail_found">No voicemail found!</string>
+    <string name="no_voicemail_found_desc">Let\'s be honest, we usually don\'t listen to them anyways</string>
+    <string name="importing_contact">Importing contact…</string>
+    <string name="importing_contact_success">Contact imported successfully!</string>
+    <string name="import_contact_from_vcf">Import contacts from a .vcf file</string>
+    <string name="export_contact_to_vcf">Export contacts to a .vcf file</string>
 
 
     <plurals name="delete_msg">

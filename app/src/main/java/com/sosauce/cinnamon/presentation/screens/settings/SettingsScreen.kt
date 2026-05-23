@@ -29,7 +29,6 @@ import com.sosauce.cinnamon.presentation.navigation.SettingsScreens
 import com.sosauce.cinnamon.presentation.screens.settings.components.AboutCard
 import com.sosauce.cinnamon.presentation.screens.settings.components.SettingsCategoryCard
 import com.sosauce.cinnamon.presentation.shared_components.buttons.CuteNavigationButton
-import com.sosauce.cinnamon.utils.bouncySpec
 import com.sosauce.cinnamon.utils.bouncySpecNavigation
 import com.sosauce.cinnamon.utils.navigateBack
 
@@ -85,7 +84,9 @@ fun SettingsScreen(
                 onNavigateUp = {
                     if (backStack.size == 1) {
                         onNavigateUp()
-                    } else { backStack.navigateBack() }
+                    } else {
+                        backStack.navigateBack()
+                    }
                 }
             )
         }
@@ -98,7 +99,9 @@ fun SettingsScreen(
             onBack = {
                 if (backStack.size == 1) {
                     onNavigateUp()
-                } else { backStack.navigateBack() }
+                } else {
+                    backStack.navigateBack()
+                }
             },
             transitionSpec = {
                 ContentTransform(
@@ -161,10 +164,6 @@ fun SettingsScreen(
 
                 entry<SettingsScreens.Behavior> {
                     SettingsBehavior()
-                }
-
-                entry<SettingsScreens.Migration> {
-                    SettingsMigration()
                 }
             }
         )

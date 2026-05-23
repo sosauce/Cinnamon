@@ -4,13 +4,11 @@ package com.sosauce.cinnamon.presentation.screens.messages
 
 import android.app.Application
 import android.provider.BlockedNumberContract
-import android.provider.Telephony
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.data.conversation_settings.ConversationSettingsDao
 import com.sosauce.cinnamon.data.datastore.UserPreferences
@@ -25,9 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -38,13 +34,12 @@ class ConversationsViewModel(
     private val messagesRepository: MessagesRepository,
     private val userPreferences: UserPreferences,
     private val conversationSettingsDao: ConversationSettingsDao
-): AndroidViewModel(application) {
+) : AndroidViewModel(application) {
 
     private val _state = MutableStateFlow(ConversationsState(isLoading = true))
     val state = _state.asStateFlow()
 
     private val textFieldState = TextFieldState()
-
 
 
     init {
@@ -109,7 +104,7 @@ class ConversationsViewModel(
     }
 
     fun handleThreadsAction(action: ConversationsAction) {
-        when(action) {
+        when (action) {
             is ConversationsAction.ArchiveConversations -> {
                 viewModelScope.launch {
                     userPreferences.toggleArchiveThreads(action.threadIds)
@@ -130,8 +125,6 @@ class ConversationsViewModel(
         }
 
     }
-
-
 
 
 }

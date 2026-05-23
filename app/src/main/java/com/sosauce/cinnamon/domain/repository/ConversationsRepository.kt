@@ -52,7 +52,6 @@ class ConversationsRepository(
         if (!PermissionUtils.hasSmsPermission(context)) return emptyList()
 
 
-
         val messages = mutableListOf<CuteMessage>()
 
         val projection = arrayOf(
@@ -221,12 +220,13 @@ class ConversationsRepository(
 
         val selection = "${Mms._ID} = ?"
         val selectionArgs = arrayOf(id.toString())
-        context.contentResolver.query(uri, projection, selection, selectionArgs, null)?.use { cursor ->
-            val addressColumn = cursor.getColumnIndexOrThrow(Mms.Addr.ADDRESS)
-            if (cursor.moveToFirst()) {
-                return cursor.getString(addressColumn)
+        context.contentResolver.query(uri, projection, selection, selectionArgs, null)
+            ?.use { cursor ->
+                val addressColumn = cursor.getColumnIndexOrThrow(Mms.Addr.ADDRESS)
+                if (cursor.moveToFirst()) {
+                    return cursor.getString(addressColumn)
+                }
             }
-        }
         return ""
     }
 
@@ -256,6 +256,7 @@ class ConversationsRepository(
             val mimeType: String,
             val text: String
         )
+
         val idToParts = mutableMapOf<Long, MutableList<RawPart>>()
 
 
@@ -306,39 +307,43 @@ class ConversationsRepository(
                             CuteAttachment.AttachmentDetails(
                                 id = part.partId,
                                 uri = fileUri,
-                                filename =  context.getString(R.string.unknown), // TODO get filename
+                                filename = context.getString(R.string.unknown), // TODO get filename
                                 attachmentType = AttachmentType.IMAGE,
                                 size = 0 // we dont care about the size for known filetype since we display them and not info, saves resources
                             )
                         )
                     }
+
                     part.mimeType.startsWith("video/") -> {
 
                         attachmentDetails.add(
                             CuteAttachment.AttachmentDetails(
                                 id = part.partId,
                                 uri = fileUri,
-                                filename =  context.getString(R.string.unknown),
+                                filename = context.getString(R.string.unknown),
                                 attachmentType = AttachmentType.VIDEO,
                                 size = 0
                             )
                         )
                     }
+
                     part.mimeType.startsWith("audio/") -> {
 
                         attachmentDetails.add(
                             CuteAttachment.AttachmentDetails(
                                 id = part.partId,
                                 uri = fileUri,
-                                filename =  context.getString(R.string.unknown),
+                                filename = context.getString(R.string.unknown),
                                 attachmentType = AttachmentType.AUDIO,
                                 size = 0
                             )
                         )
                     }
+
                     part.mimeType == "application/smil" -> {
                         filename = parseAttachmentNames(part.text).firstOrNull() ?: "idk"
                     }
+
                     else -> {
                         val size = context.getMMSSize(fileUri)
                         attachmentDetails.add(
@@ -435,8 +440,16 @@ class ConversationsRepository(
     }
 
     suspend fun deleteConversation(threadId: Long) = withContext(Dispatchers.IO) {
-        context.contentResolver.delete(Sms.CONTENT_URI, "${Sms.THREAD_ID} = ?", arrayOf(threadId.toString()))
-        context.contentResolver.delete(Mms.CONTENT_URI, "${Mms.THREAD_ID} = ?", arrayOf(threadId.toString()))
+        context.contentResolver.delete(
+            Sms.CONTENT_URI,
+            "${Sms.THREAD_ID} = ?",
+            arrayOf(threadId.toString())
+        )
+        context.contentResolver.delete(
+            Mms.CONTENT_URI,
+            "${Mms.THREAD_ID} = ?",
+            arrayOf(threadId.toString())
+        )
     }
 
     suspend fun deleteMessages(messages: List<CuteMessage>) = withContext(Dispatchers.IO) {

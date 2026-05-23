@@ -1,11 +1,11 @@
 @file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
 
 package com.sosauce.cinnamon.presentation.theme
+
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialExpressiveTheme
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -15,11 +15,8 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import com.materialkolor.DynamicMaterialThemeState
-import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicColorScheme
-import com.materialkolor.rememberDynamicMaterialThemeState
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.datastore.rememberAppTheme
 import com.sosauce.cinnamon.data.datastore.rememberPaletteStyle

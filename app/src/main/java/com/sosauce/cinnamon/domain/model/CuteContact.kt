@@ -38,8 +38,10 @@ data class CuteContact(
 ) {
 
 
-    val hasInfos = details.phoneNumbers.isNotEmpty() || details.emails.isNotEmpty() || details.addresses.isNotEmpty()
-    val hasAbout = details.websites.isNotEmpty() || details.note?.isNotEmpty() == true || details.events.isNotEmpty()
+    val hasInfos =
+        details.phoneNumbers.isNotEmpty() || details.emails.isNotEmpty() || details.addresses.isNotEmpty()
+    val hasAbout =
+        details.websites.isNotEmpty() || details.note?.isNotEmpty() == true || details.events.isNotEmpty()
 
     val searchIndex: String by lazy {
         buildString {
@@ -53,6 +55,7 @@ data class CuteContact(
             details.websites.fastForEach { append("${it.website} ") }
         }
     }
+
     @Serializable
     data class Email(
         val email: String,
@@ -60,6 +63,7 @@ data class CuteContact(
         val isDefault: Boolean,
         val isBlocked: Boolean = false
     )
+
     @Serializable
     data class Phone(
         val number: String,
@@ -67,16 +71,19 @@ data class CuteContact(
         val isDefault: Boolean,
         val isBlocked: Boolean = false
     )
+
     @Serializable
     data class Address(
         val address: String,
         val type: Int,
         val isDefault: Boolean
     )
+
     @Serializable
     data class Website(
         val website: String
     )
+
     @Serializable
     data class Event(
         val date: String,
@@ -106,7 +113,6 @@ class CuteContactDetailsBuilder {
     fun addEvent(event: Event) = events.add(event)
 
 
-
     fun build(): CuteContactDetails {
         return CuteContactDetails(
             phoneNumbers = phoneNumbers.toList(),
@@ -121,7 +127,6 @@ class CuteContactDetailsBuilder {
             lastName = lastName
         )
     }
-
 
 
 }

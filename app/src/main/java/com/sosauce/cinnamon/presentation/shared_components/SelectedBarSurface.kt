@@ -153,7 +153,12 @@ fun ConversationsSelectedBar(
             Button(
                 onClick = onPinThreads,
                 interactionSource = interactionSources[0],
-                shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 4.dp, bottomEnd = 4.dp),
+                shape = RoundedCornerShape(
+                    topStart = 50.dp,
+                    bottomStart = 50.dp,
+                    topEnd = 4.dp,
+                    bottomEnd = 4.dp
+                ),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
@@ -179,7 +184,8 @@ fun ConversationsSelectedBar(
                     .animateWidth(interactionSources[1])
                     .weight(1f)
             ) {
-                val icon = if (screen is Screen.ArchivedThreads) R.drawable.unarchive else R.drawable.archive
+                val icon =
+                    if (screen is Screen.ArchivedThreads) R.drawable.unarchive else R.drawable.archive
 
                 Icon(
                     painter = painterResource(icon),
@@ -189,7 +195,12 @@ fun ConversationsSelectedBar(
             Button(
                 onClick = { showDeleteConversationsDialog = true },
                 interactionSource = interactionSources[2],
-                shape = RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                shape = RoundedCornerShape(
+                    topStart = 4.dp,
+                    bottomStart = 4.dp,
+                    topEnd = 50.dp,
+                    bottomEnd = 50.dp
+                ),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
@@ -230,7 +241,12 @@ fun ContactsSelectedBar(
             Button(
                 onClick = onToggleFavorite,
                 interactionSource = interactionSources[0],
-                shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 4.dp, bottomEnd = 4.dp),
+                shape = RoundedCornerShape(
+                    topStart = 50.dp,
+                    bottomStart = 50.dp,
+                    topEnd = 4.dp,
+                    bottomEnd = 4.dp
+                ),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
@@ -247,7 +263,12 @@ fun ContactsSelectedBar(
             Button(
                 onClick = onDeleteContacts,
                 interactionSource = interactionSources[1],
-                shape = RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                shape = RoundedCornerShape(
+                    topStart = 4.dp,
+                    bottomStart = 4.dp,
+                    topEnd = 50.dp,
+                    bottomEnd = 50.dp
+                ),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)

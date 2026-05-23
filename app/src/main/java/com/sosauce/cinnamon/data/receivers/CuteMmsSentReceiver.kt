@@ -1,7 +1,6 @@
 package com.sosauce.cinnamon.data.receivers
 
 import android.app.Activity
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
@@ -13,7 +12,7 @@ import java.io.File
 
 // TODO: I just copied fossify for this one, don't forget to rewrite/cleanup for my needs
 
-class CuteMmsSentReceiver: MmsSentReceiver() {
+class CuteMmsSentReceiver : MmsSentReceiver() {
 
 
     override fun onMessageStatusUpdated(context: Context?, intent: Intent?, resultCode: Int) {

@@ -57,7 +57,7 @@ fun ContactInfos(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer,)
+                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
                 ),
                 shape = RoundedCornerShape(24.dp)
             ) {
@@ -82,7 +82,11 @@ fun ContactInfos(
                                 if (number.isBlocked) {
                                     IconButton(
                                         onClick = {
-                                            Toast.makeText(context, "You blocked this number", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(
+                                                context,
+                                                "You blocked this number",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         },
                                         shapes = IconButtonDefaults.shapes()
                                     ) {
@@ -97,7 +101,13 @@ fun ContactInfos(
                             Text(number.number)
                             Text(
                                 text = buildString {
-                                    append(ContactsContract.CommonDataKinds.Phone.getTypeLabel(resources, number.type, "Custom"))
+                                    append(
+                                        ContactsContract.CommonDataKinds.Phone.getTypeLabel(
+                                            resources,
+                                            number.type,
+                                            "Custom"
+                                        )
+                                    )
                                     if (number.isDefault) {
                                         append(" · ")
                                         append(stringResource(R.string.string_default))
@@ -122,7 +132,11 @@ fun ContactInfos(
                                     context.startActivity(intent)
 
                                 } catch (_: ActivityNotFoundException) {
-                                    Toast.makeText(context, "No email app found!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "No email app found!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
 
                             },
@@ -138,7 +152,13 @@ fun ContactInfos(
                             trailingContent = {
                                 if (email.isBlocked) {
                                     IconButton(
-                                        onClick = { Toast.makeText(context, "You blocked this email", Toast.LENGTH_SHORT).show() },
+                                        onClick = {
+                                            Toast.makeText(
+                                                context,
+                                                "You blocked this email",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        },
                                         shapes = IconButtonDefaults.shapes()
                                     ) {
                                         Icon(
@@ -152,7 +172,13 @@ fun ContactInfos(
                             Text(email.email)
                             Text(
                                 text = buildString {
-                                    append(ContactsContract.CommonDataKinds.Email.getTypeLabel(resources, email.type, "Custom"))
+                                    append(
+                                        ContactsContract.CommonDataKinds.Email.getTypeLabel(
+                                            resources,
+                                            email.type,
+                                            "Custom"
+                                        )
+                                    )
                                     if (email.isDefault) {
                                         append(" · ")
                                         append(stringResource(R.string.string_default))
@@ -169,13 +195,23 @@ fun ContactInfos(
                         CuteListItem(
                             onClick = {
                                 try {
-                                    val intent = Intent(Intent.ACTION_VIEW, "geo:0,0?q=${address.address}".toUri())
+                                    val intent = Intent(
+                                        Intent.ACTION_VIEW,
+                                        "geo:0,0?q=${address.address}".toUri()
+                                    )
                                         .apply {
-                                            setClassName("com.google.android.apps.maps", "com.google.android.maps.MapsActivity")
+                                            setClassName(
+                                                "com.google.android.apps.maps",
+                                                "com.google.android.maps.MapsActivity"
+                                            )
                                         }
                                     context.startActivity(intent)
                                 } catch (_: ActivityNotFoundException) {
-                                    Toast.makeText(context, "Google Maps not found!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Google Maps not found!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             },
                             leadingContent = {
@@ -191,7 +227,13 @@ fun ContactInfos(
                             Text(address.address)
                             Text(
                                 text = buildString {
-                                    append(ContactsContract.CommonDataKinds.StructuredPostal.getTypeLabel(resources, address.type, "Custom"))
+                                    append(
+                                        ContactsContract.CommonDataKinds.StructuredPostal.getTypeLabel(
+                                            resources,
+                                            address.type,
+                                            "Custom"
+                                        )
+                                    )
                                     if (address.isDefault) {
                                         append(" · ")
                                         append(stringResource(R.string.string_default))
@@ -210,7 +252,12 @@ fun ContactInfos(
             CuteListItem(
                 onClick = { onNavigate(Screen.ContactEditor(contact)) },
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 4.dp, bottomEnd = 4.dp),
+                shape = RoundedCornerShape(
+                    topStart = 24.dp,
+                    topEnd = 24.dp,
+                    bottomStart = 4.dp,
+                    bottomEnd = 4.dp
+                ),
                 leadingContent = {
                     Icon(
                         painter = painterResource(R.drawable.phone),
@@ -222,7 +269,12 @@ fun ContactInfos(
             CuteListItem(
                 onClick = { onNavigate(Screen.ContactEditor(contact)) },
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-                shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 24.dp, bottomEnd = 24.dp),
+                shape = RoundedCornerShape(
+                    topStart = 4.dp,
+                    topEnd = 4.dp,
+                    bottomStart = 24.dp,
+                    bottomEnd = 24.dp
+                ),
                 leadingContent = {
                     Icon(
                         painter = painterResource(R.drawable.email),
@@ -240,7 +292,7 @@ fun ContactInfos(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer,)
+                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
                 ),
                 shape = RoundedCornerShape(24.dp)
             ) {
@@ -278,7 +330,11 @@ fun ContactInfos(
                         ) {
                             Text(event.date.formateEventDate())
                             Text(
-                                text = ContactsContract.CommonDataKinds.Event.getTypeLabel(resources, event.type, "Custom").toString(),
+                                text = ContactsContract.CommonDataKinds.Event.getTypeLabel(
+                                    resources,
+                                    event.type,
+                                    "Custom"
+                                ).toString(),
                                 style = MaterialTheme.typography.bodyMediumEmphasized.copy(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

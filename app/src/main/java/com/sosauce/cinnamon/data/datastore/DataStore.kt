@@ -13,7 +13,6 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.ARCHIVED_CONVOS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.DEFAULT_MESSAGES_SIM
-import com.sosauce.cinnamon.data.datastore.PreferencesKeys.DEFAULT_PHONE_SIM
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.DEFAULT_TAB
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.ENABLE_DELIVERY_REPORTS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.ENABLE_T9_DIALING
@@ -47,7 +46,7 @@ data object PreferencesKeys {
     val ARCHIVED_CONVOS = stringSetPreferencesKey("archived_convos")
     val MMS_MAX_SIZE_LIMIT = longPreferencesKey("MMS_MAX_SIZE_LIMIT")
     val DEFAULT_MESSAGES_SIM = intPreferencesKey("DEFAULT_MESSAGES_SIM")
-    val DEFAULT_PHONE_SIM = intPreferencesKey("DEFAULT_PHONE_SIM")
+    val DEFAULT_PHONE_HANDLE_ID = stringPreferencesKey("DEFAULT_PHONE_HANDLE_ID")
     val SEND_LONG_AS_MMS = booleanPreferencesKey("SEND_LONG_AS_MMS")
     val SHOW_CHAR_COUNT = booleanPreferencesKey("DISPLAY_CHAR_COUNT")
     val SEND_GROUP_AS_MMS = booleanPreferencesKey("SEND_GROUP_AS_MMS")
@@ -72,7 +71,7 @@ fun rememberUseSystemFont() =
 
 @Composable
 fun rememberPaletteStyle() =
-    rememberPreference(key = PALETTE_STYLE, defaultValue = CutePaletteStyle.FIDELITY)
+    rememberPreference(key = PALETTE_STYLE, defaultValue = CutePaletteStyle.TONAL_SPOT)
 
 @Composable
 fun rememberPinnedConversations() =
@@ -87,10 +86,8 @@ fun rememberMmsMaxSizeLimit() = rememberPreference(MMS_MAX_SIZE_LIMIT, MmsSize.F
 
 
 @Composable
-fun rememberDefaultMessagesSim() = rememberPreference(DEFAULT_MESSAGES_SIM, SubscriptionManager.getDefaultSmsSubscriptionId())
-
-@Composable
-fun rememberDefaultPhoneSim() = rememberPreference(DEFAULT_PHONE_SIM, SubscriptionManager.getDefaultVoiceSubscriptionId())
+fun rememberDefaultMessagesSim() =
+    rememberPreference(DEFAULT_MESSAGES_SIM, SubscriptionManager.getDefaultSmsSubscriptionId())
 
 @Composable
 fun rememberShowCharCount() = rememberPreference(SHOW_CHAR_COUNT, false)

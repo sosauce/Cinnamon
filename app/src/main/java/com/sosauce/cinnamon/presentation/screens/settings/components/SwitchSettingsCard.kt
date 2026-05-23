@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SwitchSettingsCards(
+fun SwitchSettingsCard(
     modifier: Modifier = Modifier,
     checked: Boolean,
     topDp: Dp,

@@ -1,8 +1,12 @@
 package com.sosauce.cinnamon.data.managers
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
+import android.os.Bundle
 import android.telecom.TelecomManager
+import android.telephony.TelephonyManager
+import com.sosauce.cinnamon.data.datastore.UserPreferences
 import com.sosauce.cinnamon.domain.model.AudioRoute
 import com.sosauce.cinnamon.domain.model.CuteSimCard
 import com.sosauce.cinnamon.domain.states.CallState
@@ -11,7 +15,9 @@ import com.sosauce.cinnamon.utils.beautifyNumber
 import com.sosauce.cinnamon.utils.getContactNameOrNothing
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.runBlocking
 
 // Inspired by Fossify's call manager!
 
@@ -19,13 +25,13 @@ import kotlinx.coroutines.flow.update
  * A bridge between an InCallService (CallService) and the ViewModel.
  */
 class CallManager(
-    private val context: Context
+    private val context: Context,
+    val telecomManager: TelecomManager,
+    private val userPreferences: UserPreferences
 ) {
 
     private var callServiceCallback: CallServiceCallback? = null
-    private var androidCallCallback : AndroidCallCallback? = null
-
-    val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
+    private var androidCallCallback: AndroidCallCallback? = null
 
 
     val _callingState = MutableStateFlow(CallingState())
@@ -52,7 +58,17 @@ class CallManager(
 
     fun declineCall() = androidCallCallback?.declineCall()
 
-    fun startCall(number: Uri) = telecomManager.placeCall(number, null)
+    @SuppressLint("MissingPermission")
+    fun startCall(number: Uri) {
+
+        val phoneHandle = runBlocking { userPreferences.getDefaultPhoneHandle().first() }
+
+        val bundle = Bundle().apply {
+            putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, phoneHandle)
+        }
+
+        telecomManager.placeCall(number, bundle)
+    }
 
 
     fun hangupOngoingCall() = androidCallCallback?.hangupOngoingCall()
@@ -125,6 +141,7 @@ interface AndroidCallCallback {
     fun startTone(char: Char)
     fun toggleHold()
 }
+
 interface CallServiceCallback {
     fun toggleMute(mute: Boolean)
     fun switchAudioRoute(route: AudioRoute)

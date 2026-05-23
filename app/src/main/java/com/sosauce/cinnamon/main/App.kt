@@ -14,6 +14,8 @@ import coil3.SingletonImageLoader
 import coil3.request.crossfade
 import coil3.video.VideoFrameDecoder
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.data.fetchers.RecipientPhoneKeyer
+import com.sosauce.cinnamon.data.fetchers.RecipientPhotoFetcher
 import com.sosauce.cinnamon.data.managers.CallNotificationManager
 import com.sosauce.cinnamon.data.managers.MessageNotificationManager
 import com.sosauce.cinnamon.di.appModule
@@ -34,10 +36,18 @@ class App : Application(), KoinStartup, SingletonImageLoader.Factory {
         val callsName = getString(R.string.calls)
         val importance = NotificationManager.IMPORTANCE_HIGH
         val ringtone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-        val messageChannel = NotificationChannel(MessageNotificationManager.INCOMING_MESSAGES_CHANNEL_ID, messagesName, importance).apply {
+        val messageChannel = NotificationChannel(
+            MessageNotificationManager.INCOMING_MESSAGES_CHANNEL_ID,
+            messagesName,
+            importance
+        ).apply {
             group = MessageNotificationManager.MESSAGES_GROUP
         }
-        val callChannel = NotificationChannel(CallNotificationManager.CALLS_CHANNEL_ID, callsName, importance).apply {
+        val callChannel = NotificationChannel(
+            CallNotificationManager.CALLS_CHANNEL_ID,
+            callsName,
+            importance
+        ).apply {
             group = CallNotificationManager.CALLS_GROUP
             setSound(
                 ringtone,
@@ -48,8 +58,18 @@ class App : Application(), KoinStartup, SingletonImageLoader.Factory {
             )
         }
 
-        notificationManager.createNotificationChannelGroup(NotificationChannelGroup(MessageNotificationManager.MESSAGES_GROUP, getString(R.string.messages)))
-        notificationManager.createNotificationChannelGroup(NotificationChannelGroup(CallNotificationManager.CALLS_GROUP, getString(R.string.calls)))
+        notificationManager.createNotificationChannelGroup(
+            NotificationChannelGroup(
+                MessageNotificationManager.MESSAGES_GROUP,
+                getString(R.string.messages)
+            )
+        )
+        notificationManager.createNotificationChannelGroup(
+            NotificationChannelGroup(
+                CallNotificationManager.CALLS_GROUP,
+                getString(R.string.calls)
+            )
+        )
 
         notificationManager.createNotificationChannel(messageChannel)
         notificationManager.createNotificationChannel(callChannel)
@@ -64,7 +84,11 @@ class App : Application(), KoinStartup, SingletonImageLoader.Factory {
 
     override fun newImageLoader(context: PlatformContext): ImageLoader {
         return ImageLoader.Builder(context)
-            .components { add(VideoFrameDecoder.Factory()) }
+            .components {
+                add(RecipientPhoneKeyer())
+                add(RecipientPhotoFetcher.Factory())
+                add(VideoFrameDecoder.Factory())
+            }
             .crossfade(true)
             .build()
     }

@@ -7,7 +7,6 @@ import android.app.WallpaperManager
 import android.app.role.RoleManager
 import android.content.ContentProviderOperation
 import android.content.ContentResolver
-import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.database.ContentObserver
@@ -15,8 +14,6 @@ import android.net.Uri
 import android.os.Build
 import android.provider.BlockedNumberContract
 import android.provider.BlockedNumberContract.BlockedNumbers
-import android.provider.ContactsContract
-import android.provider.ContactsContract.Contacts
 import android.provider.ContactsContract.PhoneLookup
 import android.provider.OpenableColumns
 import android.provider.Telephony
@@ -24,17 +21,13 @@ import android.provider.Telephony.Mms
 import android.provider.Telephony.Sms
 import android.telecom.TelecomManager
 import android.telephony.PhoneNumberUtils
-import android.telephony.SubscriptionManager
 import android.text.format.DateFormat
 import android.text.format.DateUtils
 import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
@@ -51,7 +44,6 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -60,14 +52,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import androidx.core.content.contentValuesOf
 import androidx.core.net.toUri
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
@@ -81,9 +70,7 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeEffect
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.FileNotFoundException
@@ -103,6 +90,12 @@ import kotlin.time.toDuration
 
 val Context.appVersion
     get() = packageManager.getPackageInfo(packageName, 0).versionName
+
+inline fun <T> List<T>.thenIf(
+    condition: Boolean,
+    crossinline block: List<T>.() -> List<T>
+): List<T> = if (condition) block() else this
+
 fun Long.toDate(): String {
 
 
@@ -156,6 +149,7 @@ fun Long.secondsToDuration(): String {
 
     return "$finalTime${seconds}s"
 }
+
 // I have way too many functions to convert time and date lmao needs cleanup
 fun Long.toStopwatch(
     durationUnit: DurationUnit = DurationUnit.MILLISECONDS
@@ -203,17 +197,20 @@ fun String.getContactNameOrNothing(context: Context): String {
 /**
  * Formats the number this function is called on, if it's called on a non-number, it will do nothing.
  */
-fun String.beautifyNumber() = PhoneNumberUtils.formatNumber(this, Locale.getDefault().country) ?: this
+fun String.beautifyNumber() =
+    PhoneNumberUtils.formatNumber(this, Locale.getDefault().country) ?: this
 
 /**
  * Gets or creates a thread ID based on the number this function is called on. Wrapper around [Telephony.Threads.getOrCreateThreadId]
  */
-fun String.getThreadIdOrCreate(context: Context) = Telephony.Threads.getOrCreateThreadId(context, setOf(this))
+fun String.getThreadIdOrCreate(context: Context) =
+    Telephony.Threads.getOrCreateThreadId(context, setOf(this))
 
 /**
  * Gets or creates a thread ID based on the number this function is called on but this one is multiple addresses. Wrapper around [Telephony.Threads.getOrCreateThreadId]
  */
-fun List<String>.getThreadIdOrCreate(context: Context) = Telephony.Threads.getOrCreateThreadId(context, this.toSet())
+fun List<String>.getThreadIdOrCreate(context: Context) =
+    Telephony.Threads.getOrCreateThreadId(context, this.toSet())
 
 fun Long.getAddressFromThreadId(context: Context): String {
     context.contentResolver.query(
@@ -256,50 +253,37 @@ fun String.getContactId(context: Context): Long {
     return -1
 }
 
-/**
- * Optimized using PhoneLookup + only one query, so should be pretty safe to call inna loop
- */
-fun String.getContactPfpFromNumber(
-    context: Context,
-    highRes: Boolean = true
-): Uri {
-
-    if (this.isEmpty()) return Uri.EMPTY
-
-
-    val uri = Uri.withAppendedPath(
-        PhoneLookup.CONTENT_FILTER_URI,
-        Uri.encode(this)
-    )
-
-    val photoPath = if (highRes) PhoneLookup.PHOTO_URI else PhoneLookup.PHOTO_THUMBNAIL_URI
-
-    context.contentResolver.query(
-        uri,
-        arrayOf(photoPath),
-        null,
-        null
-    )?.use { cursor ->
-
-        val photoColumn = cursor.getColumnIndexOrThrow(photoPath)
-
-        if (cursor.moveToFirst()) {
-            return cursor.getString(photoColumn)?.toUri() ?: Uri.EMPTY
-        }
-
-    }
-
-    return Uri.EMPTY
-
-
-}
-
-fun Long.getContactPfpUriFromId(): Uri {
-    if (this < 0) return Uri.EMPTY
-    val contactUri = ContentUris.withAppendedId(Contacts.CONTENT_URI, this)
-    val photoUri = Uri.withAppendedPath(contactUri, Contacts.Photo.DISPLAY_PHOTO)
-    return photoUri
-}
+//fun String.getContactPfpFromNumber(
+//    context: Context,
+//    highRes: Boolean = true
+//): Uri {
+//
+//    if (this.isEmpty()) return Uri.EMPTY
+//
+//
+//    val uri = Uri.withAppendedPath(
+//        PhoneLookup.CONTENT_FILTER_URI,
+//        Uri.encode(this)
+//    )
+//
+//    val photoPath = if (highRes) PhoneLookup.PHOTO_URI else PhoneLookup.PHOTO_THUMBNAIL_URI
+//
+//    context.contentResolver.query(
+//        uri,
+//        arrayOf(photoPath),
+//        null,
+//        null
+//    )?.use { cursor ->
+//
+//        val photoColumn = cursor.getColumnIndexOrThrow(photoPath)
+//
+//        if (cursor.moveToFirst()) {
+//            return cursor.getString(photoColumn)?.toUri() ?: Uri.EMPTY
+//        }
+//
+//    }
+//    return Uri.EMPTY
+//}
 
 // Arranged from Fossify
 fun Context.getMMSSize(uri: Uri): Long {
@@ -314,7 +298,6 @@ fun Context.getMMSSize(uri: Uri): Long {
 
     return length
 }
-
 
 
 fun Modifier.thenIf(
@@ -414,8 +397,6 @@ fun Modifier.cuteHazeEffect(
 )
 
 
-
-
 fun Long.toShortDate(context: Context): String {
 
     val zoneId = ZoneId.systemDefault()
@@ -427,16 +408,15 @@ fun Long.toShortDate(context: Context): String {
             val is24Hour = DateFormat.is24HourFormat(context)
             if (is24Hour) "HH:mm" else "hh:mm a"
         }
+
         else -> "MMM dd"
     }
-
 
 
     val formatter = DateTimeFormatter.ofPattern(pattern, Locale.getDefault())
     return date.format(formatter)
 
 }
-
 
 
 fun Activity.requestRole(
@@ -477,8 +457,6 @@ fun Activity.hasBothRoles(): Boolean {
 }
 
 
-
-
 fun getMmsText(
     context: Context,
     id: String
@@ -513,16 +491,19 @@ inline fun <E> List<E>.copyMutate(block: MutableList<E>.() -> Unit): List<E> {
 inline fun <E> Set<E>.copyMutate(block: MutableSet<E>.() -> Unit): Set<E> {
     return toMutableSet().apply(block)
 }
+
 fun String.formateEventDate(): String {
     return when {
         startsWith("--") -> {
             val monthDay = MonthDay.parse(this)
             monthDay.format(DateTimeFormatter.ofPattern("MMMM d", Locale.getDefault()))
         }
+
         length == 10 -> {
             val parsedDate = LocalDate.parse(this)
             parsedDate.format(DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.getDefault()))
         }
+
         else -> this
     }
 }
@@ -548,7 +529,9 @@ fun String.formateEventDate(): String {
 fun CuteRoundedCornerShape(
     top: Dp,
     bottom: Dp
-): Shape = RoundedCornerShape(topStart = top, topEnd = top, bottomEnd = bottom, bottomStart = bottom)
+): Shape =
+    RoundedCornerShape(topStart = top, topEnd = top, bottomEnd = bottom, bottomStart = bottom)
+
 @Composable
 fun rememberFocusRequester(): FocusRequester {
     return remember { FocusRequester() }
@@ -647,8 +630,10 @@ fun Context.getAdaptivePrimaryColor(fallbackColor: Color): Color {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> dynamicDarkColorScheme(this).primary
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 -> {
             val manager = WallpaperManager.getInstance(this)
-            manager.getWallpaperColors(WallpaperManager.FLAG_SYSTEM)?.primaryColor?.toArgb()?.let { Color(it) } ?: fallbackColor
+            manager.getWallpaperColors(WallpaperManager.FLAG_SYSTEM)?.primaryColor?.toArgb()
+                ?.let { Color(it) } ?: fallbackColor
         }
+
         else -> fallbackColor
     }
 
@@ -663,16 +648,22 @@ fun MenuDefaults.getItemShape(
     index: Int,
     lastIndex: Int
 ): Shape {
-    return when(index) {
+    return when (index) {
         0 -> leadingItemShape
         lastIndex -> trailingItemShape
         else -> middleItemShape
     }
 }
 
-fun Uri.isImage(context: Context): Boolean = context.contentResolver.getType(this)?.startsWith("image/") == true
-fun Uri.isVideo(context: Context): Boolean = context.contentResolver.getType(this)?.startsWith("video/") == true
-fun Uri.isVcard(context: Context): Boolean = context.contentResolver.getType(this)?.endsWith("vCard") == true || context.contentResolver.getType(this)?.endsWith("x-vCard") == true
+fun Uri.isImage(context: Context): Boolean =
+    context.contentResolver.getType(this)?.startsWith("image/") == true
+
+fun Uri.isVideo(context: Context): Boolean =
+    context.contentResolver.getType(this)?.startsWith("video/") == true
+
+fun Uri.isVcard(context: Context): Boolean = context.contentResolver.getType(this)
+    ?.endsWith("vCard") == true || context.contentResolver.getType(this)
+    ?.endsWith("x-vCard") == true
 
 
 fun Uri.getVcfName(context: Context): String? {
@@ -685,6 +676,7 @@ fun Uri.getVcfName(context: Context): String? {
     }
     return null
 }
+
 // Source - https://stackoverflow.com/a/25005243
 // Posted by Stefan Haustein
 // Retrieved 2026-02-25, License - CC BY-SA 3.0
@@ -692,11 +684,13 @@ fun Uri.getFileName(context: Context): String? {
 
     var result: String? = null
     if (scheme == "content") {
-        context.contentResolver.query(this, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                result = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+        context.contentResolver.query(this, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+            ?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    result =
+                        cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+                }
             }
-        }
     }
     if (result == null) {
         result = path
@@ -707,7 +701,7 @@ fun Uri.getFileName(context: Context): String? {
 }
 
 fun Context.toLocalizedTab(tab: String): String {
-    return when(tab) {
+    return when (tab) {
         DefaultTabOption.MESSAGES -> getString(R.string.messages)
         DefaultTabOption.CONTACTS -> getString(R.string.contacts)
         DefaultTabOption.DIALER -> getString(R.string.dialer)
@@ -717,13 +711,14 @@ fun Context.toLocalizedTab(tab: String): String {
 }
 
 fun String.tabToScreen(): Screen {
-    return when(this) {
+    return when (this) {
         DefaultTabOption.MESSAGES -> Screen.Messages
         DefaultTabOption.CONTACTS -> Screen.Contacts
         DefaultTabOption.DIALER -> Screen.Dialer
         DefaultTabOption.DIALPAD -> Screen.Dialpad()
         else -> throw IllegalArgumentException("Not a valid tab!")
-    }}
+    }
+}
 
 
 fun NavBackStack<NavKey>.navigateBack() {

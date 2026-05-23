@@ -1,9 +1,9 @@
 package com.sosauce.cinnamon.di
 
+import android.content.Context
+import android.telecom.TelecomManager
 import androidx.room.Room
 import androidx.work.WorkManager
-import com.google.i18n.phonenumbers.PhoneNumberUtil
-import com.google.i18n.phonenumbers.geocoding.PhoneNumberOfflineGeocoder
 import com.sosauce.cinnamon.data.contact_settings.ContactSettingsDao
 import com.sosauce.cinnamon.data.contact_settings.ContactSettingsDatabase
 import com.sosauce.cinnamon.data.conversation_settings.ConversationSettingsDao
@@ -71,6 +71,10 @@ val appModule = module {
 
     single { CoroutineScope(SupervisorJob()) }
     single { WorkManager.getInstance(androidContext()) }
+
+    single<TelecomManager> {
+        androidContext().getSystemService(Context.TELECOM_SERVICE) as TelecomManager
+    }
 
     singleOf(::UserPreferences)
     singleOf(::CallManager)

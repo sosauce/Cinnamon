@@ -2,15 +2,10 @@
 
 package com.sosauce.cinnamon.activities
 
-import android.app.Activity
-import android.app.ComponentCaller
-import android.content.Intent
 import android.os.Bundle
-import android.os.PersistableBundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,14 +29,13 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.presentation.navigation.Screen
 import com.sosauce.cinnamon.presentation.screens.contacts.ContactListItem
 import com.sosauce.cinnamon.presentation.screens.contacts.ContactsViewModel
 import com.sosauce.cinnamon.presentation.shared_components.NoXFound
 import com.sosauce.cinnamon.utils.LazyListKeys
 import org.koin.androidx.compose.koinViewModel
 
-class ContactPickerActivity: ComponentActivity() {
+class ContactPickerActivity : ComponentActivity() {
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,7 +67,10 @@ class ContactPickerActivity: ComponentActivity() {
                                     item(LazyListKeys.FAVORITE_CONTACTS) {
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                                            modifier = Modifier.padding(
+                                                horizontal = 20.dp,
+                                                vertical = 10.dp
+                                            ),
                                         ) {
                                             Icon(
                                                 painter = painterResource(R.drawable.favorite_filled),
@@ -83,7 +80,10 @@ class ContactPickerActivity: ComponentActivity() {
                                             )
                                             Spacer(Modifier.width(5.dp))
                                             Text(
-                                                text = pluralStringResource(R.plurals.favorites, favorites.size),
+                                                text = pluralStringResource(
+                                                    R.plurals.favorites,
+                                                    favorites.size
+                                                ),
                                                 style = MaterialTheme.typography.bodyLargeEmphasized.copy(
                                                     color = MaterialTheme.colorScheme.primary
                                                 )
@@ -109,14 +109,19 @@ class ContactPickerActivity: ComponentActivity() {
                                 }
 
 
-                                nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }.toSortedMap().forEach { (letter, contacts) ->
+                                nonFavorites.groupBy {
+                                    it.displayName.firstOrNull()?.uppercaseChar() ?: '#'
+                                }.toSortedMap().forEach { (letter, contacts) ->
                                     item {
                                         Text(
                                             text = letter.toString(),
                                             style = MaterialTheme.typography.bodyLargeEmphasized.copy(
                                                 color = MaterialTheme.colorScheme.primary
                                             ),
-                                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+                                            modifier = Modifier.padding(
+                                                horizontal = 20.dp,
+                                                vertical = 10.dp
+                                            )
                                         )
                                     }
                                     items(
@@ -155,7 +160,6 @@ class ContactPickerActivity: ComponentActivity() {
 
 
     }
-
 
 
 }

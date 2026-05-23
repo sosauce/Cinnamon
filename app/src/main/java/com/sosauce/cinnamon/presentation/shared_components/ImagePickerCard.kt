@@ -6,7 +6,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -41,7 +40,7 @@ fun ImagePickerCard(
                 .padding(top = 12.dp, end = 12.dp),
             shape = RoundedCornerShape(24.dp),
 
-        ) {
+            ) {
             if (imagePath.isEmpty()) {
                 Icon(
                     painter = painterResource(R.drawable.add),

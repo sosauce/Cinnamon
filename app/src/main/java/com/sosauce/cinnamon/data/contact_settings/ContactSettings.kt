@@ -5,7 +5,8 @@ import androidx.room.PrimaryKey
 
 @Entity
 data class ContactSettings(
-    @PrimaryKey(autoGenerate = false)
+    @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
+    val contactId: Long = 0,
     val poster: String = ""
 )

@@ -13,7 +13,6 @@ import android.os.Looper
 import android.telecom.Call
 import android.telecom.CallAudioState
 import android.telecom.InCallService
-import android.telecom.TelecomManager
 import android.telecom.VideoProfile
 import android.telephony.SubscriptionManager
 import com.sosauce.cinnamon.R
@@ -26,12 +25,11 @@ import com.sosauce.cinnamon.domain.model.AudioRoute
 import com.sosauce.cinnamon.domain.model.CuteSimCard
 import com.sosauce.cinnamon.domain.states.CallState
 import kotlinx.coroutines.Runnable
-import kotlinx.coroutines.awaitCancellation
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.uuid.ExperimentalUuidApi
 
-class CallService: InCallService(), CallServiceCallback, AndroidCallCallback, KoinComponent {
+class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, KoinComponent {
 
 
     private lateinit var audioManager: AudioManager
@@ -59,16 +57,22 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback, Ko
                     callManager.updateCallState(CallState.RINGING)
                     callNotificationManager.createIncomingNotification(call.details)
                 }
+
                 Call.STATE_DIALING, Call.STATE_CONNECTING -> {
                     callManager.updateCallState(CallState.DIALING)
                     callNotificationManager.createOutgoingNotification(call.details)
                 }
+
                 Call.STATE_ACTIVE -> {
                     handler.post(runnable)
                     callManager.updateCallState(CallState.ONGOING)
                     callNotificationManager.createOngoingNotification(call.details)
                 }
-                Call.STATE_DISCONNECTED, Call.STATE_DISCONNECTING -> callManager.updateCallState(CallState.ENDED)
+
+                Call.STATE_DISCONNECTED, Call.STATE_DISCONNECTING -> callManager.updateCallState(
+                    CallState.ENDED
+                )
+
                 Call.STATE_HOLDING -> callManager.updateIsHolding(true)
                 else -> return
             }
@@ -78,7 +82,9 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback, Ko
 
         override fun onDetailsChanged(call: Call?, details: Call.Details?) {
             super.onDetailsChanged(call, details)
-            callManager.updateNumber(details?.handle?.schemeSpecificPart ?: getString(R.string.unknown))
+            callManager.updateNumber(
+                details?.handle?.schemeSpecificPart ?: getString(R.string.unknown)
+            )
         }
     }
 
@@ -145,27 +151,34 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback, Ko
         val notification = when (state) {
             Call.STATE_RINGING -> {
                 callManager.updateCallState(CallState.RINGING)
-                callManager.updateNumber(call.details?.handle?.schemeSpecificPart ?: getString(R.string.unknown))
+                callManager.updateNumber(
+                    call.details?.handle?.schemeSpecificPart ?: getString(R.string.unknown)
+                )
                 callNotificationManager.createIncomingNotification(call.details)
             }
+
             Call.STATE_DIALING, Call.STATE_CONNECTING -> {
                 callManager.updateCallState(CallState.DIALING)
                 launchCallActivity()
                 callNotificationManager.createOutgoingNotification(call.details)
             }
+
             Call.STATE_ACTIVE -> {
                 handler.post(runnable)
                 callManager.updateCallState(CallState.ONGOING)
                 callNotificationManager.createOngoingNotification(call.details)
             }
+
             Call.STATE_DISCONNECTED, Call.STATE_DISCONNECTING -> {
                 callManager.updateCallState(CallState.ENDED)
                 null
             }
+
             Call.STATE_HOLDING -> {
                 callManager.updateIsHolding(true)
                 null
             }
+
             else -> null
         }
 
@@ -194,7 +207,6 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback, Ko
         callManager.updateIsMuted(audioState?.isMuted == true)
 
 
-
         val supportedRoutes = audioState?.supportedRouteMask ?: 0
         val availableRoutes = listOf(
             CallAudioState.ROUTE_BLUETOOTH,
@@ -210,7 +222,9 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback, Ko
             } else null
         }
         val endpoint = AudioRoute(
-            name = CallAudioState.audioRouteToString(audioState?.route ?: CallAudioState.ROUTE_EARPIECE),
+            name = CallAudioState.audioRouteToString(
+                audioState?.route ?: CallAudioState.ROUTE_EARPIECE
+            ),
             type = audioState?.route ?: CallAudioState.ROUTE_EARPIECE
         )
         callManager.updateAvailableAudioRoutes(availableRoutes)

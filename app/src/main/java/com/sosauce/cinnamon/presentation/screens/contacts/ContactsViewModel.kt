@@ -4,16 +4,13 @@ package com.sosauce.cinnamon.presentation.screens.contacts
 
 import android.accounts.Account
 import android.app.Application
-import android.provider.ContactsContract
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastFilter
-import androidx.compose.ui.util.fastForEachIndexed
-import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.data.contact_settings.ContactSettingsDao
 import com.sosauce.cinnamon.data.datastore.UserPreferences
 import com.sosauce.cinnamon.domain.model.CuteContact
 import com.sosauce.cinnamon.domain.repository.ContactsRepository
@@ -27,9 +24,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -37,8 +32,9 @@ import kotlinx.coroutines.launch
 class ContactsViewModel(
     private val application: Application,
     private val contactsRepository: ContactsRepository,
-    private val userPreferences: UserPreferences
-): AndroidViewModel(application) {
+    private val userPreferences: UserPreferences,
+    private val contactSettingsDao: ContactSettingsDao
+) : AndroidViewModel(application) {
 
     private val _state = MutableStateFlow(ContactsState(isLoading = true))
     val state = _state.asStateFlow()
@@ -60,7 +56,7 @@ class ContactsViewModel(
                         if (search.isEmpty()) {
                             true
                         } else {
-                           it.searchIndex.contains(search, true)
+                            it.searchIndex.contains(search, true)
                         }
                     }
                     .fastFilter {
@@ -96,7 +92,7 @@ class ContactsViewModel(
 
 
     fun handleContactsAction(action: ContactsAction) {
-        when(action) {
+        when (action) {
             is ContactsAction.ChangeAccountFiltering -> {
                 _state.update {
                     it.copy(
@@ -104,11 +100,14 @@ class ContactsViewModel(
                     )
                 }
             }
+
             is ContactsAction.DeleteContacts -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     contactsRepository.deleteContacts(action.ids)
+                    contactSettingsDao.deleteContactsSettings(action.ids)
                 }
             }
+
             is ContactsAction.ToggleFavorite -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     contactsRepository.toggleFavorite(action.contacts)
@@ -133,6 +132,9 @@ data class ContactsState(
 
 sealed interface ContactsAction {
     data class ChangeAccountFiltering(val accountType: String) : ContactsAction
-    data class DeleteContacts(val ids: List<Long>) : ContactsAction
+    data class DeleteContacts(
+        val ids: List<Long>
+    ) : ContactsAction
+
     data class ToggleFavorite(val contacts: List<CuteContact>) : ContactsAction
 }

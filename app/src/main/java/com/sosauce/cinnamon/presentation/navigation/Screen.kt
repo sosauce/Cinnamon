@@ -2,15 +2,15 @@ package com.sosauce.cinnamon.presentation.navigation
 
 import androidx.navigation3.runtime.NavKey
 import com.sosauce.cinnamon.domain.model.CuteContact
-import com.sosauce.cinnamon.presentation.screens.messages.ConversationDetailsState
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class Screen: NavKey {
+sealed class Screen : NavKey {
 
 
     @Serializable
     data object Test : Screen()
+
     @Serializable
     data object Messages : Screen()
 

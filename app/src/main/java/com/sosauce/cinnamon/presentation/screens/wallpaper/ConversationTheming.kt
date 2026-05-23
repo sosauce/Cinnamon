@@ -61,29 +61,33 @@ fun ConversationTheming(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showColorPicker by remember { mutableStateOf(false) }
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+    val imagePicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
 
-        if (uri == null) return@rememberLauncherForActivityResult
+            if (uri == null) return@rememberLauncherForActivityResult
 
-        scope.launch(Dispatchers.IO) {
+            scope.launch(Dispatchers.IO) {
 
-            File(state.settings.wallpaper).delete()
+                File(state.settings.wallpaper).delete()
 
-            val file = File(context.filesDir, "wallpaper_${threadId}_${System.currentTimeMillis()}.jpg")
+                val file = File(
+                    context.filesDir,
+                    "wallpaper_${threadId}_${System.currentTimeMillis()}.jpg"
+                )
 
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                file.outputStream().use { output -> input.copyTo(output) }
-            }
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    file.outputStream().use { output -> input.copyTo(output) }
+                }
 
-            onHandleConversationSettingsActions(
-                ConversationSettingActions.UpsertConversationSettings(
-                    state.settings.copy(
-                        wallpaper = file.path
+                onHandleConversationSettingsActions(
+                    ConversationSettingActions.UpsertConversationSettings(
+                        state.settings.copy(
+                            wallpaper = file.path
+                        )
                     )
                 )
-            )
+            }
         }
-    }
 
     if (showColorPicker) {
         ColorPickerDialog(
@@ -168,7 +172,8 @@ fun ConversationTheming(
             }
 
             HeaderText("Chat color")
-            val color = if (state.settings.color != -1) Color(state.settings.color) else MaterialTheme.colorScheme.surfaceContainer
+            val color =
+                if (state.settings.color != -1) Color(state.settings.color) else MaterialTheme.colorScheme.surfaceContainer
             Card(
                 onClick = { showColorPicker = true },
                 shape = RoundedCornerShape(24.dp),
@@ -184,7 +189,8 @@ fun ConversationTheming(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    val icon = if (state.settings.color != -1) R.drawable.edit_filled else R.drawable.colorize
+                    val icon =
+                        if (state.settings.color != -1) R.drawable.edit_filled else R.drawable.colorize
 
                     Icon(
                         painter = painterResource(icon),

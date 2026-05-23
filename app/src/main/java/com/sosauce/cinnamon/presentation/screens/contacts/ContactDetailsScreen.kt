@@ -141,7 +141,11 @@ fun SharedTransitionScope.ContactDetailsScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        onHandleContactDetailsAction(ContactDetailsAction.BlockContact(blockEmailsToo))
+                        onHandleContactDetailsAction(
+                            ContactDetailsAction.BlockContact(
+                                blockEmailsToo
+                            )
+                        )
                         showBlockDialog = false
                     },
                     shapes = ButtonDefaults.shapes()
@@ -150,14 +154,14 @@ fun SharedTransitionScope.ContactDetailsScreen(
                 }
             },
             text = {
-                Column{
-                    Text(stringResource(R.string.block_contact_u_sure,state.contact.displayName))
+                Column {
+                    Text(stringResource(R.string.block_contact_u_sure, state.contact.displayName))
 
                     val corners by animateDpAsState(
                         if (blockEmailsToo) 50.dp else 12.dp
                     )
                     val color by animateColorAsState(
-                        if (blockEmailsToo) MaterialTheme.colorScheme.primary else  MaterialTheme.colorScheme.surfaceContainerHighest
+                        if (blockEmailsToo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest
                     )
 
                     Button(
@@ -274,18 +278,23 @@ fun SharedTransitionScope.ContactDetailsScreen(
                                                     option.onClick()
                                                     showMoreOptions = false
                                                 },
-                                                shape = MenuDefaults.getItemShape(index, moreOptions.lastIndex),
+                                                shape = MenuDefaults.getItemShape(
+                                                    index,
+                                                    moreOptions.lastIndex
+                                                ),
                                                 leadingIcon = {
                                                     Icon(
                                                         painter = painterResource(option.icon),
                                                         contentDescription = null,
-                                                        tint = option.tint ?: LocalContentColor.current
+                                                        tint = option.tint
+                                                            ?: LocalContentColor.current
                                                     )
                                                 },
                                                 text = {
                                                     Text(
                                                         text = stringResource(option.text),
-                                                        color = option.tint ?: LocalContentColor.current
+                                                        color = option.tint
+                                                            ?: LocalContentColor.current
                                                     )
                                                 }
                                             )

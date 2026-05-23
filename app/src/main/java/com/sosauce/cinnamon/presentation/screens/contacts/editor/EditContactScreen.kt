@@ -11,7 +11,6 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
@@ -33,6 +32,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -41,7 +42,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -66,6 +66,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
@@ -73,10 +74,10 @@ import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.contact_settings.ContactSettingsActions
 import com.sosauce.cinnamon.domain.model.CuteContact
-import com.sosauce.cinnamon.presentation.navigation.Screen
 import com.sosauce.cinnamon.presentation.shared_components.ImagePickerCard
 import com.sosauce.cinnamon.presentation.shared_components.buttons.CuteNavigationButtonSurface
 import com.sosauce.cinnamon.utils.SharedTransitionKeys
+import com.sosauce.cinnamon.utils.bouncySpec
 import com.sosauce.cinnamon.utils.copyMutate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -94,29 +95,33 @@ fun SharedTransitionScope.EditContactScreen(
     var contact by retain { mutableStateOf(state.contact) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+    val imagePicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
 
-        if (uri == null) return@rememberLauncherForActivityResult
+            if (uri == null) return@rememberLauncherForActivityResult
 
-        scope.launch(Dispatchers.IO) {
+            scope.launch(Dispatchers.IO) {
 
-            File(state.settings.poster).delete()
+                File(state.settings.poster).delete()
 
-            val file = File(context.filesDir, "poster_${state.contact.id}_${System.currentTimeMillis()}.jpg")
+                val file = File(
+                    context.filesDir,
+                    "poster_${state.contact.id}_${System.currentTimeMillis()}.jpg"
+                )
 
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                file.outputStream().use { output -> input.copyTo(output) }
-            }
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    file.outputStream().use { output -> input.copyTo(output) }
+                }
 
-            onHandleContactSettingsAction(
-                ContactSettingsActions.UpsertContactSettings(
-                    state.settings.copy(
-                        poster = file.path
+                onHandleContactSettingsAction(
+                    ContactSettingsActions.UpsertContactSettings(
+                        state.settings.copy(
+                            poster = file.path
+                        )
                     )
                 )
-            )
+            }
         }
-    }
 
     Scaffold(
         bottomBar = {
@@ -266,11 +271,11 @@ fun SharedTransitionScope.EditContactScreen(
 
             ContactDataSection(
                 items = contact.details.phoneNumbers,
+                keyboardType = KeyboardType.Phone,
                 labelRes = R.string.phone,
                 iconRes = R.drawable.phone,
                 addLabelRes = R.string.add_phone,
                 valueProvider = { it.number },
-
                 onValueChange = { index, value ->
                     contact = contact.copy(
                         details = contact.details.copy(
@@ -308,6 +313,7 @@ fun SharedTransitionScope.EditContactScreen(
 
             ContactDataSection(
                 items = contact.details.emails,
+                keyboardType = KeyboardType.Email,
                 labelRes = R.string.email,
                 iconRes = R.drawable.email,
                 addLabelRes = R.string.add_email,
@@ -350,6 +356,7 @@ fun SharedTransitionScope.EditContactScreen(
 
             ContactDataSection(
                 items = contact.details.addresses,
+                keyboardType = KeyboardType.PostalAddress,
                 labelRes = R.string.address,
                 iconRes = R.drawable.address,
                 addLabelRes = R.string.add_address,
@@ -396,7 +403,6 @@ fun SharedTransitionScope.EditContactScreen(
                 iconRes = R.drawable.website,
                 addLabelRes = R.string.add_website,
                 valueProvider = { it.website },
-
                 onValueChange = { index, value ->
                     contact = contact.copy(
                         details = contact.details.copy(
@@ -454,6 +460,7 @@ fun SharedTransitionScope.EditContactScreen(
                 }
             }
 
+
             Spacer(Modifier.weight(1f))
 
             // ADD BUTTONS
@@ -461,7 +468,6 @@ fun SharedTransitionScope.EditContactScreen(
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
                 verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
-
                 AddDataButton(
                     isVisible = contact.details.phoneNumbers.isEmpty(),
                     icon = R.drawable.phone,
@@ -556,8 +562,8 @@ private fun AddDataButton(
 ) {
     AnimatedVisibility(
         visible = isVisible,
-        enter = scaleIn(),
-        exit = scaleOut()
+        enter = scaleIn(bouncySpec()),
+        exit = scaleOut(bouncySpec())
     ) {
         Button(
             onClick = onClick,
@@ -572,10 +578,12 @@ private fun AddDataButton(
         }
     }
 }
+
 @Composable
 private fun ContactEditTextField(
     modifier: Modifier = Modifier,
     value: String,
+    keyboardType: KeyboardType = KeyboardType.Text,
     @StringRes label: Int,
     @DrawableRes leadingIcon: Int,
     onValueChange: (String) -> Unit,
@@ -598,6 +606,10 @@ private fun ContactEditTextField(
                 contentDescription = null
             )
         },
+        lineLimits = TextFieldLineLimits.SingleLine,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = keyboardType
+        ),
         trailingIcon = {
             if (onClickRemove != null) {
                 IconButton(
@@ -623,9 +635,10 @@ private fun EditContactPfp(
     onRemoveImage: () -> Unit
 ) {
 
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        uri?.let { onPfpSelected(it) }
-    }
+    val imagePicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            uri?.let { onPfpSelected(it) }
+        }
     Box(
         modifier
             .size(170.dp)
@@ -655,8 +668,8 @@ private fun EditContactPfp(
         }
         AnimatedVisibility(
             visible = pfp != Uri.EMPTY,
-            enter = scaleIn(),
-            exit = scaleOut(),
+            enter = scaleIn(bouncySpec()),
+            exit = scaleOut(bouncySpec()),
             modifier = Modifier.align(Alignment.TopEnd)
         ) {
             FilledIconButton(
@@ -670,9 +683,11 @@ private fun EditContactPfp(
         }
     }
 }
+
 @Composable
 private fun <T> ContactDataSection(
     items: List<T>,
+    keyboardType: KeyboardType = KeyboardType.Text,
     @StringRes labelRes: Int,
     @DrawableRes iconRes: Int,
     @StringRes addLabelRes: Int,
@@ -692,6 +707,7 @@ private fun <T> ContactDataSection(
                 items.fastForEachIndexed { index, item ->
                     ContactEditTextField(
                         value = valueProvider(item),
+                        keyboardType = keyboardType,
                         label = labelRes,
                         leadingIcon = iconRes,
                         onValueChange = { newValue -> onValueChange(index, newValue) },

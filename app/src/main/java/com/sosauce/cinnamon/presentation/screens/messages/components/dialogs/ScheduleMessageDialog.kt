@@ -58,13 +58,15 @@ fun ScheduleMessageDialog(
                 }
             ) { DatePicker(datePickerState) }
         }
+
         ScheduleStep.TIME -> {
             TimePickerDialog(
                 onDismissRequest = { step = ScheduleStep.DATE },
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            val timeMillis = (timePickerState.hour * 60 * 60 * 1000) + (timePickerState.minute * 60 * 1000)
+                            val timeMillis =
+                                (timePickerState.hour * 60 * 60 * 1000) + (timePickerState.minute * 60 * 1000)
                             val dateMillis = datePickerState.selectedDateMillis ?: return@TextButton
                             val offsetMillis = ZoneId.systemDefault()
                                 .rules

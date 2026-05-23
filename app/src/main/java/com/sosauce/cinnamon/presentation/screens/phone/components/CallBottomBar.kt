@@ -4,7 +4,6 @@ package com.sosauce.cinnamon.presentation.screens.phone.components
 
 import android.telecom.CallAudioState
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -37,7 +35,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
@@ -67,7 +64,9 @@ fun CallBottomBar(
         AnimatedContent(
             targetState = paneContent,
             transitionSpec = {
-                slideInVertically(bouncySpec()) { it } + fadeIn() togetherWith slideOutVertically(bouncySpec()) { it } + fadeOut()
+                slideInVertically(bouncySpec()) { it } + fadeIn() togetherWith slideOutVertically(
+                    bouncySpec()
+                ) { it } + fadeOut()
             }
         ) {
             Box(
@@ -83,12 +82,14 @@ fun CallBottomBar(
                             onSendTone = { onCallAction(CallAction.StartTone(it)) },
                         )
                     }
+
                     DialerPaneContent.AUDIO_SWITCHER -> {
                         AudioSwitcher(
                             onCallAction = onCallAction,
                             routes = callUiState.availableAudioRoutes
                         )
                     }
+
                     DialerPaneContent.NOTHING -> Box(Modifier.fillMaxWidth()) {}
                 }
             }
@@ -128,7 +129,9 @@ fun CallBottomBar(
                         .animateWidth(interactionSources[0])
                 ) {
                     Icon(
-                        painter = if (callUiState.isMuted) painterResource(R.drawable.mic_off) else painterResource(R.drawable.mic),
+                        painter = if (callUiState.isMuted) painterResource(R.drawable.mic_off) else painterResource(
+                            R.drawable.mic
+                        ),
                         contentDescription = null
                     )
                 }

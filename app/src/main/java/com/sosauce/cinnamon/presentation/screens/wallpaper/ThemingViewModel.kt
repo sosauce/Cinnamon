@@ -35,7 +35,7 @@ class ThemingViewModel(
     }
 
     fun handleConversationSettingsActions(action: ConversationSettingActions) {
-        when(action) {
+        when (action) {
             is ConversationSettingActions.UpsertConversationSettings -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     conversationSettingsDao.upsertConversation(action.conversationSettings)

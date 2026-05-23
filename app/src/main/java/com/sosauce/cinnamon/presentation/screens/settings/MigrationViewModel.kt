@@ -3,9 +3,11 @@ package com.sosauce.cinnamon.presentation.screens.settings
 import android.app.Application
 import android.net.Uri
 import android.provider.ContactsContract
+import android.widget.Toast
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.domain.model.CuteContact
 import com.sosauce.cinnamon.domain.model.CuteContactDetails
 import com.sosauce.cinnamon.domain.repository.ContactsRepository
@@ -15,6 +17,7 @@ import ezvcard.parameter.EmailType
 import ezvcard.parameter.TelephoneType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MigrationViewModel(
     private val application: Application,
@@ -23,15 +26,23 @@ class MigrationViewModel(
 
 
     fun handleMigrationAction(action: MigrationAction) {
-        when(action) {
+        when (action) {
             is MigrationAction.ImportContacts -> {
+
+                Toast.makeText(
+                    application,
+                    application.getString(R.string.importing_contact),
+                    Toast.LENGTH_SHORT
+                ).show()
+
                 viewModelScope.launch(Dispatchers.IO) {
                     application.contentResolver.openInputStream(action.vCard)?.use { stream ->
                         val card = Ezvcard.parse(stream).all()
 
                         card.fastForEach { ezCard ->
                             val firstName = ezCard.structuredName?.given ?: ""
-                            val middleName = ezCard.structuredName?.additionalNames?.firstOrNull() ?: ""
+                            val middleName =
+                                ezCard.structuredName?.additionalNames?.firstOrNull() ?: ""
                             val lastName = ezCard.structuredName?.family ?: ""
                             val nickname = ezCard.nickname?.values?.firstOrNull() ?: ""
                             val organization = ezCard.organization?.values?.firstOrNull() ?: ""
@@ -40,7 +51,8 @@ class MigrationViewModel(
                             val phoneNumbers = ezCard.telephoneNumbers.mapIndexed { index, phone ->
                                 CuteContact.Phone(
                                     number = phone.text ?: "",
-                                    type = phone.types.firstOrNull()?.let { mapPhoneType(it) } ?: ContactsContract.CommonDataKinds.Phone.TYPE_OTHER,
+                                    type = phone.types.firstOrNull()?.let { mapPhoneType(it) }
+                                        ?: ContactsContract.CommonDataKinds.Phone.TYPE_OTHER,
                                     isDefault = index == 0
                                 )
                             }
@@ -48,7 +60,8 @@ class MigrationViewModel(
                             val emails = ezCard.emails.mapIndexed { index, email ->
                                 CuteContact.Email(
                                     email = email.value ?: "",
-                                    type = email.types.firstOrNull()?.let { mapEmailType(it) } ?: ContactsContract.CommonDataKinds.Email.TYPE_OTHER,
+                                    type = email.types.firstOrNull()?.let { mapEmailType(it) }
+                                        ?: ContactsContract.CommonDataKinds.Email.TYPE_OTHER,
                                     isDefault = index == 0
                                 )
                             }
@@ -62,7 +75,8 @@ class MigrationViewModel(
                                         address.postalCode,
                                         address.country
                                     ).joinToString(", "),
-                                    type = address.types.firstOrNull()?.let { mapAddressType(it) } ?: ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER,
+                                    type = address.types.firstOrNull()?.let { mapAddressType(it) }
+                                        ?: ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER,
                                     isDefault = index == 0
                                 )
                             }
@@ -93,14 +107,28 @@ class MigrationViewModel(
                                 note = notes,
                                 events = events
                             )
+
+                            val (accountType, accountName) = action.source
                             val cuteContact = CuteContact(
-                                details = details
+                                details = details,
+                                accountType = accountType,
+                                accountName = accountName
                             )
-                            contactsRepository.createOrEditContact(cuteContact, true)
+                            val success = contactsRepository.createOrEditContact(cuteContact)
+                            if (success) {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(
+                                        application,
+                                        application.getString(R.string.importing_contact_success),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
                         }
                     }
                 }
             }
+
             is MigrationAction.ImportCallLogs -> {
 
             }
@@ -132,7 +160,7 @@ class MigrationViewModel(
 
 sealed interface MigrationAction {
     data class ImportContacts(
-        val source: String,
+        val source: Pair<String, String>,
         val vCard: Uri
     ) : MigrationAction
 

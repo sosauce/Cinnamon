@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Application
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.data.contact_settings.ContactSettingsDao
 import com.sosauce.cinnamon.data.managers.CallManager
@@ -20,7 +19,7 @@ class CallingViewModel(
     private val application: Application,
     private val callManager: CallManager,
     private val contactSettingsDao: ContactSettingsDao
-): AndroidViewModel(application) {
+) : AndroidViewModel(application) {
 
 
     val state = callManager.callingState
@@ -29,7 +28,9 @@ class CallingViewModel(
     init {
         viewModelScope.launch(Dispatchers.IO) {
 
-            val poster = contactSettingsDao.getContactPoster(state.value.number.getContactId(application.applicationContext)) ?: ""
+            val poster =
+                contactSettingsDao.getContactPoster(state.value.number.getContactId(application.applicationContext))
+                    ?: ""
 
             callManager._callingState.update {
                 it.copy(
@@ -43,7 +44,7 @@ class CallingViewModel(
 
     @SuppressLint("MissingPermission")
     fun handleCallAction(action: CallAction) {
-        when(action) {
+        when (action) {
             is CallAction.LaunchCall -> {
                 val numberUri = "tel:${action.number}".toUri()
 
@@ -51,6 +52,7 @@ class CallingViewModel(
                     callManager.startCall(numberUri)
                 }
             }
+
             is CallAction.AnswerCall -> callManager.answerCall()
             is CallAction.DeclineCall -> callManager.declineCall()
             is CallAction.HangUp -> callManager.hangupOngoingCall()
@@ -86,8 +88,8 @@ sealed interface CallAction {
     data class StartTone(val char: Char) : CallAction
     data class ToggleMute(val mute: Boolean) : CallAction
     data class SwitchAudioTarget(val route: AudioRoute) : CallAction
-    data object AnswerCall: CallAction
-    data object DeclineCall: CallAction
-    data object ToggleHold: CallAction
-    data object HangUp: CallAction
+    data object AnswerCall : CallAction
+    data object DeclineCall : CallAction
+    data object ToggleHold : CallAction
+    data object HangUp : CallAction
 }

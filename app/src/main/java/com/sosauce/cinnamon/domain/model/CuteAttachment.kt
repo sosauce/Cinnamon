@@ -1,10 +1,6 @@
 package com.sosauce.cinnamon.domain.model
 
 import android.net.Uri
-import com.sosauce.cinnamon.domain.UriSerializer
-import kotlinx.serialization.SerialInfo
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Serializer
 
 data class CuteAttachment(
     val id: Long = 0,

@@ -7,7 +7,8 @@ import android.net.Uri
  */
 data class CuteVoicemail(
     val id: Long,
-    val address: String,
+    val number: String,
+    val displayName: String,
     val date: Long,
     val duration: Long,
     val uri: Uri,

@@ -7,7 +7,6 @@ import android.app.role.RoleManager
 import android.os.Build
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -24,7 +22,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -41,17 +38,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.presentation.screens.setup.components.SetupBottomBar
-import com.sosauce.cinnamon.presentation.shared_components.AppIcon
 import com.sosauce.cinnamon.utils.HOW_TO_ENABLE_RESTRCITED_PERMS
 import com.sosauce.cinnamon.utils.requestRole
 
@@ -135,7 +129,9 @@ fun SetupPermissions(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        painter = if (isSmsRoleHeld) painterResource(R.drawable.check) else painterResource(R.drawable.close),
+                        painter = if (isSmsRoleHeld) painterResource(R.drawable.check) else painterResource(
+                            R.drawable.close
+                        ),
                         contentDescription = null,
                         tint = if (isSmsRoleHeld) Color.Green.copy(0.85f) else Color.Red.copy(0.85f)
                     )
@@ -171,9 +167,13 @@ fun SetupPermissions(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        painter = if (isDialerRoleHeld) painterResource(R.drawable.check) else painterResource(R.drawable.close),
+                        painter = if (isDialerRoleHeld) painterResource(R.drawable.check) else painterResource(
+                            R.drawable.close
+                        ),
                         contentDescription = null,
-                        tint = if (isDialerRoleHeld) Color.Green.copy(0.85f) else Color.Red.copy(0.85f)
+                        tint = if (isDialerRoleHeld) Color.Green.copy(0.85f) else Color.Red.copy(
+                            0.85f
+                        )
                     )
                     Spacer(Modifier.width(10.dp))
                     Column {

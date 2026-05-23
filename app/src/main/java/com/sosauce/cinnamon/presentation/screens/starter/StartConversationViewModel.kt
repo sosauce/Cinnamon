@@ -8,7 +8,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import coil3.request.Disposable
 import com.sosauce.cinnamon.domain.model.CuteContact
 import com.sosauce.cinnamon.domain.repository.ContactsRepository
 import com.sosauce.cinnamon.utils.copyMutate
@@ -20,13 +19,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class StartConversationViewModel(
     private val contactsRepository: ContactsRepository
-): ViewModel() {
+) : ViewModel() {
 
     private val _state = MutableStateFlow(StartConversationState())
     val state = _state.asStateFlow()

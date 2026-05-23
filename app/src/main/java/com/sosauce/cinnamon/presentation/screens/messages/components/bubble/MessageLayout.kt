@@ -2,7 +2,6 @@ package com.sosauce.cinnamon.presentation.screens.messages.components.bubble
 
 import android.annotation.SuppressLint
 import android.provider.Telephony
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.expandVertically
@@ -22,15 +21,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
@@ -55,8 +50,9 @@ fun MessageLayout(
 ) {
 
     val config = LocalConfiguration.current
-    val alignment = if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX) Alignment.Start else Alignment.End
-    val verticalPadding = when(sandwichPosition) {
+    val alignment =
+        if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX) Alignment.Start else Alignment.End
+    val verticalPadding = when (sandwichPosition) {
         SandwichPosition.SOLO -> 5.dp
         else -> 1.dp
     }

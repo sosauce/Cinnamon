@@ -9,7 +9,8 @@ plugins {
 
 androidComponents {
     onVariants(selector().withBuildType("release")) { variant ->
-        val mainOutput = variant.outputs.single { it.outputType == VariantOutputConfiguration.OutputType.SINGLE }
+        val mainOutput =
+            variant.outputs.single { it.outputType == VariantOutputConfiguration.OutputType.SINGLE }
 
         @Suppress("UnstableApiUsage")
         mainOutput.outputFileName = "Cinnamon_${mainOutput.versionName.get()}.apk"
@@ -115,5 +116,4 @@ dependencies {
     implementation("androidx.glance:glance-appwidget:1.1.1")
     implementation("androidx.glance:glance-material3:1.1.1")
     implementation("io.github.developersyndicate:composense:alpha-1.0.0")
-
 }

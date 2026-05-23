@@ -3,35 +3,23 @@
 package com.sosauce.cinnamon.presentation.shared_components
 
 import androidx.annotation.DrawableRes
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
-import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
-import androidx.glance.appwidget.components.FilledButton
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.presentation.navigation.Screen
 import com.sosauce.cinnamon.utils.LocalScreen
@@ -75,7 +63,8 @@ fun SharedTransitionScope.ScreenSelection(
         screens.fastForEachIndexed { index, category ->
             val isActive = currentScreen == category.screen
 
-            val containerColor = if (isActive) MaterialTheme.colorScheme.primary else Color.Transparent
+            val containerColor =
+                if (isActive) MaterialTheme.colorScheme.primary else Color.Transparent
 
             Button(
                 onClick = {

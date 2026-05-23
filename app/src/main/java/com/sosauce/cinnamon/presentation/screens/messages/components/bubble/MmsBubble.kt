@@ -1,7 +1,6 @@
 package com.sosauce.cinnamon.presentation.screens.messages.components.bubble
 
 import android.content.Intent
-import android.net.Uri
 import android.provider.Telephony
 import android.text.format.Formatter
 import androidx.compose.foundation.background
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -29,11 +27,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import com.sosauce.cinnamon.R
@@ -44,7 +40,6 @@ import com.sosauce.cinnamon.presentation.screens.messages.ConversationActions
 import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
 import com.sosauce.cinnamon.utils.getVcfName
 import com.sosauce.cinnamon.utils.isVcard
-import ezvcard.Ezvcard
 
 @Composable
 fun MmsBubble(
@@ -98,11 +93,17 @@ private fun MmsAttachmentRouter(
 
 
     when {
-        details.attachmentType == AttachmentType.IMAGE -> ImageAttachment(image = uri, onHandleConversationActions = onHandleConversationActions)
+        details.attachmentType == AttachmentType.IMAGE -> ImageAttachment(
+            image = uri,
+            onHandleConversationActions = onHandleConversationActions
+        )
 
         details.attachmentType == AttachmentType.VIDEO -> VideoAttachment(video = uri)
 
-        details.attachmentType == AttachmentType.AUDIO -> AudioAttachment(audio = uri, bubbleColor = bubbleColor)
+        details.attachmentType == AttachmentType.AUDIO -> AudioAttachment(
+            audio = uri,
+            bubbleColor = bubbleColor
+        )
 
         uri.isVcard(context) -> {
             val contactName by remember {
@@ -115,7 +116,10 @@ private fun MmsAttachmentRouter(
                     .background(bubbleColor)
                     .clickable {
                         val intent = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(details.uri, context.contentResolver.getType(details.uri))
+                            setDataAndType(
+                                details.uri,
+                                context.contentResolver.getType(details.uri)
+                            )
                             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                         }
                         context.startActivity(intent)

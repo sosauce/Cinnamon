@@ -7,7 +7,7 @@ import android.telecom.Connection
 import androidx.annotation.RequiresApi
 
 @RequiresApi(Build.VERSION_CODES.R)
-class CuteCallScreeningService: CallScreeningService() {
+class CuteCallScreeningService : CallScreeningService() {
 
     override fun onScreenCall(callDetails: Call.Details) {
         val isIncoming = callDetails.callDirection == Call.Details.DIRECTION_INCOMING

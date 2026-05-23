@@ -5,7 +5,6 @@ package com.sosauce.cinnamon.presentation.screens.messages.components
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalFloatingToolbar
@@ -33,7 +32,7 @@ fun TextingUnavailableBar(
 
     val reasonIcon = when (reason) {
         TextingUnavailableReason.AIRPLANE_MODE_ON -> R.drawable.airplane_mode
-        TextingUnavailableReason.SHORT_CODE, TextingUnavailableReason.BLOCKED,-> R.drawable.block
+        TextingUnavailableReason.SHORT_CODE, TextingUnavailableReason.BLOCKED -> R.drawable.block
     }
 
     HorizontalFloatingToolbar(

@@ -6,19 +6,15 @@ import android.app.Service
 import android.content.Intent
 import android.net.Uri
 import android.os.IBinder
-import com.klinker.android.send_message.Settings
 import com.sosauce.cinnamon.data.telephony.CuteTelephonyManager
-import com.sosauce.cinnamon.domain.repository.MessagesRepository
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import org.koin.android.scope.serviceScope
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class QuickReplyService: Service(), KoinComponent {
+class QuickReplyService : Service(), KoinComponent {
 
     override fun onBind(intent: Intent?): IBinder? = null
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -30,7 +26,10 @@ class QuickReplyService: Service(), KoinComponent {
                 return START_NOT_STICKY
             }
 
-            val number = Uri.decode(intent.dataString!!.removePrefix("sms:").removePrefix("smsto:").removePrefix("mms").removePrefix("mmsto:").trim())
+            val number = Uri.decode(
+                intent.dataString!!.removePrefix("sms:").removePrefix("smsto:").removePrefix("mms")
+                    .removePrefix("mmsto:").trim()
+            )
             val text = intent.getStringExtra(Intent.EXTRA_TEXT)
             if (!text.isNullOrEmpty()) {
                 val addresses = listOf(number)

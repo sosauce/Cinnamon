@@ -3,17 +3,14 @@
 package com.sosauce.cinnamon.presentation.screens.messages.components.bottombar
 
 import android.net.Uri
-import android.provider.BlockedNumberContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
-import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -33,7 +30,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -49,7 +45,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorPosition
 import androidx.compose.material3.MenuDefaults
@@ -78,15 +73,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntRect
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupPositionProvider
-import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.datastore.rememberShowCharCount
@@ -95,8 +84,6 @@ import com.sosauce.cinnamon.data.schedulers.scheduled_messages.ScheduledMessage
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationActions
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationDetailsState
 import com.sosauce.cinnamon.presentation.screens.messages.components.AnimatedCounter
-import com.sosauce.cinnamon.presentation.screens.messages.components.TextingUnavailableBar
-import com.sosauce.cinnamon.presentation.screens.messages.components.TextingUnavailableReason
 import com.sosauce.cinnamon.presentation.screens.messages.components.dialogs.ScheduleMessageDialog
 import com.sosauce.cinnamon.utils.bouncySpec
 import com.sosauce.cinnamon.utils.selfAlignHorizontally
@@ -126,17 +113,20 @@ fun ConversationBottomBar(
     var cameraPicture by remember { mutableStateOf<Uri?>(null) }
 
 
-    val mediaSelector = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
-        viewModel.addAttachments(uris)
-    }
-    val systemCameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) {
-        val uri = cameraPicture ?: return@rememberLauncherForActivityResult
-        viewModel.addAttachments(listOf(uri))
-        cameraPicture = null
-    }
-    val documentsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-        viewModel.addAttachments(uris)
-    }
+    val mediaSelector =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
+            viewModel.addAttachments(uris)
+        }
+    val systemCameraLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) {
+            val uri = cameraPicture ?: return@rememberLauncherForActivityResult
+            viewModel.addAttachments(listOf(uri))
+            cameraPicture = null
+        }
+    val documentsLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+            viewModel.addAttachments(uris)
+        }
     val attachmentRotation by animateFloatAsState(
         targetValue = if (isActionPickerExpanded) 45f else 0f
     )
@@ -194,7 +184,9 @@ fun ConversationBottomBar(
             .fillMaxWidth(0.95f)
     ) {
         Popup(
-            popupPositionProvider = MenuDefaults.rememberDropdownMenuPopupPositionProvider(MenuAnchorPosition.Below)
+            popupPositionProvider = MenuDefaults.rememberDropdownMenuPopupPositionProvider(
+                MenuAnchorPosition.Below
+            )
         ) {
             FloatingActionButtonMenu(
                 expanded = isActionPickerExpanded,
@@ -316,7 +308,8 @@ fun ConversationBottomBar(
                         if (showCharCount) {
                             {
                                 val charCount = state.message.length
-                                val segmentCount = if (charCount <= 160) 1 else ceil(charCount / 160.0).toInt()
+                                val segmentCount =
+                                    if (charCount <= 160) 1 else ceil(charCount / 160.0).toInt()
                                 CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodySmallEmphasized) {
                                     Row {
                                         AnimatedCounter(charCount)

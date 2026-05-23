@@ -2,7 +2,6 @@ package com.sosauce.cinnamon.domain.model
 
 import android.provider.Telephony.Sms
 import com.sosauce.cinnamon.data.broadcasts.DeliveryReportsReceiver
-import kotlinx.serialization.Serializable
 
 /**
  * Define what a message is.

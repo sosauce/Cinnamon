@@ -9,7 +9,6 @@ import android.net.Uri
 import android.provider.BlockedNumberContract
 import android.provider.MediaStore
 import android.widget.Toast
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
@@ -35,31 +34,18 @@ import com.sosauce.cinnamon.domain.repository.ConversationsRepository
 import com.sosauce.cinnamon.utils.beautifyNumber
 import com.sosauce.cinnamon.utils.blockNumbers
 import com.sosauce.cinnamon.utils.getContactNameOrNothing
-import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.isShortCode
 import com.sosauce.cinnamon.utils.observe
 import com.sosauce.cinnamon.utils.toDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.plus
-import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 class ConversationDetailsViewModel(
@@ -73,7 +59,8 @@ class ConversationDetailsViewModel(
     private val messageNotificationManager: MessageNotificationManager
 ) : AndroidViewModel(application) {
 
-    private val _state = MutableStateFlow(ConversationDetailsState(isLoading = true, threadId = threadId))
+    private val _state =
+        MutableStateFlow(ConversationDetailsState(isLoading = true, threadId = threadId))
     val state = _state.asStateFlow()
 
     init {
@@ -88,7 +75,8 @@ class ConversationDetailsViewModel(
             }.collectLatest { messages ->
                 _state.update {
                     it.copy(
-                        messages = messages.sortedByDescending { it.date }.groupBy { it.date.toDate() },
+                        messages = messages.sortedByDescending { it.date }
+                            .groupBy { it.date.toDate() },
                         isLoading = false
                     )
                 }
@@ -96,42 +84,38 @@ class ConversationDetailsViewModel(
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            val number = state
-                .mapLatest { it.recipients }
-                .filter { it.isNotEmpty() }
-                .first()
-                .first()
-
-            _state.update {
-                it.copy(
-                    pfp = number.getContactPfpFromNumber(application)
-                )
-            }
-        }
-
-        viewModelScope.launch(Dispatchers.IO) {
             val threadRecipients = conversationsRepository.fetchThreadRecipients(threadId)
 
-            val isShortCode = if (threadRecipients.size > 1) false else threadRecipients.firstOrNull()?.isShortCode() == true
+            val isShortCode =
+                if (threadRecipients.size > 1) false else threadRecipients.firstOrNull()
+                    ?.isShortCode() == true
 
             _state.update {
                 it.copy(
                     recipients = threadRecipients,
-                    nameOrBeautifiedRecipients = threadRecipients.fastMap { it.getContactNameOrNothing(application).beautifyNumber() },
+                    nameOrBeautifiedRecipients = threadRecipients.fastMap {
+                        it.getContactNameOrNothing(
+                            application
+                        ).beautifyNumber()
+                    },
                     isShortCode = isShortCode
                 )
             }
 
-            application.contentResolver.observe(BlockedNumberContract.BlockedNumbers.CONTENT_URI).collectLatest {
-                if (state.value.recipients.size > 1) return@collectLatest
+            application.contentResolver.observe(BlockedNumberContract.BlockedNumbers.CONTENT_URI)
+                .collectLatest {
+                    if (state.value.recipients.size > 1) return@collectLatest
 
-                val number = state.value.recipients.firstOrNull() ?: return@collectLatest
-                _state.update {
-                    it.copy(
-                        isSoloRecipientBlocked = BlockedNumberContract.isBlocked(application, number)
-                    )
+                    val number = state.value.recipients.firstOrNull() ?: return@collectLatest
+                    _state.update {
+                        it.copy(
+                            isSoloRecipientBlocked = BlockedNumberContract.isBlocked(
+                                application,
+                                number
+                            )
+                        )
+                    }
                 }
-            }
         }
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -143,10 +127,11 @@ class ConversationDetailsViewModel(
         }
     }
 
-    fun deleteConversation() = viewModelScope.launch(Dispatchers.IO) { conversationsRepository.deleteConversation(threadId) }
+    fun deleteConversation() =
+        viewModelScope.launch(Dispatchers.IO) { conversationsRepository.deleteConversation(threadId) }
 
     fun handleConversationSettingsActions(action: ConversationSettingActions) {
-        when(action) {
+        when (action) {
             is ConversationSettingActions.UpsertConversationSettings -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     conversationSettingsDao.upsertConversation(action.conversationSettings)
@@ -156,12 +141,13 @@ class ConversationDetailsViewModel(
     }
 
     fun handleConversationActions(action: ConversationActions) {
-        when(action) {
+        when (action) {
             is ConversationActions.MarkAsRead -> {
                 viewModelScope.launch {
                     cuteTelephonyManager.markConversationAsRead(threadId)
                 }
             }
+
             is ConversationActions.SendMessage -> {
                 viewModelScope.launch {
                     cuteTelephonyManager.sendMessage(
@@ -174,7 +160,8 @@ class ConversationDetailsViewModel(
 
             is ConversationActions.ScheduleMessage -> {
                 viewModelScope.launch(Dispatchers.IO) {
-                    val scheduledMessageId = scheduledMessagesDao.upsertScheduledMessage(action.scheduledMessage)
+                    val scheduledMessageId =
+                        scheduledMessagesDao.upsertScheduledMessage(action.scheduledMessage)
                     val delay = action.scheduledMessage.sendAt - System.currentTimeMillis()
                     val request = OneTimeWorkRequestBuilder<SendMessageWorker>()
                         .setInitialDelay(delay, TimeUnit.MILLISECONDS)
@@ -184,11 +171,18 @@ class ConversationDetailsViewModel(
                             )
                         )
                         .build()
-                    workManager.enqueueUniqueWork("Scheduled message ID: $scheduledMessageId", ExistingWorkPolicy.KEEP, request)
+                    workManager.enqueueUniqueWork(
+                        "Scheduled message ID: $scheduledMessageId",
+                        ExistingWorkPolicy.KEEP,
+                        request
+                    )
                 }
             }
 
-            is ConversationActions.ClearThreadNotifications -> messageNotificationManager.clearThreadNotifications(threadId)
+            is ConversationActions.ClearThreadNotifications -> messageNotificationManager.clearThreadNotifications(
+                threadId
+            )
+
             is ConversationActions.ToggleBlock -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     if (state.value.recipients.size > 1) return@launch // can't block group chats (unless we block everyone but why)
@@ -216,7 +210,10 @@ class ConversationDetailsViewModel(
                         MediaStore.Images.Media.IS_PENDING to 1,
                     )
 
-                    val uri = application.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues) ?: return@launch
+                    val uri = application.contentResolver.insert(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        contentValues
+                    ) ?: return@launch
 
                     var bitmap: Bitmap? = null
 
@@ -231,7 +228,11 @@ class ConversationDetailsViewModel(
                         application.contentResolver.update(uri, contentValues, null, null)
 
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(application, application.getString(R.string.saved), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                application,
+                                application.getString(R.string.saved),
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     } catch (e: Exception) {
                         application.contentResolver.delete(uri, null, null)
@@ -243,14 +244,19 @@ class ConversationDetailsViewModel(
 
                 val scheduledMessages = action.messages.fastFilter { it.isScheduled }
 
-                viewModelScope.launch(Dispatchers.IO) { conversationsRepository.deleteMessages(action.messages) }
+                viewModelScope.launch(Dispatchers.IO) {
+                    conversationsRepository.deleteMessages(
+                        action.messages
+                    )
+                }
 
                 if (scheduledMessages.isNotEmpty()) {
                     viewModelScope.launch(Dispatchers.IO) {
-                        scheduledMessages.fastMap { scheduledMessagesDao.getScheduledMessageById(it.id) }.fastForEach {
-                            scheduledMessagesDao.deleteScheduledMessage(it)
-                            workManager.cancelUniqueWork("Scheduled message ID: ${it.id}")
-                        }
+                        scheduledMessages.fastMap { scheduledMessagesDao.getScheduledMessageById(it.id) }
+                            .fastForEach {
+                                scheduledMessagesDao.deleteScheduledMessage(it)
+                                workManager.cancelUniqueWork("Scheduled message ID: ${it.id}")
+                            }
                     }
 
                 }
@@ -271,7 +277,6 @@ data class ConversationDetailsState(
     val settings: ConversationSettings = ConversationSettings(),
     val messages: Map<String, List<CuteMessage>> = emptyMap(),
     val isSoloRecipientBlocked: Boolean = false, // Always false for GCs
-    val pfp: Uri = Uri.EMPTY,
     val isShortCode: Boolean = false
 )
 

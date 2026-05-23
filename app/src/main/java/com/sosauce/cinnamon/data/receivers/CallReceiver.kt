@@ -10,7 +10,7 @@ import com.sosauce.cinnamon.utils.HANGUP_ONGOING_CALL
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class CallReceiver: BroadcastReceiver(), KoinComponent {
+class CallReceiver : BroadcastReceiver(), KoinComponent {
 
     override fun onReceive(context: Context, intent: Intent?) {
 

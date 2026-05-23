@@ -12,6 +12,7 @@ const val SWITCH_AUDIO_SOURCE = "switch_audio_source"
 const val AUDIO_SOURCE = "audio_source"
 const val MUTE_SOURCE = "mute_source"
 const val FULL_SCREEN_INTENT = "full_screen_intent"
+
 // Googled "how many milliseconds in a day" lol
 const val ONE_DAY_IN_MILLIS = 8.64e+7
 const val EMOJI_REGEX = "(?:[\uD83C\uDF00-\uD83D\uDDFF]|[\uD83E\uDD00-\uD83E\uDDFF]|" +
@@ -27,7 +28,8 @@ const val EMOJI_REGEX = "(?:[\uD83C\uDF00-\uD83D\uDDFF]|[\uD83E\uDD00-\uD83E\uDD
         "[\u231A\u231B\u2328\u23CF\u23E9-\u23F3\u23F8-\u23FA]\uFE0F?)+"
 const val GITHUB_RELEASES = "https://github.com/sosauce/Cinnamon/releases"
 const val SUPPORT_PAGE = "https://sosauce.github.io/support/"
-const val HOW_TO_ENABLE_RESTRCITED_PERMS = "https://support.google.com/android/answer/12623953?hl=en"
+const val HOW_TO_ENABLE_RESTRCITED_PERMS =
+    "https://support.google.com/android/answer/12623953?hl=en"
 
 
 object CuteTheme {
@@ -66,6 +68,7 @@ object LazyListKeys {
     const val PINNED_CONVERSATIONS = "pinned_conversations"
     const val FAVORITE_CONTACTS = "FAVORITE_CONTACTS"
     const val GROUP_CHAT_BUTTON = "GROUP_CHAT_BUTTON"
+    const val VOICEMAIL = "VOICEMAIL"
 
 }
 

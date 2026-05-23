@@ -12,7 +12,7 @@ import com.sosauce.cinnamon.utils.THREAD_ID
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class MessageReplyReceiver: BroadcastReceiver(), KoinComponent {
+class MessageReplyReceiver : BroadcastReceiver(), KoinComponent {
     override fun onReceive(context: Context, intent: Intent) {
         val messagesNotificationManager by inject<MessageNotificationManager>()
         val threadId = intent.getLongExtra(THREAD_ID, -1L)

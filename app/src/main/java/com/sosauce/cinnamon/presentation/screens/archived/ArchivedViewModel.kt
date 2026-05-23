@@ -14,17 +14,15 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.collections.emptyList
 
 class ArchivedViewModel(
     private val userPreferences: UserPreferences,
     private val messagesRepository: MessagesRepository
-): ViewModel() {
+) : ViewModel() {
 
     private val _state = MutableStateFlow(ArchivedState(isLoading = true))
     val state = _state.asStateFlow()
@@ -58,7 +56,7 @@ class ArchivedViewModel(
     }
 
     fun handleThreadsAction(action: ConversationsAction) {
-        when(action) {
+        when (action) {
             is ConversationsAction.ArchiveConversations -> {
                 viewModelScope.launch {
                     userPreferences.toggleArchiveThreads(action.threadIds)

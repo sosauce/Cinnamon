@@ -18,24 +18,24 @@ class EditContactViewModel(
     private val contact: CuteContact,
     private val contactSettingsDao: ContactSettingsDao,
     private val contactsRepository: ContactsRepository
-): ViewModel() {
+) : ViewModel() {
 
     private val isCreateInsteadOfEdit = contact.id == 0L
-    private val _state = MutableStateFlow(EditContactState(contact, isCreateInsteadOfEdit = isCreateInsteadOfEdit))
-
+    private val _state =
+        MutableStateFlow(EditContactState(contact, isCreateInsteadOfEdit = isCreateInsteadOfEdit))
     val state = _state.asStateFlow()
 
 
-
-
-    // TODO CANT FETCH OR UPSERT SETTINGS FOR A CONTACTS THAT'S GETTING CREATED
     init {
-        viewModelScope.launch(Dispatchers.IO) {
-            contactSettingsDao.getContactSettings(contact.id).collectLatest { settings ->
-                _state.update {
-                    it.copy(
-                        settings = settings ?: ContactSettings(contact.id.toInt())
-                    )
+        // Can't fetch settings for a contact that doesn't exist yet
+        if (!isCreateInsteadOfEdit) {
+            viewModelScope.launch(Dispatchers.IO) {
+                contactSettingsDao.getContactSettings(contact.id).collectLatest { settings ->
+                    _state.update {
+                        it.copy(
+                            settings = settings ?: ContactSettings(contactId = contact.id)
+                        )
+                    }
                 }
             }
         }
@@ -43,7 +43,7 @@ class EditContactViewModel(
 
 
     fun handleContactSettingsAction(action: ContactSettingsActions) {
-        when(action) {
+        when (action) {
             is ContactSettingsActions.UpsertContactSettings -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     contactSettingsDao.upsertContact(action.contactSettings)
@@ -53,10 +53,10 @@ class EditContactViewModel(
     }
 
     fun handleEditContactAction(action: EditContactAction) {
-        when(action) {
+        when (action) {
             is EditContactAction.SaveEditedContact -> {
                 viewModelScope.launch {
-                    contactsRepository.createOrEditContact(action.editedContact, true)
+                    contactsRepository.createOrEditContact(action.editedContact)
                 }
             }
         }

@@ -2,10 +2,6 @@ package com.sosauce.cinnamon.activities
 
 import android.app.KeyguardManager
 import android.content.Intent
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
@@ -13,13 +9,8 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.devsync.composense.SenseProximity
 import com.sosauce.cinnamon.domain.states.CallState
 import com.sosauce.cinnamon.presentation.screens.phone.CallAction
 import com.sosauce.cinnamon.presentation.screens.phone.CallScreen
@@ -55,7 +46,9 @@ class CallActivity : ComponentActivity() {
 
 
 
-                if (callUiState.callState == CallState.ENDED) { finishAndRemoveTask() }
+                if (callUiState.callState == CallState.ENDED) {
+                    finishAndRemoveTask()
+                }
 
                 CallScreen(
                     onCallAction = callViewModel::handleCallAction,
@@ -81,6 +74,7 @@ class CallActivity : ComponentActivity() {
         (getSystemService(KEYGUARD_SERVICE) as KeyguardManager).requestDismissKeyguard(this, null)
 
         val powerManager = getSystemService(POWER_SERVICE) as PowerManager
-        powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK, "$APP_PACKAGE:full_wake_lock").acquire(5000L)
+        powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK, "$APP_PACKAGE:full_wake_lock")
+            .acquire(5000L)
     }
 }

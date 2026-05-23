@@ -1,4 +1,5 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class,
+@file:OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class,
     ExperimentalHazeMaterialsApi::class
 )
 
@@ -64,7 +65,13 @@ fun SelectedTopBar(
         AlertDialog(
             onDismissRequest = { showDeleteMsgDialog = false },
             title = {
-                Text(pluralStringResource(R.plurals.delete_msg, sweetSelectState.selectedItems.size, sweetSelectState.selectedItems.size),)
+                Text(
+                    pluralStringResource(
+                        R.plurals.delete_msg,
+                        sweetSelectState.selectedItems.size,
+                        sweetSelectState.selectedItems.size
+                    ),
+                )
             },
             text = {
                 Text("Are you sure? This cannot be undone!")
@@ -78,7 +85,11 @@ fun SelectedTopBar(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        onHandleConversationActions(ConversationActions.DeleteSelectedMessages(sweetSelectState.selectedItems.toList()))
+                        onHandleConversationActions(
+                            ConversationActions.DeleteSelectedMessages(
+                                sweetSelectState.selectedItems.toList()
+                            )
+                        )
                         sweetSelectState.clearSelected()
                         showDeleteMsgDialog = false
                     },
@@ -135,7 +146,10 @@ fun SelectedTopBar(
                         scope.launch(Dispatchers.IO) {
                             clipboard.setClipEntry(
                                 ClipEntry(
-                                    ClipData.newPlainText("",sweetSelectState.selectedItems.first().body)
+                                    ClipData.newPlainText(
+                                        "",
+                                        sweetSelectState.selectedItems.first().body
+                                    )
                                 )
                             )
                         }

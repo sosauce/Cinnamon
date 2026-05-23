@@ -17,11 +17,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
@@ -128,15 +128,17 @@ fun SharedTransitionScope.StartConversation(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Button(
+                    FilledTonalButton(
                         onClick = onToggleGroupChatMode,
                         shapes = ButtonDefaults.shapes(),
                         modifier = Modifier
                             .fillMaxWidth(0.5f)
                     ) {
 
-                        val icon = if (state.isGroupChatMode) R.drawable.contact else R.drawable.group_add
-                        val text = if (state.isGroupChatMode) R.string.new_chat else R.string.new_group_chat
+                        val icon =
+                            if (state.isGroupChatMode) R.drawable.contact else R.drawable.group_add
+                        val text =
+                            if (state.isGroupChatMode) R.string.new_chat else R.string.new_group_chat
 
                         Icon(
                             painter = painterResource(icon),
@@ -182,7 +184,11 @@ fun SharedTransitionScope.StartConversation(
                         ) { contact ->
 
                             val isSelected = remember(state.selectedNumbers) {
-                                contact.details.phoneNumbers.fastAny { state.selectedNumbers.contains(it.number) }
+                                contact.details.phoneNumbers.fastAny {
+                                    state.selectedNumbers.contains(
+                                        it.number
+                                    )
+                                }
                             }
 
                             ContactListItem(
@@ -191,12 +197,15 @@ fun SharedTransitionScope.StartConversation(
                                 isSelected = isSelected,
                                 onClick = {
                                     val phoneNumbers = contact.details.phoneNumbers
-                                    val firstNumber = phoneNumbers.firstOrNull()?.number ?: return@ContactListItem
+                                    val firstNumber =
+                                        phoneNumbers.firstOrNull()?.number ?: return@ContactListItem
 
                                     when {
                                         phoneNumbers.size > 1 -> {
-                                            contactPhoneNumbersPicker = phoneNumbers.fastMap { it.number }
+                                            contactPhoneNumbersPicker =
+                                                phoneNumbers.fastMap { it.number }
                                         }
+
                                         state.isGroupChatMode -> onAddNumberToGroup(firstNumber)
                                         else -> {
                                             val threadId = firstNumber.getThreadIdOrCreate(context)
@@ -211,7 +220,8 @@ fun SharedTransitionScope.StartConversation(
                 }
 
 
-                nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }.toSortedMap().forEach { (letter, contacts) ->
+                nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }
+                    .toSortedMap().forEach { (letter, contacts) ->
                     item {
                         Text(
                             text = letter.toString(),
@@ -228,7 +238,11 @@ fun SharedTransitionScope.StartConversation(
                         ) { contact ->
 
                             val isSelected = remember(state.selectedNumbers) {
-                                contact.details.phoneNumbers.fastAny { state.selectedNumbers.contains(it.number) }
+                                contact.details.phoneNumbers.fastAny {
+                                    state.selectedNumbers.contains(
+                                        it.number
+                                    )
+                                }
                             }
                             ContactListItem(
                                 modifier = Modifier.animateItem(),
@@ -236,12 +250,15 @@ fun SharedTransitionScope.StartConversation(
                                 isSelected = isSelected,
                                 onClick = {
                                     val phoneNumbers = contact.details.phoneNumbers
-                                    val firstNumber = phoneNumbers.firstOrNull()?.number ?: return@ContactListItem
+                                    val firstNumber =
+                                        phoneNumbers.firstOrNull()?.number ?: return@ContactListItem
 
                                     when {
                                         phoneNumbers.size > 1 -> {
-                                            contactPhoneNumbersPicker = phoneNumbers.fastMap { it.number }
+                                            contactPhoneNumbersPicker =
+                                                phoneNumbers.fastMap { it.number }
                                         }
+
                                         state.isGroupChatMode -> onAddNumberToGroup(firstNumber)
                                         else -> {
                                             val threadId = firstNumber.getThreadIdOrCreate(context)

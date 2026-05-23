@@ -23,12 +23,14 @@ class SendMessageWorker(
 
         return withContext(Dispatchers.IO) {
             return@withContext try {
-                val scheduledMessageId = workerParameters.inputData.getLong(SCHEDULED_MESSAGE_ID, -1L)
+                val scheduledMessageId =
+                    workerParameters.inputData.getLong(SCHEDULED_MESSAGE_ID, -1L)
                 if (scheduledMessageId == -1L) return@withContext Result.failure(
                     workDataOf(MESSAGE_NOT_SENT to "Scheduled message doesn't exist")
                 )
 
-                val scheduledMessage = scheduledMessagesDao.getScheduledMessageById(scheduledMessageId)
+                val scheduledMessage =
+                    scheduledMessagesDao.getScheduledMessageById(scheduledMessageId)
 
                 cuteTelephonyManager.sendMessage(
                     addresses = listOf(scheduledMessage.address),
@@ -40,7 +42,7 @@ class SendMessageWorker(
                 Result.success()
             } catch (e: Exception) {
                 Result.failure(
-                    workDataOf(MESSAGE_NOT_SENT to (e.message ?: "Unknown error") )
+                    workDataOf(MESSAGE_NOT_SENT to (e.message ?: "Unknown error"))
                 )
             }
         }

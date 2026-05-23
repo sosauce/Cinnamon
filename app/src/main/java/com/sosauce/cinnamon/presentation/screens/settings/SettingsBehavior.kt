@@ -15,7 +15,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,9 +33,8 @@ import com.sosauce.cinnamon.presentation.screens.settings.components.DropdownMen
 import com.sosauce.cinnamon.presentation.screens.settings.components.LazyRowWithScrollButton
 import com.sosauce.cinnamon.presentation.screens.settings.components.SettingsWithTitle
 import com.sosauce.cinnamon.presentation.screens.settings.components.SimSelector
-import com.sosauce.cinnamon.presentation.screens.settings.components.SwitchSettingsCards
+import com.sosauce.cinnamon.presentation.screens.settings.components.SwitchSettingsCard
 import com.sosauce.cinnamon.presentation.shared_components.SimsViewModel
-import com.sosauce.cinnamon.presentation.shared_components.buttons.CuteNavigationButton
 import com.sosauce.cinnamon.utils.DefaultTabOption
 import com.sosauce.cinnamon.utils.getItemShape
 import com.sosauce.cinnamon.utils.toLocalizedTab
@@ -93,7 +91,12 @@ fun SettingsBehavior() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 2.dp),
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomEnd = 4.dp, bottomStart = 4.dp)
+                shape = RoundedCornerShape(
+                    topStart = 24.dp,
+                    topEnd = 24.dp,
+                    bottomEnd = 4.dp,
+                    bottomStart = 4.dp
+                )
             ) {
                 LazyRowWithScrollButton(
                     items = simsViewModel.fetchSims()
@@ -112,21 +115,21 @@ fun SettingsBehavior() {
                     modifier = Modifier.padding(5.dp)
                 )
             }
-            SwitchSettingsCards(
+            SwitchSettingsCard(
                 checked = sendGroupAsMms,
                 onCheckedChange = { sendGroupAsMms = !sendGroupAsMms },
                 topDp = 4.dp,
                 bottomDp = 4.dp,
                 text = "Send group messages as MMS"
             )
-            SwitchSettingsCards(
+            SwitchSettingsCard(
                 checked = sendLongAsMms,
                 onCheckedChange = { sendLongAsMms = !sendLongAsMms },
                 topDp = 4.dp,
                 bottomDp = 4.dp,
                 text = "Send long messages as MMS"
             )
-            SwitchSettingsCards(
+            SwitchSettingsCard(
                 checked = enableDeliveryReports,
                 onCheckedChange = { enableDeliveryReports = !enableDeliveryReports },
                 topDp = 4.dp,

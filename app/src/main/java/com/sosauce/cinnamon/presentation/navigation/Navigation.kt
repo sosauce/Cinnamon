@@ -27,7 +27,6 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import com.materialkolor.DynamicMaterialExpressiveTheme
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.DEFAULT_TAB
 import com.sosauce.cinnamon.data.datastore.dataStore
 import com.sosauce.cinnamon.presentation.screens.archived.ArchivedThreads
@@ -44,14 +43,14 @@ import com.sosauce.cinnamon.presentation.screens.dialer.DialerViewModel
 import com.sosauce.cinnamon.presentation.screens.dialer.DialpadScreen
 import com.sosauce.cinnamon.presentation.screens.dialer.DialpadViewModel
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationActions
+import com.sosauce.cinnamon.presentation.screens.messages.ConversationDetailsScreen
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationDetailsViewModel
-import com.sosauce.cinnamon.presentation.screens.messages.ConversationScreen
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationsScreen
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationsViewModel
 import com.sosauce.cinnamon.presentation.screens.messages.about.AboutConversationScreen
-import com.sosauce.cinnamon.presentation.screens.starter.StartConversation
 import com.sosauce.cinnamon.presentation.screens.phone.CallingViewModel
 import com.sosauce.cinnamon.presentation.screens.settings.SettingsScreen
+import com.sosauce.cinnamon.presentation.screens.starter.StartConversation
 import com.sosauce.cinnamon.presentation.screens.starter.StartConversationViewModel
 import com.sosauce.cinnamon.presentation.screens.voicemail.VoicemailScreen
 import com.sosauce.cinnamon.presentation.screens.voicemail.VoicemailViewModel
@@ -80,10 +79,12 @@ fun Nav(
     val context = LocalContext.current
     val initialTab = remember {
         // meh, but works
-        runBlocking { context.dataStore.data.map { it[DEFAULT_TAB] }.first() ?: DefaultTabOption.MESSAGES }
+        runBlocking {
+            context.dataStore.data.map { it[DEFAULT_TAB] }.first() ?: DefaultTabOption.MESSAGES
+        }
     }
     val backStack = rememberNavBackStack(initialTab.tabToScreen()).apply {
-        handleIntent(context,intent)
+        handleIntent(context, intent)
     }
     val hazeState = rememberHazeState()
 
@@ -106,7 +107,7 @@ fun Nav(
 
                     entry<Screen.Contacts>(
                         metadata = NavDisplay.transitionSpec {
-                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith  fadeOut()
+                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith fadeOut()
                         }
                     ) {
                         val viewModel = koinViewModel<ContactsViewModel>()
@@ -121,7 +122,7 @@ fun Nav(
 
                     entry<Screen.ContactDetails>(
                         metadata = NavDisplay.transitionSpec {
-                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith  fadeOut()
+                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith fadeOut()
                         }
                     ) { key ->
 
@@ -141,7 +142,7 @@ fun Nav(
                     }
                     entry<Screen.Dialer>(
                         metadata = NavDisplay.transitionSpec {
-                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith  fadeOut()
+                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith fadeOut()
                         }
                     ) {
                         val viewModel = koinViewModel<DialerViewModel>()
@@ -158,7 +159,7 @@ fun Nav(
 
                     entry<Screen.Voicemail>(
                         metadata = NavDisplay.transitionSpec {
-                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith  fadeOut()
+                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith fadeOut()
                         }
                     ) {
                         val viewModel = koinViewModel<VoicemailViewModel>()
@@ -166,13 +167,15 @@ fun Nav(
 
                         VoicemailScreen(
                             state = state,
-                            onNavigateUp = backStack::navigateBack
+                            onNavigateUp = backStack::navigateBack,
+                            onNavigate = backStack::add,
+                            onDeleteVoicemails = viewModel::deleteVoicemails
                         )
                     }
 
                     entry<Screen.Messages>(
                         metadata = NavDisplay.transitionSpec {
-                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith  fadeOut()
+                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith fadeOut()
                         }
                     ) {
 
@@ -188,7 +191,7 @@ fun Nav(
 
                     entry<Screen.Conversation>(
                         metadata = NavDisplay.transitionSpec {
-                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith  fadeOut()
+                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith fadeOut()
                         }
                     ) { key ->
                         val viewModel = koinViewModel<ConversationDetailsViewModel>(
@@ -207,7 +210,7 @@ fun Nav(
                                 forcedColor = if (state.settings.color != -1) Color(state.settings.color) else MaterialTheme.colorScheme.primary
                             )
                         ) {
-                            ConversationScreen(
+                            ConversationDetailsScreen(
                                 state = state,
                                 prefilledMessage = key.prefilledMessage,
                                 onNavigateUp = backStack::navigateBack,
@@ -223,7 +226,7 @@ fun Nav(
 
                     entry<Screen.ConversationTheming>(
                         metadata = NavDisplay.transitionSpec {
-                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith  fadeOut()
+                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith fadeOut()
                         }
                     ) { key ->
                         val viewModel = koinViewModel<ThemingViewModel>(
@@ -241,7 +244,7 @@ fun Nav(
 
                     entry<Screen.Dialpad>(
                         metadata = NavDisplay.transitionSpec {
-                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith  fadeOut()
+                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith fadeOut()
                         }
                     ) { key ->
                         val callViewModel = koinViewModel<CallingViewModel>()
@@ -261,7 +264,7 @@ fun Nav(
 
                     entry<Screen.StartConversation>(
                         metadata = NavDisplay.transitionSpec {
-                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith  fadeOut()
+                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith fadeOut()
                         }
                     ) {
 
@@ -279,7 +282,7 @@ fun Nav(
 
                     entry<Screen.AboutConversation>(
                         metadata = NavDisplay.transitionSpec {
-                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith  fadeOut()
+                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith fadeOut()
                         }
                     ) { key ->
                         val viewModel = koinViewModel<ConversationDetailsViewModel>(
@@ -295,7 +298,7 @@ fun Nav(
 
                     entry<Screen.AboutMe>(
                         metadata = NavDisplay.transitionSpec {
-                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith  fadeOut()
+                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith fadeOut()
                         }
                     ) {
                         AboutMeScreen(
@@ -305,7 +308,7 @@ fun Nav(
 
                     entry<Screen.ArchivedThreads>(
                         metadata = NavDisplay.transitionSpec {
-                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith  fadeOut()
+                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith fadeOut()
                         }
                     ) {
 
@@ -322,7 +325,7 @@ fun Nav(
 
                     entry<Screen.Settings>(
                         metadata = NavDisplay.transitionSpec {
-                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith  fadeOut()
+                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith fadeOut()
                         }
                     ) {
                         SettingsScreen(
@@ -332,7 +335,7 @@ fun Nav(
 
                     entry<Screen.ContactEditor>(
                         metadata = NavDisplay.transitionSpec {
-                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith  fadeOut()
+                            slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn() togetherWith fadeOut()
                         }
                     ) { key ->
 

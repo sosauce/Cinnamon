@@ -1,6 +1,5 @@
 package com.sosauce.cinnamon.data.managers
 
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
@@ -17,12 +16,14 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.IconCompat
 import coil3.ImageLoader
 import coil3.request.ImageRequest
-import coil3.request.allowHardware
 import coil3.toBitmap
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.data.fetchers.RecipientPhone
+import com.sosauce.cinnamon.data.fetchers.RecipientPhotoFetcher
 import com.sosauce.cinnamon.data.receivers.MessageReplyReceiver
 import com.sosauce.cinnamon.data.telephony.CuteTelephonyManager
 import com.sosauce.cinnamon.main.MainActivity
@@ -30,15 +31,12 @@ import com.sosauce.cinnamon.utils.CuteIntents
 import com.sosauce.cinnamon.utils.RESULT_KEY
 import com.sosauce.cinnamon.utils.THREAD_ID
 import com.sosauce.cinnamon.utils.getAddressFromThreadId
-import com.sosauce.cinnamon.utils.getContactId
 import com.sosauce.cinnamon.utils.getContactNameOrNothing
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.math.min
-import androidx.core.graphics.createBitmap
-import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 
 class MessageNotificationManager(
     private val context: Context,
@@ -46,15 +44,16 @@ class MessageNotificationManager(
     private val scope: CoroutineScope
 ) {
 
-    private val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+    private val notificationManager =
+        context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
     private val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         PendingIntent.FLAG_MUTABLE
     } else 0
 
     // TODO: make this navigate to the discussion
     private val intent = Intent(context, MainActivity::class.java)
-    private val contentIntent = PendingIntent.getActivity(context, 1001, intent, PendingIntent.FLAG_IMMUTABLE)
-
+    private val contentIntent =
+        PendingIntent.getActivity(context, 1001, intent, PendingIntent.FLAG_IMMUTABLE)
 
 
     /**
@@ -67,8 +66,10 @@ class MessageNotificationManager(
         person: Person
     ) {
         // Nullable tho if we're replying to a notification obviously it should exist
-        val threadIdAsNotif = notificationManager.activeNotifications.find { it.id == threadId.toInt() }
-        val messageStyle = NotificationCompat.MessagingStyle.Message(message, System.currentTimeMillis(), person)
+        val threadIdAsNotif =
+            notificationManager.activeNotifications.find { it.id == threadId.toInt() }
+        val messageStyle =
+            NotificationCompat.MessagingStyle.Message(message, System.currentTimeMillis(), person)
 
         threadIdAsNotif?.let { notification ->
 
@@ -98,7 +99,6 @@ class MessageNotificationManager(
     }
 
 
-
     // https://www.geeksforgeeks.org/kotlin/circular-crop-an-image-and-save-it-to-the-file-in-android/
     private fun circleBitmap(bitmap: Bitmap): Bitmap {
         val size = min(bitmap.width, bitmap.height)
@@ -126,6 +126,7 @@ class MessageNotificationManager(
         return output
 
     }
+
     fun sendOrAppendMessageNotification(
         threadId: Long,
         message: String,
@@ -136,11 +137,11 @@ class MessageNotificationManager(
         if (ActiveThreadId.threadId == threadId) return
 
         val request = ImageRequest.Builder(context)
-            .data(number?.getContactPfpFromNumber(context))
-            .allowHardware(false)
+            .data(RecipientPhone(number ?: ""))
             .build()
         val bitmap = runBlocking(Dispatchers.IO) {
             ImageLoader.Builder(context)
+                .components { add(RecipientPhotoFetcher.Factory()) }
                 .build()
                 .execute(request)
                 .image?.toBitmap()
@@ -150,26 +151,38 @@ class MessageNotificationManager(
 
         val person = Person.Builder()
             .setIcon(personIcon)
-            .setName(number?.getContactNameOrNothing(context) ?: context.getString(R.string.unknown))
+            .setName(
+                number?.getContactNameOrNothing(context) ?: context.getString(R.string.unknown)
+            )
             .build()
-        val receivedMessage = NotificationCompat.MessagingStyle.Message(message, System.currentTimeMillis(), person).apply {
-            if (imageUri != null) {
-                setData("image/", imageUri)
-            }
-        }
+        val receivedMessage =
+            NotificationCompat.MessagingStyle.Message(message, System.currentTimeMillis(), person)
+                .apply {
+                    if (imageUri != null) {
+                        setData("image/", imageUri)
+                    }
+                }
         val notificationStyle = NotificationCompat.MessagingStyle(person)
             .addMessage(receivedMessage)
 
-        val threadIdAsNotif = notificationManager.activeNotifications.find { it.id == threadId.toInt() }
+        val threadIdAsNotif =
+            notificationManager.activeNotifications.find { it.id == threadId.toInt() }
 
         val intent = Intent(context, MainActivity::class.java).apply {
             action = CuteIntents.NOTIFICATION_NAVIGATE_TO_THREAD
             putExtra("threadId", threadId)
         }
-        val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT )
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
 
         threadIdAsNotif?.let { notification ->
-            val activeStyle = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(notification.notification)?.addMessage(receivedMessage)
+            val activeStyle =
+                NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(notification.notification)
+                    ?.addMessage(receivedMessage)
 
             notificationManager.notify(
                 threadId.toInt(),

@@ -1,7 +1,5 @@
 package com.sosauce.cinnamon.domain.model
 
-import android.net.Uri
-
 /**
  * A conversation.
  * @param rawRecipients list of all people in this conversation (as phone numbers, excluding ourselves) only multiple if is a group chat

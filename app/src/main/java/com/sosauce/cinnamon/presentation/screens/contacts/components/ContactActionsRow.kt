@@ -3,7 +3,6 @@
 package com.sosauce.cinnamon.presentation.screens.contacts.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -20,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.domain.model.CuteContact
@@ -69,7 +67,10 @@ fun ContactActionsRow(
                             action = NumberPickerAction.MESSAGE
                             showNumberPicker = true
                         } else {
-                            val threadId = contact.details.phoneNumbers.first().number.getThreadIdOrCreate(context)
+                            val threadId =
+                                contact.details.phoneNumbers.first().number.getThreadIdOrCreate(
+                                    context
+                                )
                             onNavigate(Screen.Conversation(threadId))
                         }
                     }
@@ -94,11 +95,12 @@ fun ContactActionsRow(
             onDismissRequest = { showNumberPicker = false },
             onPickNumber = { number ->
                 showNumberPicker = false
-                when(action) {
+                when (action) {
                     NumberPickerAction.MESSAGE -> {
                         val threadId = number.getThreadIdOrCreate(context)
                         onNavigate(Screen.Conversation(threadId))
                     }
+
                     NumberPickerAction.CALL -> onHandleCallAction(CallAction.LaunchCall(number))
                 }
             },

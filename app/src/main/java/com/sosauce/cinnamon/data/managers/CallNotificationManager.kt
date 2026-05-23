@@ -2,16 +2,10 @@ package com.sosauce.cinnamon.data.managers
 
 import android.annotation.SuppressLint
 import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
-import android.media.AudioAttributes
-import android.media.RingtoneManager
 import android.net.Uri
-import android.provider.ContactsContract
 import android.telecom.Call
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -23,10 +17,7 @@ import com.sosauce.cinnamon.data.receivers.CallReceiver
 import com.sosauce.cinnamon.utils.ACCEPT_INCOMING_CALL
 import com.sosauce.cinnamon.utils.DECLINE_INCOMING_CALL
 import com.sosauce.cinnamon.utils.HANGUP_ONGOING_CALL
-import com.sosauce.cinnamon.utils.getContactId
 import com.sosauce.cinnamon.utils.getContactNameOrNothing
-import androidx.core.net.toUri
-import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 
 class CallNotificationManager(
     private val context: Context,
@@ -43,7 +34,6 @@ class CallNotificationManager(
     val pendingIntent = PendingIntent.getActivity(context, 1, intent, PendingIntent.FLAG_MUTABLE)
 
 
-
     private val declineIntent = Intent(context, CallReceiver::class.java).apply {
         action = DECLINE_INCOMING_CALL
     }
@@ -54,9 +44,24 @@ class CallNotificationManager(
         action = HANGUP_ONGOING_CALL
     }
 
-    private val declinePendingIntent = PendingIntent.getBroadcast(context, DECLINE_CALL_CODE, declineIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-    private val acceptPendingIntent = PendingIntent.getBroadcast(context, ACCEPT_CALL_CODE, acceptIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-    private val hangupPendingIntent = PendingIntent.getBroadcast(context, HANGUP_ONGOING_CALL_CODE, hangupIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+    private val declinePendingIntent = PendingIntent.getBroadcast(
+        context,
+        DECLINE_CALL_CODE,
+        declineIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    private val acceptPendingIntent = PendingIntent.getBroadcast(
+        context,
+        ACCEPT_CALL_CODE,
+        acceptIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    private val hangupPendingIntent = PendingIntent.getBroadcast(
+        context,
+        HANGUP_ONGOING_CALL_CODE,
+        hangupIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
 
 
     @SuppressLint("MissingPermission")
@@ -64,10 +69,11 @@ class CallNotificationManager(
         callDetails: Call.Details
     ): Notification {
 
-        val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart ?:
-        callDetails.handle.schemeSpecificPart
+        val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart
+            ?: callDetails.handle.schemeSpecificPart
 
-        val contactPfpUri = number.getContactPfpFromNumber(context)
+        //val contactPfpUri = number.getContactPfpFromNumber(context)
+        val contactPfpUri = Uri.EMPTY
         val icon = if (contactPfpUri != Uri.EMPTY) {
             IconCompat.createWithContentUri(contactPfpUri)
         } else IconCompat.createWithResource(context, R.drawable.account)
@@ -102,10 +108,11 @@ class CallNotificationManager(
         callDetails: Call.Details
     ): Notification {
 
-        val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart ?:
-        callDetails.handle.schemeSpecificPart
+        val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart
+            ?: callDetails.handle.schemeSpecificPart
 
-        val contactPfpUri = number.getContactPfpFromNumber(context)
+        //val contactPfpUri = number.getContactPfpFromNumber(context)
+        val contactPfpUri = Uri.EMPTY
         val icon = if (contactPfpUri != Uri.EMPTY) {
             IconCompat.createWithContentUri(contactPfpUri)
         } else IconCompat.createWithResource(context, R.drawable.account)
@@ -144,10 +151,11 @@ class CallNotificationManager(
         callDetails: Call.Details
     ): Notification {
 
-        val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart ?:
-        callDetails.handle.schemeSpecificPart
+        val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart
+            ?: callDetails.handle.schemeSpecificPart
 
-        val contactPfpUri = number.getContactPfpFromNumber(context)
+        //val contactPfpUri = number.getContactPfpFromNumber(context)
+        val contactPfpUri = Uri.EMPTY
         val icon = if (contactPfpUri != Uri.EMPTY) {
             IconCompat.createWithContentUri(contactPfpUri)
         } else IconCompat.createWithResource(context, R.drawable.account)

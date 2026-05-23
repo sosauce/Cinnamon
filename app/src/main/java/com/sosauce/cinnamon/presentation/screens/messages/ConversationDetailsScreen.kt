@@ -1,4 +1,5 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
+@file:OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
     ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class,
     ExperimentalHazeMaterialsApi::class
 )
@@ -14,7 +15,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -25,11 +25,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -51,21 +49,18 @@ import androidx.compose.runtime.retain.RetainedEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import coil3.compose.AsyncImage
+import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.conversation_settings.ConversationSettingActions
 import com.sosauce.cinnamon.data.managers.ActiveThreadId
@@ -74,29 +69,22 @@ import com.sosauce.cinnamon.presentation.navigation.Screen
 import com.sosauce.cinnamon.presentation.screens.messages.components.TextingUnavailableBar
 import com.sosauce.cinnamon.presentation.screens.messages.components.TextingUnavailableReason
 import com.sosauce.cinnamon.presentation.screens.messages.components.bottombar.ConversationBottomBar
-import com.sosauce.cinnamon.presentation.screens.messages.components.topbars.ConversationTopBar
 import com.sosauce.cinnamon.presentation.screens.messages.components.bubble.MessageLayout
 import com.sosauce.cinnamon.presentation.screens.messages.components.bubble.MmsBubble
 import com.sosauce.cinnamon.presentation.screens.messages.components.bubble.SandwichPosition
 import com.sosauce.cinnamon.presentation.screens.messages.components.bubble.TextBubble
+import com.sosauce.cinnamon.presentation.screens.messages.components.topbars.ConversationTopBar
 import com.sosauce.cinnamon.presentation.screens.messages.components.topbars.SelectedTopBar
 import com.sosauce.cinnamon.presentation.screens.phone.CallAction
-import com.sosauce.cinnamon.presentation.shared_components.NoXFound
 import com.sosauce.cinnamon.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.utils.bouncySpec
-import com.sosauce.cinnamon.utils.getAdaptivePrimaryColor
 import com.sosauce.cinnamon.utils.isEmoji
-import com.sosauce.cinnamon.utils.rememberHazeState
-import com.sosauce.cinnamon.utils.selfAlignHorizontally
-import com.sosauce.cinnamon.utils.toDate
 import com.sosauce.sweetselect.rememberSweetSelectState
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SharedTransitionScope.ConversationScreen(
+fun SharedTransitionScope.ConversationDetailsScreen(
     state: ConversationDetailsState,
     prefilledMessage: String,
     onHandleCallAction: (CallAction) -> Unit,
@@ -116,14 +104,15 @@ fun SharedTransitionScope.ConversationScreen(
         }
     } else {
         val listState = rememberLazyListState()
-        val chatWallpaperState = rememberHazeState()
         val sweetSelectState = rememberSweetSelectState<CuteMessage>()
         val lifecycleOwner = LocalLifecycleOwner.current
 
         RetainedEffect(lifecycleOwner) {
             val observer = LifecycleEventObserver { _, event ->
-                when(event) {
-                    Lifecycle.Event.ON_CREATE, Lifecycle.Event.ON_RESUME, Lifecycle.Event.ON_START -> ActiveThreadId.threadId = state.threadId
+                when (event) {
+                    Lifecycle.Event.ON_CREATE, Lifecycle.Event.ON_RESUME, Lifecycle.Event.ON_START -> ActiveThreadId.threadId =
+                        state.threadId
+
                     else -> ActiveThreadId.threadId = null
                 }
             }
@@ -133,83 +122,84 @@ fun SharedTransitionScope.ConversationScreen(
 
         LaunchedEffect(state.messages) { listState.animateScrollToItem(0) }
 
-        Box {
-            // Wallpaper
-            AsyncImage(
-                model = state.settings.wallpaper.toUri(),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .hazeSource(chatWallpaperState)
-                    .sharedElement(
-                        sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONVERSATION_WALLPAPER),
-                        animatedVisibilityScope = LocalNavAnimatedContentScope.current,
-                        renderInOverlayDuringTransition = false
-                    )
-                    .clip(RoundedCornerShape(24.dp))
-            )
-
-            Scaffold(
-                topBar = {
-                    AnimatedContent(
-                        targetState = sweetSelectState.isInSelectionMode,
-                        transitionSpec = {
-                            ContentTransform(
-                                targetContentEnter = slideInVertically(bouncySpec()) { -it } + fadeIn(),
-                                initialContentExit = slideOutVertically (bouncySpec()){ -it } + fadeOut(),
-                                sizeTransform = SizeTransform(clip = false)
-                            )
-                        }
-                    ) {
-                        if (it) {
-                            SelectedTopBar(
-                                sweetSelectState = sweetSelectState,
-                                onSelectAll = { sweetSelectState.toggleAll(state.messages.values.flatten()) },
-                                onUnselectAll = sweetSelectState::clearSelected,
-                                onHandleConversationActions = onHandleConversationActions
-                            )
-                        } else {
-                            ConversationTopBar(
-                                state = state,
-                                onNavigateUp = onNavigateUp,
-                                onHandleCallAction = onHandleCallAction,
-                                onNavigate = onNavigate,
-                                onDeleteConversation = onDeleteConversation,
-                                onHandleConversationActions = onHandleConversationActions
-                            )
-                        }
+        Scaffold(
+            topBar = {
+                AnimatedContent(
+                    targetState = sweetSelectState.isInSelectionMode,
+                    transitionSpec = {
+                        ContentTransform(
+                            targetContentEnter = slideInVertically(bouncySpec()) { -it } + fadeIn(),
+                            initialContentExit = slideOutVertically(bouncySpec()) { -it } + fadeOut(),
+                            sizeTransform = SizeTransform(clip = false)
+                        )
                     }
-                },
-                bottomBar = {
-                    when {
-                        state.isShortCode -> TextingUnavailableBar(reason = TextingUnavailableReason.SHORT_CODE)
-                        state.isSoloRecipientBlocked -> TextingUnavailableBar(reason = TextingUnavailableReason.BLOCKED)
-                        else -> {
-                            ConversationBottomBar(
-                                conversationState = state,
-                                prefilledMessage = prefilledMessage,
-                                onSaveDraft = { draft ->
-                                    onHandleConversationSettingsActions(
-                                        ConversationSettingActions.UpsertConversationSettings(
-                                            state.settings.copy(
-                                                draft = draft
-                                            )
-                                        )
-                                    )
-                                },
-                                onHandleConversationActions = onHandleConversationActions
-                            )
-                        }
+                ) {
+                    if (it) {
+                        SelectedTopBar(
+                            sweetSelectState = sweetSelectState,
+                            onSelectAll = { sweetSelectState.toggleAll(state.messages.values.flatten()) },
+                            onUnselectAll = sweetSelectState::clearSelected,
+                            onHandleConversationActions = onHandleConversationActions
+                        )
+                    } else {
+                        ConversationTopBar(
+                            state = state,
+                            onNavigateUp = onNavigateUp,
+                            onHandleCallAction = onHandleCallAction,
+                            onNavigate = onNavigate,
+                            onDeleteConversation = onDeleteConversation,
+                            onHandleConversationActions = onHandleConversationActions
+                        )
                     }
                 }
-            ) { paddingValues ->
-                LazyColumn(
+            },
+            bottomBar = {
+                when {
+                    state.isShortCode -> TextingUnavailableBar(reason = TextingUnavailableReason.SHORT_CODE)
+                    state.isSoloRecipientBlocked -> TextingUnavailableBar(reason = TextingUnavailableReason.BLOCKED)
+                    else -> {
+                        ConversationBottomBar(
+                            conversationState = state,
+                            prefilledMessage = prefilledMessage,
+                            onSaveDraft = { draft ->
+                                onHandleConversationSettingsActions(
+                                    ConversationSettingActions.UpsertConversationSettings(
+                                        state.settings.copy(
+                                            draft = draft
+                                        )
+                                    )
+                                )
+                            },
+                            onHandleConversationActions = onHandleConversationActions
+                        )
+                    }
+                }
+            }
+        ) { paddingValues ->
+
+            Box(
+                Modifier.fillMaxSize()
+            ) {
+                // Wallpaper
+                AsyncImage(
+                    model = state.settings.wallpaper,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxSize()
-                        .hazeEffect(
-                            state = chatWallpaperState
-                        ) { blurRadius = state.settings.wallpaperBlurIntensity.dp },
+                        .sharedElement(
+                            sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONVERSATION_WALLPAPER),
+                            animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                            renderInOverlayDuringTransition = false
+                        )
+                        .cloudy(
+                            state.settings.wallpaperBlurIntensity,
+                            state.settings.wallpaperBlurIntensity > 0
+                        )
+                )
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize(),
                     state = listState,
                     contentPadding = paddingValues,
                     reverseLayout = true
@@ -270,7 +260,7 @@ fun SharedTransitionScope.ConversationScreen(
                                         },
                                         onLongClick = { sweetSelectState.toggle(message) },
                                         statusContent = {
-                                            when(message.type) {
+                                            when (message.type) {
                                                 Telephony.Sms.MESSAGE_TYPE_OUTBOX -> {
                                                     Row(
                                                         verticalAlignment = Alignment.CenterVertically
@@ -284,6 +274,7 @@ fun SharedTransitionScope.ConversationScreen(
                                                         )
                                                     }
                                                 }
+
                                                 Telephony.Sms.MESSAGE_TYPE_FAILED -> {
                                                     Row(
                                                         verticalAlignment = Alignment.CenterVertically
@@ -304,9 +295,20 @@ fun SharedTransitionScope.ConversationScreen(
                                         }
                                     ) {
                                         if (message.isMms) {
-                                            MmsBubble(message, sandwichPosition, bubbleColor, onHandleConversationActions)
+                                            MmsBubble(
+                                                message,
+                                                sandwichPosition,
+                                                bubbleColor,
+                                                onHandleConversationActions
+                                            )
                                         } else {
-                                            TextBubble(message.body, message.type, sandwichPosition, message.isScheduled, bubbleColor)
+                                            TextBubble(
+                                                message.body,
+                                                message.type,
+                                                sandwichPosition,
+                                                message.isScheduled,
+                                                bubbleColor
+                                            )
                                         }
                                     }
                                 }
@@ -361,6 +363,7 @@ fun SharedTransitionScope.ConversationScreen(
 
                 }
             }
+
         }
     }
 }

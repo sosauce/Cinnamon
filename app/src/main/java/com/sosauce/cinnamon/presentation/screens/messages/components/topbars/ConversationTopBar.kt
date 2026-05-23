@@ -1,4 +1,5 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class,
+@file:OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class,
     ExperimentalHazeMaterialsApi::class
 )
 
@@ -38,7 +39,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
-import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.presentation.navigation.Screen
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationActions
@@ -48,7 +48,6 @@ import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
 import com.sosauce.cinnamon.presentation.shared_components.DefaultGroupChatIcon
 import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedMoreIcon
 import com.sosauce.cinnamon.presentation.shared_components.toolbars.ToolbarSkeleton
-import com.sosauce.cinnamon.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.utils.getItemShape
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 
@@ -110,12 +109,14 @@ fun SharedTransitionScope.ConversationTopBar(
                     },
                     shapes = ButtonDefaults.shapes()
                 ) {
-                    val text = if (state.isSoloRecipientBlocked) R.string.unblock else R.string.block
+                    val text =
+                        if (state.isSoloRecipientBlocked) R.string.unblock else R.string.block
                     Text(stringResource(text))
                 }
             },
             text = {
-                val text = if (state.isSoloRecipientBlocked) R.string.unblock_no_u_sure else R.string.block_are_u_sure
+                val text =
+                    if (state.isSoloRecipientBlocked) R.string.unblock_no_u_sure else R.string.block_are_u_sure
                 Text(stringResource(text, state.recipients.first()))
             },
             title = {
@@ -179,7 +180,7 @@ fun SharedTransitionScope.ConversationTopBar(
                     DefaultContactIcon(
                         firstLetter = state.nameOrBeautifiedRecipients.firstOrNull()?.firstOrNull(),
                         size = 38.dp,
-                        contactPfp = state.pfp
+                        contactPhoneNumber = state.recipients.firstOrNull()
                     )
                 }
 

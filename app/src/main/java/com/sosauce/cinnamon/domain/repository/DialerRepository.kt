@@ -6,20 +6,9 @@ import android.content.ContentProviderOperation
 import android.content.Context
 import android.net.Uri
 import android.provider.CallLog
-import android.provider.ContactsContract
 import androidx.compose.ui.util.fastForEach
-import androidx.core.net.toUri
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import androidx.paging.PagingSource
-import androidx.paging.PagingState
-import com.google.i18n.phonenumbers.PhoneNumberUtil
-import com.google.i18n.phonenumbers.geocoding.PhoneNumberOfflineGeocoder
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.domain.model.CuteCallLog
-import com.sosauce.cinnamon.utils.getContactId
-import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.observe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,10 +16,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
-import java.util.Locale
-
-
-
 
 
 class DialerRepository(
@@ -82,7 +67,8 @@ class DialerRepository(
             while (cursor.moveToNext()) {
 
                 val id = cursor.getLong(idColumn)
-                val number = cursor.getString(numberColumn).ifEmpty { context.getString(R.string.private_number) }
+                val number = cursor.getString(numberColumn)
+                    .ifEmpty { context.getString(R.string.private_number) }
                 val callType = cursor.getInt(callTypeColumn)
                 val date = cursor.getLong(dateColumn)
                 val duration = cursor.getLong(durationColumn)

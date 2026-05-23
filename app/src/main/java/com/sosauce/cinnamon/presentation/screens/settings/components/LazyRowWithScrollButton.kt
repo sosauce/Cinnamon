@@ -56,3 +56,45 @@ fun <T> LazyRowWithScrollButton(
         }
     }
 }
+
+
+// K = Account, V = Handle
+@Composable
+fun <K, V> LazyRowWithScrollButton(
+    items: Map<K, V>,
+    content: @Composable (Pair<K, V>) -> Unit
+) {
+    val state = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val entryList = items.toList()
+    Box {
+        LazyRow(
+            state = state
+        ) {
+            items(
+                items = entryList
+            ) { entry ->
+                content(entry)
+            }
+        }
+        androidx.compose.animation.AnimatedVisibility(
+            visible = state.canScrollForward,
+            modifier = Modifier.align(Alignment.CenterEnd),
+            enter = slideInHorizontally { it },
+            exit = slideOutHorizontally { it }
+        ) {
+            IconButton(
+                onClick = {
+                    scope.launch {
+                        state.animateScrollToItem(entryList.lastIndex)
+                    }
+                }
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.arrow_right),
+                    contentDescription = null
+                )
+            }
+        }
+    }
+}

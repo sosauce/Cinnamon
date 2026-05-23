@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 class DialpadViewModel(
     private val prefilledNumber: String,
     private val contactsRepository: ContactsRepository
-): ViewModel() {
+) : ViewModel() {
 
     private val _state = MutableStateFlow(DialpadState())
     val state = _state.asStateFlow()

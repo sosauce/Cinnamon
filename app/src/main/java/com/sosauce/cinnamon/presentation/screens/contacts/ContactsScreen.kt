@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -99,7 +98,13 @@ fun SharedTransitionScope.ContactsScreen(
                                     state.contactAccounts.fastForEach { account ->
                                         DropdownMenuItem(
                                             selected = state.accountFilter == account.type,
-                                            onClick = { onHandleContactsAction(ContactsAction.ChangeAccountFiltering(account.type)) },
+                                            onClick = {
+                                                onHandleContactsAction(
+                                                    ContactsAction.ChangeAccountFiltering(
+                                                        account.type
+                                                    )
+                                                )
+                                            },
                                             shapes = MenuDefaults.itemShapes(),
                                             leadingIcon = {
                                                 Icon(
@@ -146,7 +151,10 @@ fun SharedTransitionScope.ContactsScreen(
                                 )
                                 Spacer(Modifier.width(5.dp))
                                 Text(
-                                    text = pluralStringResource(R.plurals.favorites, favorites.size),
+                                    text = pluralStringResource(
+                                        R.plurals.favorites,
+                                        favorites.size
+                                    ),
                                     style = MaterialTheme.typography.bodyLargeEmphasized.copy(
                                         color = MaterialTheme.colorScheme.primary
                                     )
@@ -178,7 +186,8 @@ fun SharedTransitionScope.ContactsScreen(
                     }
 
 
-                    nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }.toSortedMap().forEach { (letter, contacts) ->
+                    nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }
+                        .toSortedMap().forEach { (letter, contacts) ->
                         item {
                             Text(
                                 text = letter.toString(),

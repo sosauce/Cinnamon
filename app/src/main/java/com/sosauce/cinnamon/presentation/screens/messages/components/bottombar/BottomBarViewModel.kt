@@ -18,7 +18,7 @@ class BottomBarViewModel(
     private val threadId: Long,
     private val prefilledMessage: String,
     private val conversationSettingsDao: ConversationSettingsDao
-): ViewModel() {
+) : ViewModel() {
 
     val textFieldState = TextFieldState(prefilledMessage)
     private val _state = MutableStateFlow(BottomBarState())

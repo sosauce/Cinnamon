@@ -34,9 +34,10 @@ class ContactsRepository(
         fetchContacts(extraSelection, extraSelectionArgs)
     }.flowOn(Dispatchers.IO)
 
-    fun fetchLatestContactsDetails(contactId: Long) = context.contentResolver.observe(ContactsContract.Data.CONTENT_URI).mapLatest {
-        fetchContactDetails(contactId)
-    }.flowOn(Dispatchers.IO)
+    fun fetchLatestContactsDetails(contactId: Long) =
+        context.contentResolver.observe(ContactsContract.Data.CONTENT_URI).mapLatest {
+            fetchContactDetails(contactId)
+        }.flowOn(Dispatchers.IO)
 
     private fun fetchContacts(
         extraSelection: String?,
@@ -65,22 +66,30 @@ class ContactsRepository(
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idCol)
-                contacts.add(CuteContact(
-                    id = id,
-                    displayName = cursor.getString(nameCol) ?: "",
-                    photo = cursor.getString(photoCol)?.toUri() ?: Uri.EMPTY,
-                    isFavorite = cursor.getInt(starCol) == 1,
-                    details = CuteContactDetails(phoneNumbers = allPhones[id] ?: emptyList())
-                ))
+                contacts.add(
+                    CuteContact(
+                        id = id,
+                        displayName = cursor.getString(nameCol) ?: "",
+                        photo = cursor.getString(photoCol)?.toUri() ?: Uri.EMPTY,
+                        isFavorite = cursor.getInt(starCol) == 1,
+                        details = CuteContactDetails(phoneNumbers = allPhones[id] ?: emptyList())
+                    )
+                )
             }
         }
         return contacts
     }
+
     private fun fetchAllPhoneNumbers(): Map<Long, List<CuteContact.Phone>> {
         val map = mutableMapOf<Long, MutableList<CuteContact.Phone>>()
         context.contentResolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(ContactsContract.Data.CONTACT_ID, ContactsContract.Data.DATA1, ContactsContract.Data.DATA2, ContactsContract.Data.IS_PRIMARY),
+            arrayOf(
+                ContactsContract.Data.CONTACT_ID,
+                ContactsContract.Data.DATA1,
+                ContactsContract.Data.DATA2,
+                ContactsContract.Data.IS_PRIMARY
+            ),
             null, null, null
         )?.use { cursor ->
             val idCol = cursor.getColumnIndexOrThrow(ContactsContract.Data.CONTACT_ID)
@@ -129,7 +138,8 @@ class ContactsRepository(
             selectionArgs,
             null
         )?.use { cursor ->
-            val displayNameColumn = cursor.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME_PRIMARY)
+            val displayNameColumn =
+                cursor.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME_PRIMARY)
             val photoColumn = cursor.getColumnIndexOrThrow(ContactsContract.Data.PHOTO_URI)
             val starredColumn = cursor.getColumnIndexOrThrow(ContactsContract.Data.STARRED)
             val mimeColumn = cursor.getColumnIndexOrThrow(ContactsContract.Data.MIMETYPE)
@@ -163,11 +173,21 @@ class ContactsRepository(
                         builder.lastName = cursor.getString(data3Column) ?: ""
                     }
 
-                    ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE -> builder.company = data1
+                    ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE -> builder.company =
+                        data1
+
                     ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE -> builder.note = data1
-                    ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE -> builder.addEvent(CuteContact.Event(data1, data2))
-                    ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE -> builder.addWebsite(CuteContact.Website(data1))
-                    ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE -> builder.addAddress(CuteContact.Address(data1, data2, isDefault))
+                    ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE -> builder.addEvent(
+                        CuteContact.Event(data1, data2)
+                    )
+
+                    ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE -> builder.addWebsite(
+                        CuteContact.Website(data1)
+                    )
+
+                    ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE -> builder.addAddress(
+                        CuteContact.Address(data1, data2, isDefault)
+                    )
                 }
             }
         }
@@ -203,27 +223,22 @@ class ContactsRepository(
     }
 
     suspend fun createOrEditContact(
-        contact: CuteContact,
-        showProgressToasts: Boolean = false // Only show them when inserting from vCard
-    ) = withContext(Dispatchers.IO) {
+        contact: CuteContact
+    ): Boolean = withContext(Dispatchers.IO) {
 
         val rawId = getContactRawId(contact.id)
 
 
-        try {
-
-            if (showProgressToasts) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Inserting contact", Toast.LENGTH_SHORT).show()
-                }
-            }
+        return@withContext try {
             val operations = arrayListOf<ContentProviderOperation>()
+
+            val pfpByteArray = uriToByteArray(contact.photo)
 
             if (rawId == 0L) {
                 operations.add(
                     ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
-                        .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
-                        .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null)
+                        .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, contact.accountType)
+                        .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, contact.accountName)
                         .withYieldAllowed(true)
                         .build()
                 )
@@ -232,10 +247,33 @@ class ContactsRepository(
                 operations.add(
                     ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                         .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                        .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
-                        .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, contact.details.firstName)
-                        .withValue(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, contact.details.middleName)
-                        .withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, contact.details.lastName)
+                        .withValue(
+                            ContactsContract.Data.MIMETYPE,
+                            ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
+                        )
+                        .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, pfpByteArray)
+                        .withYieldAllowed(true)
+                        .build()
+                )
+                operations.add(
+                    ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                        .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+                        .withValue(
+                            ContactsContract.Data.MIMETYPE,
+                            ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE
+                        )
+                        .withValue(
+                            ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME,
+                            contact.details.firstName
+                        )
+                        .withValue(
+                            ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME,
+                            contact.details.middleName
+                        )
+                        .withValue(
+                            ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME,
+                            contact.details.lastName
+                        )
                         .withYieldAllowed(true) // from what I understand, this allows the content resolver to not take too long/freeze thread for each operation
                         .build()
                 )
@@ -244,10 +282,16 @@ class ContactsRepository(
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+                            .withValue(
+                                ContactsContract.Data.MIMETYPE,
+                                ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
+                            )
                             .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone.number)
                             .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, phone.type)
-                            .withValue(ContactsContract.CommonDataKinds.Phone.IS_PRIMARY, if (phone.isDefault) 1 else 0)
+                            .withValue(
+                                ContactsContract.CommonDataKinds.Phone.IS_PRIMARY,
+                                if (phone.isDefault) 1 else 0
+                            )
                             .withYieldAllowed(true)
                             .build()
                     )
@@ -257,10 +301,16 @@ class ContactsRepository(
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
+                            .withValue(
+                                ContactsContract.Data.MIMETYPE,
+                                ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE
+                            )
                             .withValue(ContactsContract.CommonDataKinds.Email.ADDRESS, email.email)
                             .withValue(ContactsContract.CommonDataKinds.Email.TYPE, email.type)
-                            .withValue(ContactsContract.CommonDataKinds.Email.IS_PRIMARY, if (email.isDefault) 1 else 0)
+                            .withValue(
+                                ContactsContract.CommonDataKinds.Email.IS_PRIMARY,
+                                if (email.isDefault) 1 else 0
+                            )
                             .withYieldAllowed(true)
                             .build()
                     )
@@ -270,9 +320,18 @@ class ContactsRepository(
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE)
-                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS, address.address)
-                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.TYPE, address.type)
+                            .withValue(
+                                ContactsContract.Data.MIMETYPE,
+                                ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE
+                            )
+                            .withValue(
+                                ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS,
+                                address.address
+                            )
+                            .withValue(
+                                ContactsContract.CommonDataKinds.StructuredPostal.TYPE,
+                                address.type
+                            )
                             .withYieldAllowed(true)
                             .build()
                     )
@@ -282,8 +341,14 @@ class ContactsRepository(
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE)
-                            .withValue(ContactsContract.CommonDataKinds.Website.URL, website.website)
+                            .withValue(
+                                ContactsContract.Data.MIMETYPE,
+                                ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE
+                            )
+                            .withValue(
+                                ContactsContract.CommonDataKinds.Website.URL,
+                                website.website
+                            )
                             .withYieldAllowed(true)
                             .build()
                     )
@@ -292,7 +357,10 @@ class ContactsRepository(
                 operations.add(
                     ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                         .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                        .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE)
+                        .withValue(
+                            ContactsContract.Data.MIMETYPE,
+                            ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE
+                        )
                         .withValue(ContactsContract.CommonDataKinds.Note.NOTE, contact.details.note)
                         .withYieldAllowed(true)
                         .build()
@@ -302,8 +370,14 @@ class ContactsRepository(
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE)
-                            .withValue(ContactsContract.CommonDataKinds.Event.START_DATE, event.date)
+                            .withValue(
+                                ContactsContract.Data.MIMETYPE,
+                                ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE
+                            )
+                            .withValue(
+                                ContactsContract.CommonDataKinds.Event.START_DATE,
+                                event.date
+                            )
                             .withValue(ContactsContract.CommonDataKinds.Event.TYPE, event.type)
                             .withYieldAllowed(true)
                             .build()
@@ -315,14 +389,30 @@ class ContactsRepository(
 
                 operations.add(
                     ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI)
-                        .withSelection("${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?", arrayOf(rawId.toString(),ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE))
-                        .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, contact.details.firstName)
-                        .withValue(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, contact.details.middleName)
-                        .withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, contact.details.lastName)
+                        .withSelection(
+                            "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
+                            arrayOf(
+                                rawId.toString(),
+                                ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE
+                            )
+                        )
+                        .withValue(
+                            ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME,
+                            contact.details.firstName
+                        )
+                        .withValue(
+                            ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME,
+                            contact.details.middleName
+                        )
+                        .withValue(
+                            ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME,
+                            contact.details.lastName
+                        )
                         .withYieldAllowed(true) // from what I understand, this allows the content resolver to not take too long/freeze thread for each operation
                         .build()
 
                 )
+
 
                 operations.add(
                     ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
@@ -340,7 +430,10 @@ class ContactsRepository(
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+                            .withValue(
+                                ContactsContract.Data.MIMETYPE,
+                                ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
+                            )
                             .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone.number)
                             .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, phone.type)
                             .withValue(
@@ -363,11 +456,40 @@ class ContactsRepository(
                         .build()
                 )
 
+
+                operations.add(
+                    ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
+                        .withSelection(
+                            "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
+                            arrayOf(
+                                rawId.toString(),
+                                ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
+                            )
+                        )
+                        .withYieldAllowed(true)
+                        .build()
+                )
+
+                operations.add(
+                    ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                        .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
+                        .withValue(
+                            ContactsContract.Data.MIMETYPE,
+                            ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
+                        )
+                        .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, pfpByteArray)
+                        .withYieldAllowed(true)
+                        .build()
+                )
+
                 contact.details.emails.fastForEach { email ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
+                            .withValue(
+                                ContactsContract.Data.MIMETYPE,
+                                ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE
+                            )
                             .withValue(ContactsContract.CommonDataKinds.Email.ADDRESS, email.email)
                             .withValue(ContactsContract.CommonDataKinds.Email.TYPE, email.type)
                             .withValue(
@@ -394,12 +516,18 @@ class ContactsRepository(
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE)
+                            .withValue(
+                                ContactsContract.Data.MIMETYPE,
+                                ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE
+                            )
                             .withValue(
                                 ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS,
                                 address.address
                             )
-                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.TYPE, address.type)
+                            .withValue(
+                                ContactsContract.CommonDataKinds.StructuredPostal.TYPE,
+                                address.type
+                            )
                             .build()
                     )
                 }
@@ -420,8 +548,14 @@ class ContactsRepository(
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE)
-                            .withValue(ContactsContract.CommonDataKinds.Website.URL, website.website)
+                            .withValue(
+                                ContactsContract.Data.MIMETYPE,
+                                ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE
+                            )
+                            .withValue(
+                                ContactsContract.CommonDataKinds.Website.URL,
+                                website.website
+                            )
                             .build()
                     )
                 }
@@ -442,8 +576,14 @@ class ContactsRepository(
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE)
-                            .withValue(ContactsContract.CommonDataKinds.Event.START_DATE, event.date)
+                            .withValue(
+                                ContactsContract.Data.MIMETYPE,
+                                ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE
+                            )
+                            .withValue(
+                                ContactsContract.CommonDataKinds.Event.START_DATE,
+                                event.date
+                            )
                             .withValue(ContactsContract.CommonDataKinds.Event.TYPE, event.type)
                             .build()
                     )
@@ -464,8 +604,14 @@ class ContactsRepository(
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE)
-                            .withValue(ContactsContract.CommonDataKinds.Note.NOTE, contact.details.note)
+                            .withValue(
+                                ContactsContract.Data.MIMETYPE,
+                                ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE
+                            )
+                            .withValue(
+                                ContactsContract.CommonDataKinds.Note.NOTE,
+                                contact.details.note
+                            )
                             .build()
                     )
                 }
@@ -473,17 +619,26 @@ class ContactsRepository(
 
             }
             context.contentResolver.applyBatch(ContactsContract.AUTHORITY, operations)
+            true
 
-            if (showProgressToasts) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Contact inserted!", Toast.LENGTH_SHORT).show()
-                }
-            }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            e.printStackTrace()
             withContext(Dispatchers.Main) {
                 Toast.makeText(context, "Error while saving contact", Toast.LENGTH_SHORT).show()
             }
+            false
         }
+    }
+
+    private fun uriToByteArray(uri: Uri): ByteArray? {
+
+        if (uri == Uri.EMPTY) return null
+
+        context.contentResolver.openInputStream(uri)?.use {
+            return it.readBytes()
+        }
+
+        return null
     }
 
     suspend fun deleteContacts(contactIds: List<Long>) = withContext(Dispatchers.IO) {

@@ -5,31 +5,53 @@
     <uses-feature
         android:name="android.hardware.telephony"
         android:required="false" />
-    <uses-permission android:name="android.permission.READ_SMS" />
-    <uses-permission android:name="android.permission.SEND_SMS" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.WRITE_SMS" />
-    <uses-permission android:name="android.permission.RECEIVE_MMS" />
+
+    <uses-permission
+        android:name="android.permission.READ_SMS"
+        tools:ignore="SmsAndCallLogPolicy" />
+    <uses-permission
+        android:name="android.permission.SEND_SMS"
+        tools:ignore="SmsAndCallLogPolicy" />
+    <uses-permission
+        android:name="android.permission.RECEIVE_SMS"
+        tools:ignore="SmsAndCallLogPolicy" />
+    <uses-permission
+        android:name="android.permission.WRITE_SMS"
+        tools:ignore="SmsAndCallLogPolicy,SystemPermissionTypo" />
+    <uses-permission
+        android:name="android.permission.RECEIVE_MMS"
+        tools:ignore="SmsAndCallLogPolicy" />
     <uses-permission android:name="com.android.voicemail.permission.ADD_VOICEMAIL" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
-    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS"/>
+    <uses-permission
+        android:name="android.permission.USE_FULL_SCREEN_INTENT"
+        tools:ignore="FullScreenIntentPolicy" />
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <uses-permission android:name="android.permission.READ_CALL_LOG" />
-    <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
+    <uses-permission
+        android:name="android.permission.READ_CALL_LOG"
+        tools:ignore="SmsAndCallLogPolicy" />
+    <uses-permission
+        android:name="android.permission.WRITE_CALL_LOG"
+        tools:ignore="SmsAndCallLogPolicy" />
     <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE"
+        tools:ignore="ForegroundServicesPolicy" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <uses-permission android:name="android.hardware.sensor.proximity" />
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
 
 
-
+    <uses-permission
+        android:name="android.permission.USE_BIOMETRIC"
+        tools:node="remove" /> <!-- Granted by Composense but not needed -->
 
 
     <application
@@ -47,6 +69,7 @@
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.APP_MESSAGING" />
                 <category android:name="android.intent.category.APP_CONTACTS" />
@@ -56,8 +79,10 @@
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <action android:name="android.intent.action.SENDTO" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data android:scheme="sms" />
                 <data android:scheme="smsto" />
                 <data android:scheme="mms" />
@@ -78,7 +103,7 @@
 
         <activity
             android:name=".activities.ContactPickerActivity"
-            android:exported="true"/>
+            android:exported="true" />
 
 
         <provider
@@ -120,6 +145,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.RESPOND_VIA_MESSAGE" />
                 <category android:name="android.intent.category.DEFAULT" />
+
                 <data android:scheme="sms" />
                 <data android:scheme="smsto" />
                 <data android:scheme="mms" />
@@ -127,7 +153,7 @@
             </intent-filter>
         </service>
 
-        <receiver android:name=".data.receivers.MessageReplyReceiver"/>
+        <receiver android:name=".data.receivers.MessageReplyReceiver" />
 
         <activity
             android:name=".activities.CallActivity"
@@ -137,7 +163,7 @@
             android:turnScreenOn="true"
             android:theme="@style/Theme.CuteConnect">
             <intent-filter>
-                <action android:name="android.intent.action.CALL"/>
+                <action android:name="android.intent.action.CALL" />
                 <category android:name="android.intent.category.DEFAULT" />
 
                 <data android:scheme="tel" />
@@ -154,11 +180,12 @@
             <meta-data
                 android:name="android.telecom.IN_CALL_SERVICE_UI"
                 android:value="true" />
-            <meta-data android:name="android.telecom.IN_CALL_SERVICE_RINGING"
+            <meta-data
+                android:name="android.telecom.IN_CALL_SERVICE_RINGING"
                 android:value="true" />
 
             <intent-filter>
-                <action android:name="android.telecom.InCallService"/>
+                <action android:name="android.telecom.InCallService" />
             </intent-filter>
         </service>
 
@@ -171,17 +198,18 @@
             </intent-filter>
         </service>
 
-        <service android:name="com.android.mms.transaction.TransactionService"/>
+        <service android:name="com.android.mms.transaction.TransactionService" />
 
         <receiver
             android:name="com.klinker.android.send_message.SentReceiver"
-            android:taskAffinity="cinnamon.SMS_SENT"/>
+            android:taskAffinity="cinnamon.SMS_SENT" />
 
         <receiver
             android:name=".data.broadcasts.DeliveryReportsReceiver"
-            android:exported="true"/>
+            android:exported="true" />
 
-        <receiver android:name=".data.receivers.MmsReceiver"
+        <receiver
+            android:name=".data.receivers.MmsReceiver"
             android:exported="true"
             android:permission="android.permission.BROADCAST_WAP_PUSH">
             <intent-filter>
@@ -193,17 +221,17 @@
 
         <receiver
             android:name="com.klinker.android.send_message.DeliveredReceiver"
-            android:taskAffinity="cinnamon.SMS_DELIVERED"/>
+            android:taskAffinity="cinnamon.SMS_DELIVERED" />
         <!-- Your custom receiver which is child of com.klinker.android.send_message.MmsSentReceiver -->
         <receiver
             android:name=".data.receivers.CuteMmsSentReceiver"
             android:exported="true">
             <intent-filter>
-                <action android:name="com.klinker.android.messaging.MMS_SENT"/>
+                <action android:name="com.klinker.android.messaging.MMS_SENT" />
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".data.receivers.CallReceiver"/>
+        <receiver android:name=".data.receivers.CallReceiver" />
 
     </application>
 

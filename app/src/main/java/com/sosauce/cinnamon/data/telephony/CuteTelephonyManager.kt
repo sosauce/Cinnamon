@@ -41,7 +41,12 @@ class CuteTelephonyManager(
         )
         val selection = "${Sms.THREAD_ID} = ?"
 
-        context.contentResolver.update(Sms.CONTENT_URI, contentValues, selection, arrayOf(threadId.toString()))
+        context.contentResolver.update(
+            Sms.CONTENT_URI,
+            contentValues,
+            selection,
+            arrayOf(threadId.toString())
+        )
     }
 
 
@@ -53,7 +58,8 @@ class CuteTelephonyManager(
         message: String,
         attachments: List<Uri>
     ) {
-        val isMms = attachments.isNotEmpty() || (addresses.size > 1 && userPreferences.groupAsMms.first()) || (message.length > 160 && userPreferences.longAsMms.first())
+        val isMms =
+            attachments.isNotEmpty() || (addresses.size > 1 && userPreferences.groupAsMms.first()) || (message.length > 160 && userPreferences.longAsMms.first())
 
         if (isMms) {
             if (attachments.isNotEmpty()) {
@@ -92,7 +98,12 @@ class CuteTelephonyManager(
             data = messageUri
         }
         val deliveryReportPending = if (userPreferences.enableDeliveryReports.first()) {
-            PendingIntent.getBroadcast(context, 0, deliveryReportIntent,PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.getBroadcast(
+                context,
+                0,
+                deliveryReportIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
         } else null
 
         if (message.length <= 160) {

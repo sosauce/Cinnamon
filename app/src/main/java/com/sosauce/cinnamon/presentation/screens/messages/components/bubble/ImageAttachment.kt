@@ -3,9 +3,6 @@
 package com.sosauce.cinnamon.presentation.screens.messages.components.bubble
 
 import android.net.Uri
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,19 +31,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
-import androidx.core.view.WindowCompat
 import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationActions
-import com.sosauce.cinnamon.utils.rememberHazeState
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
-import kotlin.Unit
 
 @Composable
 fun ImageAttachment(
@@ -61,7 +51,7 @@ fun ImageAttachment(
 
         val zoomState = rememberZoomState()
         Dialog(
-            onDismissRequest = { showFullscreen = false  },
+            onDismissRequest = { showFullscreen = false },
             properties = DialogProperties(
                 usePlatformDefaultWidth = false,
                 decorFitsSystemWindows = false
@@ -114,7 +104,13 @@ fun ImageAttachment(
                         )
                     }
                     FloatingActionButton(
-                        onClick = { onHandleConversationActions(ConversationActions.DownloadMmsImage(image ?: return@FloatingActionButton)) },
+                        onClick = {
+                            onHandleConversationActions(
+                                ConversationActions.DownloadMmsImage(
+                                    image ?: return@FloatingActionButton
+                                )
+                            )
+                        },
                         shape = MaterialShapes.Cookie9Sided.toShape()
                     ) {
                         Icon(
@@ -134,7 +130,6 @@ fun ImageAttachment(
             .clickable { showFullscreen = true },
         contentScale = ContentScale.Crop
     )
-
 
 
 }

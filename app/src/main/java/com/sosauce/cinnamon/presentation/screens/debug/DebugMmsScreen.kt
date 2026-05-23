@@ -40,7 +40,9 @@ fun DebugMmsScreen(
                     contentDescription = null
                 )
 
-                if (it.text != null) { Text(it.text) }
+                if (it.text != null) {
+                    Text(it.text)
+                }
             }
         }
     }

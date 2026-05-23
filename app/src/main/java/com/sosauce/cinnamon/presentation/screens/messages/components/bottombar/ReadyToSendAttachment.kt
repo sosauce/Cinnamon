@@ -54,6 +54,7 @@ fun ReadyToSendAttachment(
                         .clip(RoundedCornerShape(12.dp))
                 ) { ImageAttachment(image = attachment, onHandleConversationActions = {}) }
             }
+
             attachment.isVideo(context) -> {
                 Box(
                     modifier = Modifier
@@ -61,6 +62,7 @@ fun ReadyToSendAttachment(
                         .clip(RoundedCornerShape(12.dp))
                 ) { VideoAttachment(video = attachment) }
             }
+
             else -> {
                 Row(
                     modifier = Modifier
@@ -85,7 +87,10 @@ fun ReadyToSendAttachment(
                             style = MaterialTheme.typography.bodySmallEmphasized
                         )
                         Text(
-                            text = Formatter.formatFileSize(context,context.getMMSSize(attachment)),
+                            text = Formatter.formatFileSize(
+                                context,
+                                context.getMMSSize(attachment)
+                            ),
                             style = MaterialTheme.typography.labelSmallEmphasized.copy(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

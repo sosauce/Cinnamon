@@ -2,11 +2,8 @@ package com.sosauce.cinnamon.presentation.screens.contacts
 
 import android.app.Application
 import android.provider.BlockedNumberContract
-import android.provider.ContactsContract
-import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.data.contact_settings.ContactSettings
 import com.sosauce.cinnamon.data.contact_settings.ContactSettingsDao
@@ -23,14 +20,14 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.plus
+import java.io.File
 
 class ContactDetailsViewModel(
     private val application: Application,
     private val contactId: Long,
     private val contactsRepository: ContactsRepository,
     private val contactSettingsDao: ContactSettingsDao
-): AndroidViewModel(application) {
+) : AndroidViewModel(application) {
 
 
     private val _state = MutableStateFlow(ContactDetailsState(isLoading = true))
@@ -53,55 +50,62 @@ class ContactDetailsViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             contactSettingsDao.getContactSettings(contactId).collectLatest { settings ->
                 _state.update {
-                    it.copy(settings = settings ?: ContactSettings(contactId.toInt()))
+                    it.copy(settings = settings ?: ContactSettings(contactId = contactId))
                 }
             }
         }
 
-        application.contentResolver.observe(BlockedNumberContract.BlockedNumbers.CONTENT_URI).onEach {
-            _state.update { state ->
+        application.contentResolver.observe(BlockedNumberContract.BlockedNumbers.CONTENT_URI)
+            .onEach {
+                _state.update { state ->
 
-                val contact = state.contact
+                    val contact = state.contact
 
-                val updatedPhones = contact.details.phoneNumbers.fastMap { phone ->
-                    phone.copy(
-                        isBlocked = BlockedNumberContract.isBlocked(application, phone.number)
-                    )
-                }
+                    val updatedPhones = contact.details.phoneNumbers.fastMap { phone ->
+                        phone.copy(
+                            isBlocked = BlockedNumberContract.isBlocked(application, phone.number)
+                        )
+                    }
 
-                val updatedEmails = contact.details.emails.fastMap { email ->
-                    email.copy(
-                        isBlocked = BlockedNumberContract.isBlocked(application, email.email)
-                    )
-                }
+                    val updatedEmails = contact.details.emails.fastMap { email ->
+                        email.copy(
+                            isBlocked = BlockedNumberContract.isBlocked(application, email.email)
+                        )
+                    }
 
-                state.copy(
-                    contact = contact.copy(
-                        details = contact.details.copy(
-                            phoneNumbers = updatedPhones,
-                            emails = updatedEmails
+                    state.copy(
+                        contact = contact.copy(
+                            details = contact.details.copy(
+                                phoneNumbers = updatedPhones,
+                                emails = updatedEmails
+                            )
                         )
                     )
-                )
-            }
-        }.flowOn(Dispatchers.Default).launchIn(viewModelScope)
+                }
+            }.flowOn(Dispatchers.Default).launchIn(viewModelScope)
 
 
     }
 
     fun handleContactDetailsAction(action: ContactDetailsAction) {
-        when(action) {
+        when (action) {
             is ContactDetailsAction.ToggleFavorite -> {
                 viewModelScope.launch {
                     contactsRepository.toggleFavorite(listOf(state.value.contact))
                 }
             }
+
             is ContactDetailsAction.ShareContact -> {}
             is ContactDetailsAction.DeleteContact -> {
-                viewModelScope.launch {
+                viewModelScope.launch(Dispatchers.IO) {
                     contactsRepository.deleteContacts(listOf(contactId))
+
+                    // Delete poster before deleting settings from local db or else we might lose reference to the poster in the state before being able to delete
+                    File(application.filesDir, state.value.settings.poster).delete()
+                    contactSettingsDao.deleteContactSettings(state.value.settings)
                 }
             }
+
             is ContactDetailsAction.BlockContact -> {
                 val toBlock = if (action.emailsToo) {
                     state.value.contact.details.phoneNumbers.fastMap { it.number } + state.value.contact.details.emails.fastMap { it.email }

@@ -7,7 +7,7 @@ import android.content.Intent
 import android.provider.Telephony
 import androidx.core.content.contentValuesOf
 
-class DeliveryReportsReceiver: BroadcastReceiver() {
+class DeliveryReportsReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent?) {
         val uri = intent?.data ?: return

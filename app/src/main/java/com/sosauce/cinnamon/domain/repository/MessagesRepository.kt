@@ -2,36 +2,23 @@
 
 package com.sosauce.cinnamon.domain.repository
 
-import android.content.ContentProviderOperation
-import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.BlockedNumberContract
-import android.provider.ContactsContract
 import android.provider.Telephony
 import android.provider.Telephony.Mms
 import android.provider.Telephony.MmsSms
-import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import androidx.paging.PagingSource
-import androidx.paging.PagingState
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.domain.model.CuteCallLog
 import com.sosauce.cinnamon.domain.model.CuteConversation
-import com.sosauce.cinnamon.domain.model.CuteMessage
 import com.sosauce.cinnamon.utils.beautifyNumber
 import com.sosauce.cinnamon.utils.getContactNameOrNothing
-import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.observe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
@@ -102,7 +89,8 @@ class MessagesRepository(private val context: Context) {
                 val date = cursor.getLong(dateColumn)
                 val read = cursor.getInt(readColumn) != 0
                 val rawRecipients = recipientIds.fastMap { it.getNumberForId() }
-                val recipients = rawRecipients.fastMap { it.getContactNameOrNothing(context).beautifyNumber() }
+                val recipients =
+                    rawRecipients.fastMap { it.getContactNameOrNothing(context).beautifyNumber() }
                 val isGroupChat = rawRecipients.size > 1
                 val systemSnippet = cursor.getString(snippetColumn)
                 val snippet = if (systemSnippet.isNullOrBlank()) {
@@ -123,19 +111,21 @@ class MessagesRepository(private val context: Context) {
                         date = date,
                         read = read,
                         isGroupChat = isGroupChat,
-                        isSenderBlocked = if (isGroupChat) false else blockedNumbers.contains(rawRecipients.firstOrNull())
+                        isSenderBlocked = if (isGroupChat) false else blockedNumbers.contains(
+                            rawRecipients.firstOrNull()
+                        )
                     )
                 )
             }
         }
 
-       return conversations
+        return conversations
     }
 
 
     /**
      * I don't wanna use [android.provider.BlockedNumberContract.isBlocked] because they say it's slow and that's spooky
-      */
+     */
     private fun getAllBlockedNumbers(): Set<String> {
 
         val blocked = mutableSetOf<String>()
@@ -147,7 +137,8 @@ class MessagesRepository(private val context: Context) {
             null,
             null
         )?.use { cursor ->
-            val numberColumn = cursor.getColumnIndexOrThrow(BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER)
+            val numberColumn =
+                cursor.getColumnIndexOrThrow(BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER)
 
             while (cursor.moveToNext()) {
                 val number = cursor.getString(numberColumn)
@@ -180,7 +171,6 @@ class MessagesRepository(private val context: Context) {
     }
 
 
-
     private fun getMmsThreadSnippet(threadId: Long): String {
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             Mms.Part.CONTENT_URI
@@ -193,7 +183,8 @@ class MessagesRepository(private val context: Context) {
             Mms.Part.TEXT,
         )
         // today i learnt u can cross SQL select
-        val selection = "${Mms.Part.MSG_ID} = (SELECT ${Mms._ID} FROM $MMS_TABLE_NAME WHERE ${Mms.THREAD_ID} = ? ORDER BY ${Mms.DATE} DESC LIMIT 1)"
+        val selection =
+            "${Mms.Part.MSG_ID} = (SELECT ${Mms._ID} FROM $MMS_TABLE_NAME WHERE ${Mms.THREAD_ID} = ? ORDER BY ${Mms.DATE} DESC LIMIT 1)"
         val selectionArgs = arrayOf(threadId.toString())
 
         context.contentResolver.query(
@@ -210,6 +201,7 @@ class MessagesRepository(private val context: Context) {
                     mimeType == "text/plain" -> {
                         return cursor.getString(cursor.getColumnIndexOrThrow(Mms.Part.TEXT)) ?: ""
                     }
+
                     mimeType.startsWith("image/") -> context.getString(R.string.image)
                     mimeType.startsWith("video/") -> context.getString(R.string.video)
                     else -> context.getString(R.string.attachment)
@@ -227,9 +219,21 @@ class MessagesRepository(private val context: Context) {
         val placeholders = threadIds.joinToString(", ") { "?" }
         val stringThreadIds = threadIds.fastMap { it.toString() }.toTypedArray()
 
-        context.contentResolver.delete(Telephony.Sms.CONTENT_URI, "${Telephony.Sms.THREAD_ID} IN ($placeholders)", stringThreadIds)
-        context.contentResolver.delete(Mms.CONTENT_URI, "${Mms.THREAD_ID} IN ($placeholders)", stringThreadIds)
-        context.contentResolver.delete(Telephony.Threads.CONTENT_URI, "${Telephony.Threads._ID} IN ($placeholders)", stringThreadIds)
+        context.contentResolver.delete(
+            Telephony.Sms.CONTENT_URI,
+            "${Telephony.Sms.THREAD_ID} IN ($placeholders)",
+            stringThreadIds
+        )
+        context.contentResolver.delete(
+            Mms.CONTENT_URI,
+            "${Mms.THREAD_ID} IN ($placeholders)",
+            stringThreadIds
+        )
+        context.contentResolver.delete(
+            Telephony.Threads.CONTENT_URI,
+            "${Telephony.Threads._ID} IN ($placeholders)",
+            stringThreadIds
+        )
     }
 
     companion object {

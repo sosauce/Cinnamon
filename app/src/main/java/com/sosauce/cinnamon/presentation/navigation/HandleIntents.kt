@@ -13,7 +13,7 @@ fun NavBackStack<NavKey>.handleIntent(
 ) {
     if (intent == null) return
 
-    when(intent.action) {
+    when (intent.action) {
         CuteIntents.NOTIFICATION_NAVIGATE_TO_THREAD -> {
             val threadId = intent.getLongExtra("threadId", 0L)
             add(Screen.Conversation(threadId))
@@ -25,7 +25,8 @@ fun NavBackStack<NavKey>.handleIntent(
         }
 
         Intent.ACTION_SENDTO -> {
-            val threadId = (intent.data?.toString() ?: "").removePrefix("smsto:").getThreadIdOrCreate(context)
+            val threadId =
+                (intent.data?.toString() ?: "").removePrefix("smsto:").getThreadIdOrCreate(context)
             val message = intent.getStringExtra("sms_body") ?: ""
             add(Screen.Conversation(threadId, message))
         }
