@@ -131,7 +131,7 @@ fun VoicemailScreen(
                                     onNavigateUp = onNavigateUp
                                 )
                             },
-                            onNavigate = {}
+                            onNavigate = onNavigate
                         )
                     }
                 }
