@@ -2,8 +2,6 @@
 
 package com.sosauce.cinnamon.domain.repository
 
-import android.accounts.Account
-import android.accounts.AccountManager
 import android.content.ContentProviderOperation
 import android.content.Context
 import android.net.Uri
@@ -42,7 +40,7 @@ class ContactsRepository(
     private fun fetchAccountNames(): Map<Long, String> {
         val map = mutableMapOf<Long, String>()
         context.contentResolver.query(
-            ContactsContract.RawContacts.CONTENT_URI,
+                ContactsContract.RawContacts.CONTENT_URI,
             arrayOf(
                 ContactsContract.RawContacts.CONTACT_ID,
                 ContactsContract.RawContacts.ACCOUNT_NAME
@@ -708,5 +706,5 @@ class ContactsRepository(
     }
 
 
-    fun fetchAccounts(): List<Account> = AccountManager.get(context).accounts.toList()
+//    fun fetchAccounts(): List<Account> = AccountManager.get(context).accounts.toList()
 }
