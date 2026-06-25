@@ -2,8 +2,6 @@
 
 package com.sosauce.cinnamon.domain.repository
 
-import android.accounts.Account
-import android.accounts.AccountManager
 import android.content.ContentProviderOperation
 import android.content.Context
 import android.net.Uri
@@ -708,5 +706,5 @@ class ContactsRepository(
     }
 
 
-    fun fetchAccounts(): List<Account> = AccountManager.get(context).accounts.toList()
+//    fun fetchAccounts(): List<Account> = AccountManager.get(context).accounts.toList()
 }
