@@ -42,7 +42,7 @@ class ContactsRepository(
     private fun fetchAccountNames(): Map<Long, String> {
         val map = mutableMapOf<Long, String>()
         context.contentResolver.query(
-            ContactsContract.RawContacts.CONTENT_URI,
+                ContactsContract.RawContacts.CONTENT_URI,
             arrayOf(
                 ContactsContract.RawContacts.CONTACT_ID,
                 ContactsContract.RawContacts.ACCOUNT_NAME
