@@ -40,7 +40,6 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
-import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -92,6 +91,8 @@ import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.math.ceil
+import androidx.compose.ui.layout.onSizeChanged
+
 
 @Composable
 fun ConversationBottomBar(
@@ -271,16 +272,21 @@ fun ConversationBottomBar(
                 }
             }
         }
+        val density = LocalDensity.current
+        var barHeight by remember { mutableStateOf(0.dp) }
+        val cornerRadius = (barHeight / 2).coerceAtMost(28.dp)
+
         Column(
             modifier = Modifier
                 .imePadding()
                 .navigationBarsPadding()
+                .onSizeChanged { barHeight = with(density) { it.height.toDp() } }
                 .background(
                     color = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = RoundedCornerShape(50.dp)
+                    shape = RoundedCornerShape(cornerRadius),
                 )
                 .padding(10.dp)
-        ) {
+        ){
             Row(
                 modifier = Modifier.animateContentSize(),
                 verticalAlignment = Alignment.CenterVertically
@@ -297,8 +303,8 @@ fun ConversationBottomBar(
                 }
                 TextField(
                     state = viewModel.textFieldState,
-                    shape = FloatingToolbarDefaults.ContainerShape,
-                    lineLimits = TextFieldLineLimits.SingleLine,
+                    shape = RoundedCornerShape(cornerRadius),
+                    lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 1, maxHeightInLines = 6),
                     modifier = Modifier.weight(1f),
                     colors = TextFieldDefaults.colors(
                         unfocusedIndicatorColor = Color.Transparent,
