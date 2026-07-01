@@ -43,7 +43,8 @@
 - Unified UI/UX for a fluid and gorgeous experience among the 3 modules!
 - Send and receive SMS & MMS!
 - Schedule messages!
-- Per chat customzation: Wallpaper & color
+- Pin chats!
+- Per chat customization: Wallpaper & color!
 - Manage & edit contacts!
 - Support for contact posters!
 - Device level blocking!
