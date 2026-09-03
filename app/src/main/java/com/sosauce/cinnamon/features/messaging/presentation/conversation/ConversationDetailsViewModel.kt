@@ -105,7 +105,7 @@ class ConversationDetailsViewModel(
             conversation = conversation,
             settings = settings,
             isLoading = false,
-            isShortCode = conversation.participants.first().rawNumber.isShortCode()
+            isShortCode = conversation.participants.firstOrNull()?.rawNumber?.isShortCode() ?: false
         )
     }.stateIn(
         viewModelScope,

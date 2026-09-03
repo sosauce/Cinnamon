@@ -46,6 +46,7 @@ data object PreferencesKeys {
     val SORT_CONTACTS_ASCENDING = booleanPreferencesKey("SORT_CONTACTS_ASCENDING")
     val ENABLE_T9_DIALING = booleanPreferencesKey("ENABLE_T9_DIALING")
     val SORT_LOGS_ASCENDING = booleanPreferencesKey("SORT_LOGS_ASCENDING")
+    val INCOMING_CALL_FULLSCREEN = booleanPreferencesKey("INCOMING_CALL_FULLSCREEN")
 }
 
 
@@ -104,6 +105,9 @@ fun rememberEnableT9Dialing() = rememberPreference(PreferencesKeys.ENABLE_T9_DIA
 
 @Composable
 fun rememberSortLogsAscending() = rememberPreference(PreferencesKeys.SORT_LOGS_ASCENDING, true)
+
+@Composable
+fun rememberIncomingCallFullscreen() = rememberPreference(PreferencesKeys.INCOMING_CALL_FULLSCREEN, true)
 
 @Composable
 fun rememberInitialScreen() = rememberPreference(PreferencesKeys.DEFAULT_TAB, DefaultTabOption.MESSAGES)

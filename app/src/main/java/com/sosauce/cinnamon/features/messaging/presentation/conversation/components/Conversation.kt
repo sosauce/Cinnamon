@@ -60,7 +60,7 @@ fun Conversation(
     if (showUnblockDialog) {
 
         // Can only block individual chats, not group chats
-        val blockedParticipant = conversation.participants.first()
+        val blockedParticipant = conversation.participants.firstOrNull() ?: return
 
         AlertDialog(
             onDismissRequest = { showUnblockDialog = false },

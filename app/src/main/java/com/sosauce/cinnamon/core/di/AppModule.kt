@@ -23,6 +23,7 @@ import com.sosauce.cinnamon.features.phone.data.repository.VoicemailsRepository
 import com.sosauce.cinnamon.core.telephony.PhoneNumberNormalizer
 import com.sosauce.cinnamon.core.telephony.message.CuteTelephonyManager
 import com.sosauce.cinnamon.core.telephony.message.MessageNotificationManager
+import com.sosauce.cinnamon.core.system.services.CallOverlayManager
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
 import com.sosauce.cinnamon.core.telephony.phone.CallNotificationManager
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.MIGRATION_1_2_CONTACT_SETTINGS
@@ -99,6 +100,7 @@ val appModule = module {
     singleOf(::CallManager)
     singleOf(::MessageNotificationManager)
     singleOf(::CallNotificationManager)
+    singleOf(::CallOverlayManager)
     singleOf(::CuteTelephonyManager)
     singleOf(::MessagesRepository)
     singleOf(::ContactsRepository)

@@ -19,6 +19,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.rememberAppTheme
+import com.sosauce.cinnamon.core.datastore.rememberIncomingCallFullscreen
 import com.sosauce.cinnamon.core.datastore.rememberPaletteStyle
 import com.sosauce.cinnamon.core.datastore.rememberUseSystemFont
 import com.sosauce.cinnamon.core.ui.nunitoFontFamily
@@ -29,6 +30,7 @@ import com.sosauce.cinnamon.core.utils.anyLightColorScheme
 import com.sosauce.cinnamon.settings.components.PaletteSelector
 import com.sosauce.cinnamon.settings.components.SettingsSelector
 import com.sosauce.cinnamon.settings.components.SettingsWithTitle
+import com.sosauce.cinnamon.settings.components.SwitchSettingsCard
 import com.sosauce.nekobites.components.LazyRowWithScrollButton
 
 @Composable
@@ -102,6 +104,8 @@ fun SettingsLookAndFeel() {
         CutePaletteStyle.FRUIT_SALAD
     )
 
+    var incomingFullscreen by rememberIncomingCallFullscreen()
+
     Column {
         SettingsWithTitle(
             title = R.string.theme
@@ -171,6 +175,19 @@ fun SettingsLookAndFeel() {
                     )
                 }
             }
+        }
+
+        // Incoming call popup — moved from Permissions (blur options removed per request)
+        SettingsWithTitle(
+            title = R.string.look_and_feel
+        ) {
+            SwitchSettingsCard(
+                checked = incomingFullscreen,
+                onCheckedChange = { incomingFullscreen = !incomingFullscreen },
+                topDp = 24.dp,
+                bottomDp = 24.dp,
+                text = "Incoming call full-screen popup"
+            )
         }
 
     }

@@ -16,6 +16,9 @@ import com.sosauce.cinnamon.app.navigation.Nav
 import com.sosauce.cinnamon.setup.SetupScreen
 import com.sosauce.cinnamon.core.ui.CinnamonTheme
 import com.sosauce.cinnamon.core.utils.CuteTheme
+import android.app.role.RoleManager
+import android.os.Build
+import android.provider.Telephony
 import com.sosauce.cinnamon.core.utils.hasBothRoles
 
 class MainActivity : ComponentActivity() {
@@ -29,13 +32,24 @@ class MainActivity : ComponentActivity() {
         setContent {
             CinnamonTheme {
 
-                var hasBothRoles by remember { mutableStateOf(hasBothRoles()) }
-                if (hasBothRoles) {
+                // Dialer role no longer required — always use Cinnamon's call UI (CallScreen/Incoming UI)
+                // Only gate on SMS default (needed for messaging). hasBothRoles kept for legacy but dialer part ignored.
+                var hasSmsRole by remember {
+                    mutableStateOf(
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            val rm = getSystemService(RoleManager::class.java)
+                            rm.isRoleHeld(RoleManager.ROLE_SMS)
+                        } else {
+                            Telephony.Sms.getDefaultSmsPackage(this@MainActivity) == packageName
+                        }
+                    )
+                }
+                if (hasSmsRole) {
                     Nav(
                         intent = intent
                     )
                 } else {
-                    SetupScreen { hasBothRoles = true }
+                    SetupScreen { hasSmsRole = true }
                 }
             }
         }

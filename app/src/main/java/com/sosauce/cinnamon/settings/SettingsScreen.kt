@@ -38,6 +38,12 @@ fun SettingsScreen(
     val scrollState = rememberScrollState()
     val items = listOf(
         Item(
+            icon = R.drawable.phone_filled,
+            name = stringResource(R.string.permissions),
+            description = stringResource(R.string.permissions_desc),
+            onNavigate = { backStack.add(SettingsScreens.Permissions) }
+        ),
+        Item(
             icon = R.drawable.palette,
             name = stringResource(R.string.look_and_feel),
             description = stringResource(R.string.look_and_feel_desc),
@@ -165,6 +171,9 @@ fun SettingsScreen(
                 }
                 entry<SettingsScreens.Behavior> {
                     SettingsBehavior()
+                }
+                entry<SettingsScreens.Permissions> {
+                    SettingsPermissions()
                 }
             }
         )

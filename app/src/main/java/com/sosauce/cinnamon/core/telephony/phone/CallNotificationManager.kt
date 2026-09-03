@@ -30,13 +30,13 @@ class CallNotificationManager(
 
     val notificationManager = NotificationManagerCompat.from(context)
 
-    val intent = Intent(Intent.ACTION_MAIN, null).apply {
-        flags = Intent.FLAG_ACTIVITY_NO_USER_ACTION
-        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        setClass(context, CallActivity::class.java)
+    val intent = Intent(context, CallActivity::class.java).apply {
+        action = Intent.ACTION_MAIN
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        addFlags(Intent.FLAG_ACTIVITY_NO_USER_ACTION)
     }
 
-    val pendingIntent = PendingIntent.getActivity(context, 1, intent, PendingIntent.FLAG_MUTABLE)
+    val pendingIntent = PendingIntent.getActivity(context, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
 
     private val declineIntent = Intent(context, CallReceiver::class.java).apply {
@@ -71,7 +71,8 @@ class CallNotificationManager(
 
     @SuppressLint("MissingPermission")
     suspend fun createIncomingNotification(
-        callDetails: Call.Details
+        callDetails: Call.Details,
+        useFullScreen: Boolean = true
     ): Notification {
 
         val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart
@@ -91,7 +92,7 @@ class CallNotificationManager(
             .setCategory(Notification.CATEGORY_CALL)
             .setOngoing(true)
             .setContentIntent(pendingIntent)
-            .setFullScreenIntent(pendingIntent, true)
+            .setFullScreenIntent(pendingIntent, useFullScreen)
             .setStyle(
                 NotificationCompat.CallStyle.forIncomingCall(
                     Person.Builder()

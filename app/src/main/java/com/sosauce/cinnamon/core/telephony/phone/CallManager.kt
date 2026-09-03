@@ -60,13 +60,22 @@ class CallManager(
 
     /**
      * @return Whether the call was successfully placed or not
+     * @param forcedHandle - if provided, uses this PhoneAccountHandle directly (for SIM picker)
      */
-    fun startCall(number: String): Boolean {
-
-        val phoneHandle = runBlocking { userPreferences.getDefaultPhoneHandle().first() }
+    fun startCall(number: String, forcedHandle: android.telecom.PhoneAccountHandle? = null): Boolean {
+        val savedHandle = runBlocking { userPreferences.getDefaultPhoneHandle().first() }
+        // Avoid system SIM chooser: if no saved handle and multiple SIMs, pick first capable account
+        // This keeps call inside Cinnamon's CallScreen instead of opening system dialer's chooser.
+        val fallbackHandle = if (forcedHandle != null) forcedHandle else savedHandle ?: run {
+            try {
+                @Suppress("MissingPermission")
+                telecomManager.callCapablePhoneAccounts?.firstOrNull() as? android.telecom.PhoneAccountHandle
+                    ?: telecomManager.getDefaultOutgoingPhoneAccount(android.telecom.PhoneAccount.SCHEME_TEL)
+            } catch (_: SecurityException) { null }
+        }
 
         val bundle = Bundle().apply {
-            putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, phoneHandle)
+            putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, fallbackHandle)
         }
 
         val normalizedNumber = phoneNumberNormalizer.formatToE164(number)
@@ -77,11 +86,35 @@ class CallManager(
             true
         } catch (_: SecurityException) {
             false
+        } catch (_: Exception) {
+            false
         }
     }
 
+    fun hangupOngoingCall() {
+        val hadCallback = androidCallCallback != null
+        androidCallCallback?.hangupOngoingCall()
+        // Fallback: if InCallService not yet bound (optimistic UI before onCallAdded),
+        // or call was placed but Telecom hasn't delivered, force ENDED so CallActivity finishes.
+        // This fixes "end call button not working" when pressed quickly after dialing.
+        if (!hadCallback) {
+            updateCallState(CallState.ENDED)
+        }
+        // Also optimistically mark ended — CallService will confirm via STATE_DISCONNECTED
+        // but UI should react immediately.
+        _callingState.value.let { state ->
+            if (state.callState == CallState.DIALING || state.callState == CallState.RINGING || state.callState == CallState.ONGOING) {
+                // Don't duplicate if already ENDED, but ensure UI can finish
+                // We don't auto-force if already callback succeeded; CallService will update.
+                // However for immediate feedback, set to ENDED if callback was null.
+            }
+        }
+    }
 
-    fun hangupOngoingCall() = androidCallCallback?.hangupOngoingCall()
+    fun forceEndCall() {
+        updateCallState(CallState.ENDED)
+        androidCallCallback?.hangupOngoingCall()
+    }
 
     fun toggleMute(mute: Boolean) = callServiceCallback?.toggleMute(mute)
 

@@ -165,6 +165,10 @@
     <string name="default_launch_screen">Default launch screen</string>
     <string name="navigation">Navigation</string>
     <string name="navigation_desc">Don\'t get lost!</string>
+    <string name="default_apps">Default apps</string>
+    <string name="default_apps_desc">Set Cinnamon as default to handle calls and messages inside the app (call screen, incoming UI, bubbles).</string>
+    <string name="permissions">Permissions</string>
+    <string name="permissions_desc">Make sure the app is good to go !</string>
 
 
     <plurals name="delete_msg">

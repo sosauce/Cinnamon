@@ -26,9 +26,39 @@ import org.koin.dsl.koinConfiguration
 
 class CinnamonApplication : Application(), KoinStartup, SingletonImageLoader.Factory {
 
+    companion object {
+        @Volatile
+        var isCallActivityVisible: Boolean = false
+        // StateFlow for overlay manager to observe visibility changes
+        val isCallActivityVisibleFlow = kotlinx.coroutines.flow.MutableStateFlow(false)
+    }
 
     override fun onCreate() {
         super.onCreate()
+        registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
+            override fun onActivityResumed(activity: android.app.Activity) {
+                if (activity is com.sosauce.cinnamon.features.phone.presentation.call.CallActivity) {
+                    isCallActivityVisible = true
+                    isCallActivityVisibleFlow.value = true
+                }
+            }
+            override fun onActivityPaused(activity: android.app.Activity) {
+                if (activity is com.sosauce.cinnamon.features.phone.presentation.call.CallActivity) {
+                    isCallActivityVisible = false
+                    isCallActivityVisibleFlow.value = false
+                }
+            }
+            override fun onActivityCreated(a: android.app.Activity, b: android.os.Bundle?) {}
+            override fun onActivityStarted(a: android.app.Activity) {}
+            override fun onActivityStopped(a: android.app.Activity) {}
+            override fun onActivitySaveInstanceState(a: android.app.Activity, b: android.os.Bundle) {}
+            override fun onActivityDestroyed(a: android.app.Activity) {
+                if (a is com.sosauce.cinnamon.features.phone.presentation.call.CallActivity) {
+                    isCallActivityVisible = false
+                    isCallActivityVisibleFlow.value = false
+                }
+            }
+        })
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
 

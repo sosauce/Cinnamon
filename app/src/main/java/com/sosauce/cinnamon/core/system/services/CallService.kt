@@ -16,6 +16,7 @@ import android.telecom.InCallService
 import android.telecom.VideoProfile
 import android.telephony.SubscriptionManager
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.core.datastore.dataStore
 import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
 import com.sosauce.cinnamon.core.telephony.phone.AndroidCallCallback
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
@@ -28,7 +29,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.uuid.ExperimentalUuidApi
@@ -41,6 +44,7 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
     private lateinit var audioManager: AudioManager
     val callNotificationManager by inject<CallNotificationManager>()
     val callManager by inject<CallManager>()
+    val callOverlayManager by inject<CallOverlayManager>()
     private var cuteCall: Call? = null
 
     private val handler = Handler(Looper.getMainLooper())
@@ -111,12 +115,23 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         audioManager = (getSystemService(AUDIO_SERVICE) as AudioManager).apply {
             requestAudioFocus(audioFocus)
         }
+        // Start observing call state to show/hide bubble overlay over other apps
+        // M3 Expressive blur background via tonal surface in CallBubble
+        try {
+            callOverlayManager.observe(scope)
+        } catch (_: Exception) {}
     }
 
     override fun onDestroy() {
         super.onDestroy()
         audioManager.abandonAudioFocusRequest(audioFocus)
+        try { callOverlayManager.hideOverlay() } catch (_: Exception) {}
         job.cancel()
+    }
+
+    override fun onBringToForeground(showDialpad: Boolean) {
+        super.onBringToForeground(showDialpad)
+        launchCallActivity()
     }
 
     private fun launchCallActivity() {
@@ -124,10 +139,20 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
             addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_NO_USER_ACTION
             )
         }
-        startActivity(intent)
+        // InCallService is allowed to start activity, but on Android 10+ background
+        // launches are restricted — ensure we are foreground or use fullScreenIntent.
+        // Callers (CallManager/ViewModel) also launch CallActivity directly as immediate UI,
+        // this is a fallback for Telecom-triggered calls (incoming / from other apps).
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            // Fallback: rely on notification fullScreenIntent
+            android.util.Log.w("CallService", "launchCallActivity failed, relying on fullScreenIntent", e)
+        }
     }
 
 
@@ -147,31 +172,49 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
 
 
         val subId = call.details.accountHandle?.id?.toIntOrNull() ?: -1
-        val activeSubInfo = subscriptionManager.getActiveSubscriptionInfo(subId)
+        val activeSubInfo = try {
+            subscriptionManager.getActiveSubscriptionInfo(subId)
+        } catch (_: SecurityException) { null }
         val sim = CuteSimCard(
-            subId = activeSubInfo.subscriptionId,
-            name = activeSubInfo.displayName.toString(),
-            carrierName = activeSubInfo.carrierName.toString(),
-            color = activeSubInfo.iconTint
+            subId = activeSubInfo?.subscriptionId ?: subId,
+            name = activeSubInfo?.displayName?.toString() ?: "SIM $subId",
+            carrierName = activeSubInfo?.carrierName?.toString() ?: "",
+            color = activeSubInfo?.iconTint ?: 0
         )
 
         callManager.updateActiveSim(sim)
 
 
         scope.launch {
+            // Check incoming call popup setting — if disabled, show bubble/notification only, not full-screen
+            val useFullScreen = try {
+                runBlocking {
+                    applicationContext.dataStore.data.first()[com.sosauce.cinnamon.core.datastore.PreferencesKeys.INCOMING_CALL_FULLSCREEN] ?: true
+                }
+            } catch (_: Exception) { true }
+
             val notification = when (state) {
                 Call.STATE_RINGING -> {
                     callManager.updateCallState(CallState.RINGING)
                     callManager.updateNumber(
                         call.details?.handle?.schemeSpecificPart ?: getString(R.string.unknown)
                     )
-                    callNotificationManager.createIncomingNotification(call.details)
+                    // For incoming, ensure foreground before fullScreenIntent
+                    val notif = callNotificationManager.createIncomingNotification(call.details, useFullScreen)
+                    // Only launch full-screen CallActivity if setting enabled
+                    // Otherwise, bubble overlay (CallOverlayManager) will show as popup over other apps
+                    if (useFullScreen) {
+                        try { launchCallActivity() } catch (_: Exception) {}
+                    }
+                    notif
                 }
 
                 Call.STATE_DIALING, Call.STATE_CONNECTING -> {
                     callManager.updateCallState(CallState.DIALING)
+                    // Create notification first to ensure foreground priority on Android 10+
+                    val notif = callNotificationManager.createOutgoingNotification(call.details)
                     launchCallActivity()
-                    callNotificationManager.createOutgoingNotification(call.details)
+                    notif
                 }
 
                 Call.STATE_ACTIVE -> {
@@ -187,6 +230,24 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
 
                 Call.STATE_HOLDING -> {
                     callManager.updateIsHolding(true)
+                    null
+                }
+
+                Call.STATE_SELECT_PHONE_ACCOUNT -> {
+                    // Fallback if Telecom still asks to select SIM — pick first available and proceed
+                    // This prevents system SIM chooser from opening default dialer
+                    try {
+                        @Suppress("MissingPermission")
+                        val tm = getSystemService(android.telecom.TelecomManager::class.java)
+                        val firstHandle = tm.callCapablePhoneAccounts?.firstOrNull() as? android.telecom.PhoneAccountHandle
+                        if (firstHandle != null) {
+                            call.phoneAccountSelected(firstHandle, false)
+                        } else {
+                            callManager.updateCallState(CallState.ENDED)
+                        }
+                    } catch (_: Exception) {
+                        callManager.updateCallState(CallState.ENDED)
+                    }
                     null
                 }
 
@@ -257,7 +318,21 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
     }
 
     override fun hangupOngoingCall() {
-        cuteCall?.disconnect()
+        // Try primary call first, then any call in InCallService's call list
+        // Fixes "end call button not working" when cuteCall is null (optimistic UI)
+        // or when Telecom hasn't yet delivered the call to cuteCall.
+        val target = cuteCall ?: try { calls.firstOrNull() } catch (_: Exception) { null }
+        if (target != null) {
+            try { target.disconnect() } catch (_: Exception) {}
+        } else {
+            // No Telecom call to disconnect — force UI to ENDED so CallActivity finishes
+            callManager.updateCallState(CallState.ENDED)
+        }
+        // Always ensure state moves to ENDED for immediate UI feedback
+        // (CallService will also get STATE_DISCONNECTED callback)
+        try {
+            if (cuteCall == null) callManager.updateCallState(CallState.ENDED)
+        } catch (_: Exception) {}
     }
 
     override fun startTone(char: Char) {

@@ -37,11 +37,16 @@ class SimsRepository(
     @SuppressLint("MissingPermission")
     fun fetchPhoneHandles(): Map<PhoneAccount, PhoneAccountHandle> {
         val map = mutableMapOf<PhoneAccount, PhoneAccountHandle>()
-        telecomManager.callCapablePhoneAccounts?.fastForEach { handle ->
-
-            val account = telecomManager.getPhoneAccount(handle)
-            map[account] = handle
-        }
+        try {
+            telecomManager.callCapablePhoneAccounts?.fastForEach { handle ->
+                try {
+                    val account = telecomManager.getPhoneAccount(handle) ?: return@fastForEach
+                    map[account] = handle
+                } catch (_: SecurityException) {
+                    // No READ_PHONE_STATE — skip
+                } catch (_: Exception) {}
+            }
+        } catch (_: SecurityException) {}
         return map
     }
 

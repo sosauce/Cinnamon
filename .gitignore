@@ -26,6 +26,9 @@ render.experimental.xml
 # Keystore files
 *.jks
 *.keystore
+keystore.b64
+cinnamon-release.jks
+test.jks
 
 # Google Services (e.g. APIs or Firebase)
 google-services.json

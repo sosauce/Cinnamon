@@ -32,7 +32,11 @@ fun SettingsPhone() {
     var groupSubCalls by rememberGroupSubsequentCalls()
     var t9Dialing by rememberEnableT9Dialing()
     val simsViewModel = koinViewModel<SimsViewModel>()
-    val allHandles = simsViewModel.fetchPhoneHandles()
+    val allHandles = try {
+        simsViewModel.fetchPhoneHandles()
+    } catch (_: Exception) {
+        emptyMap()
+    }
     val defaultPhoneHandle by simsViewModel.fetchLatestDefaultPhoneHandle().collectAsStateWithLifecycle(null)
 
     Column {
@@ -51,16 +55,26 @@ fun SettingsPhone() {
                 )
             ) {
 
-                LazyRow {
-                    items(
-                        items = allHandles.keys.toList()
-                    ) { account ->
-                        val handle = allHandles[account] ?: return@items
-                        PhoneAccountHandleSelector(
-                            account = account,
-                            isDefaultHandle = handle == defaultPhoneHandle,
-                            onClick = { simsViewModel.saveDefaultPhoneHandle(handle) }
-                        )
+                if (allHandles.isEmpty()) {
+                    Text(
+                        text = "No SIM available or permission needed — grant Phone permission to choose default SIM",
+                        style = MaterialTheme.typography.bodySmallEmphasized.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        modifier = Modifier.padding(12.dp)
+                    )
+                } else {
+                    LazyRow {
+                        items(
+                            items = allHandles.keys.toList()
+                        ) { account ->
+                            val handle = allHandles[account] ?: return@items
+                            PhoneAccountHandleSelector(
+                                account = account,
+                                isDefaultHandle = handle == defaultPhoneHandle,
+                                onClick = { simsViewModel.saveDefaultPhoneHandle(handle) }
+                            )
+                        }
                     }
                 }
                 Text(
