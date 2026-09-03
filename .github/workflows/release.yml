@@ -1,0 +1,73 @@
+  name: Build & Release
+
+  on:
+    workflow_dispatch:
+
+  jobs:
+    build:
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+
+        - name: Set up JDK
+          uses: actions/setup-java@v5
+          with:
+            distribution: temurin
+            java-version: 21
+
+        - name: Extract versionName
+          id: version
+          run: |
+            VER=$(grep -oP 'versionName\s*=\s*"\K[0-9.]+' app/build.gradle* | head -n1)
+            
+            if [ -z "$VER" ]; then
+              echo "Could not determine versionName"
+              exit 1
+            fi
+            
+            echo "VERSION=$VER" >> "$GITHUB_ENV"
+            echo "TAG=v$VER" >> "$GITHUB_ENV"
+            
+            echo "Detected versionName: $VER"
+            echo "Release tag: v$VER"
+
+        - name: Decode keystore
+          env:
+            KEYSTORE_FILE_B64: ${{ secrets.KEYSTORE_FILE_B64 }}
+          run: |
+            echo "$KEYSTORE_FILE_B64" | base64 -d > my-release-key.jks
+
+        - name: Export signing env
+          run: |
+            {
+              echo "KEYSTORE_FILE=$PWD/my-release-key.jks"
+              echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}"
+              echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}"
+              echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}"
+            } >> "$GITHUB_ENV"
+
+        - name: Build Release APK
+          run: ./gradlew assembleRelease --parallel --no-daemon --no-build-cache
+
+        - name: Create Git tag
+          env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          run: |
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            
+            git tag "$TAG"
+            git push origin "$TAG"
+
+        - name: Create GitHub Release
+          uses: softprops/action-gh-release@v2
+          with:
+            tag_name: ${{ env.TAG }}
+            name: ${{ env.TAG }}
+            files: app/build/outputs/apk/release/Cinnamon_${{ env.VERSION }}.apk
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
