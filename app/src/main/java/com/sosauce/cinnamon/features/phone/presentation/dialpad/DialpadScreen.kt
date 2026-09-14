@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.insert
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ContainedLoadingIndicator
@@ -66,10 +67,9 @@ import com.sosauce.nekobites.components.NoXFound
 @Composable
 fun SharedTransitionScope.DialpadScreen(
     state: DialpadState,
-    onNavigate: (Screen) -> Unit,
+    textFieldState: TextFieldState,
     onNavigateUp: () -> Unit,
-    onHandleCallAction: (CallAction) -> Unit,
-    onAddPlus: () -> Unit
+    onHandleCallAction: (CallAction) -> Unit
 ) {
     val dialpadLayout = listOf(
         listOf("1", "2", "3"),
@@ -98,9 +98,9 @@ fun SharedTransitionScope.DialpadScreen(
             onDismissRequest = { showMultiNumberSelection = Pair(false, 0) },
             onPickNumber = { number ->
                 showMultiNumberSelection = Pair(false, 0)
-                onHandleCallAction(CallAction.LaunchCall(contact.details.phoneNumbers.first().number))
+                onHandleCallAction(CallAction.LaunchCall(number))
             },
-            phoneNumbers = contact.details.phoneNumbers.fastMap { it.number }
+            phoneNumbers = contact.phoneNumbers.fastMap { it.number }
         )
     }
 
@@ -118,7 +118,7 @@ fun SharedTransitionScope.DialpadScreen(
             ) {
                 DisableSoftKeyboard {
                     OutlinedTextField(
-                        state = state.textFieldState,
+                        state = textFieldState,
                         lineLimits = TextFieldLineLimits.SingleLine,
                         modifier = Modifier
                             .padding(horizontal = 5.dp)
@@ -143,9 +143,9 @@ fun SharedTransitionScope.DialpadScreen(
                         },
                         trailingIcon = {
                             IconButton(
-                                onClick = { state.textFieldState.backspace() },
+                                onClick = { textFieldState.backspace() },
                                 shapes = IconButtonDefaults.shapes(),
-                                enabled = state.textFieldState.text.isNotEmpty()
+                                enabled = textFieldState.text.isNotEmpty()
                             ) {
                                 Icon(
                                     painter = painterResource(R.drawable.backspace),
@@ -171,14 +171,14 @@ fun SharedTransitionScope.DialpadScreen(
                                     val letters = t9Map[number] ?: ""
                                     val onLongClick = remember {
                                         if (letters == "+") {
-                                            onAddPlus
+                                            { textFieldState.edit { insert(length, "+") } }
                                         } else null
                                     }
 
                                     LongClickButton(
                                         onClick = {
-                                            state.textFieldState.edit {
-                                                insert(state.textFieldState.text.length, number)
+                                            textFieldState.edit {
+                                                insert(textFieldState.text.length, number)
                                             }
                                         },
                                         onLongClick = onLongClick,
@@ -212,14 +212,14 @@ fun SharedTransitionScope.DialpadScreen(
                             }
                         }
                         FilledIconButton(
-                            onClick = { onHandleCallAction(CallAction.LaunchCall(state.textFieldState.text.toString())) },
+                            onClick = { onHandleCallAction(CallAction.LaunchCall(textFieldState.text.toString())) },
                             shapes = IconButtonDefaults.shapes(),
                             modifier = Modifier
                                 .padding(top = 10.dp)
                                 .fillMaxWidth(0.5f)
                                 .align(Alignment.CenterHorizontally)
                                 .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)),
-                            enabled = state.textFieldState.text.isNotEmpty() || state.textFieldState.text.isNotBlank()
+                            enabled = textFieldState.text.isNotEmpty() || textFieldState.text.isNotBlank()
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.call),
@@ -281,13 +281,13 @@ fun SharedTransitionScope.DialpadScreen(
                                 contact = contact,
                                 isSelected = false,
                                 onClick = {
-                                    if (contact.details.phoneNumbers.size > 1) {
+                                    if (contact.phoneNumbers.size > 1) {
                                         showMultiNumberSelection = Pair(true, contact.id)
                                     } else {
-                                        onHandleCallAction(CallAction.LaunchCall(contact.details.phoneNumbers.first().number))
+                                        onHandleCallAction(CallAction.LaunchCall(contact.phoneNumbers.first().number))
                                     }
                                 },
-                                showNumber = false
+                                showNumber = true
                             )
                         }
                     }
@@ -318,13 +318,13 @@ fun SharedTransitionScope.DialpadScreen(
                                     contact = contact,
                                     isSelected = false,
                                     onClick = {
-                                        if (contact.details.phoneNumbers.size > 1) {
+                                        if (contact.phoneNumbers.size > 1) {
                                             showMultiNumberSelection = Pair(true, contact.id)
                                         } else {
-                                            onHandleCallAction(CallAction.LaunchCall(contact.details.phoneNumbers.first().number))
+                                            onHandleCallAction(CallAction.LaunchCall(contact.phoneNumbers.first().number))
                                         }
                                     },
-                                    showNumber = false
+                                    showNumber = true
                                 )
                             }
                         }

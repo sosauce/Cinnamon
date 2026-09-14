@@ -88,12 +88,6 @@ fun SharedTransitionScope.AboutConversationScreen(
                 Box(
                     modifier = Modifier
                         .height(200.dp)
-                        .sharedElement(
-                            sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONVERSATION_WALLPAPER),
-                            animatedVisibilityScope = LocalNavAnimatedContentScope.current,
-                            renderInOverlayDuringTransition = false
-
-                        )
                         .clip(RoundedCornerShape(24.dp))
                 ) {
                     Box(

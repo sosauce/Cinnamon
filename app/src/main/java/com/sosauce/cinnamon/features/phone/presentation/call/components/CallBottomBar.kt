@@ -86,21 +86,17 @@ fun CallBottomBar(
             label = "paneContent"
         ) { target ->
             when (target) {
-                DialerPaneContent.NOTHING -> Box(Modifier.fillMaxWidth().height(0.dp))
+                DialerPaneContent.NOTHING -> Unit
                 DialerPaneContent.DIALPAD, DialerPaneContent.AUDIO_SWITCHER -> {
                     Surface(
-                        shape = RoundedCornerShape(28.dp), // extraLarge expressive
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = RoundedCornerShape(28.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
                         tonalElevation = 3.dp,
                         shadowElevation = 2.dp,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Box(
                             modifier = Modifier
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    shape = RoundedCornerShape(28.dp)
-                                )
                                 .padding(12.dp)
                         ) {
                             when (target) {
@@ -111,7 +107,6 @@ fun CallBottomBar(
                                     onCallAction = onCallAction,
                                     routes = callUiState.availableAudioRoutes
                                 )
-                                else -> {}
                             }
                         }
                     }
@@ -119,9 +114,8 @@ fun CallBottomBar(
             }
         }
 
-        // Main expressive control surface — tonal container with largeIncreased corners
         Surface(
-            shape = RoundedCornerShape(32.dp), // extraLargeIncreased expressive
+            shape = RoundedCornerShape(32.dp),
             color = MaterialTheme.colorScheme.surfaceContainer,
             tonalElevation = 2.dp,
             shadowElevation = 1.dp,
@@ -158,8 +152,8 @@ fun CallBottomBar(
                                     colors = ToggleButtonDefaults.colors(
                                         containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                         contentColor = MaterialTheme.colorScheme.onSurface,
-                                        checkedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                        checkedContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                        checkedContainerColor = MaterialTheme.colorScheme.primary,
+                                        checkedContentColor = MaterialTheme.colorScheme.onPrimary
                                     ),
                                     modifier = Modifier
                                         .size(64.dp)
@@ -174,7 +168,6 @@ fun CallBottomBar(
                                 Text(
                                     text = if (isMuted) "Unmute" else "Mute",
                                     style = MaterialTheme.typography.labelSmallEmphasized.copy(
-                                        fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 )
@@ -183,7 +176,6 @@ fun CallBottomBar(
                         menuContent = {}
                     )
 
-                    // 2) Audio Route — shows current route icon with expressive morph
                     customItem(
                         buttonGroupContent = {
                             Column(
@@ -204,8 +196,8 @@ fun CallBottomBar(
                                     colors = ToggleButtonDefaults.colors(
                                         containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                         contentColor = MaterialTheme.colorScheme.onSurface,
-                                        checkedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                        checkedContentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                                        checkedContainerColor = MaterialTheme.colorScheme.primary,
+                                        checkedContentColor = MaterialTheme.colorScheme.onPrimary
                                     ),
                                     modifier = Modifier
                                         .size(64.dp)
@@ -250,8 +242,8 @@ fun CallBottomBar(
                                     colors = ToggleButtonDefaults.colors(
                                         containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                         contentColor = MaterialTheme.colorScheme.onSurface,
-                                        checkedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                        checkedContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                        checkedContainerColor = MaterialTheme.colorScheme.primary,
+                                        checkedContentColor = MaterialTheme.colorScheme.onPrimary
                                     ),
                                     modifier = Modifier
                                         .size(64.dp)
@@ -297,8 +289,8 @@ fun CallBottomBar(
                                     colors = ToggleButtonDefaults.colors(
                                         containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                         contentColor = MaterialTheme.colorScheme.onSurface,
-                                        checkedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                        checkedContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                        checkedContainerColor = MaterialTheme.colorScheme.primary,
+                                        checkedContentColor = MaterialTheme.colorScheme.onPrimary
                                     ),
                                     modifier = Modifier
                                         .size(64.dp)

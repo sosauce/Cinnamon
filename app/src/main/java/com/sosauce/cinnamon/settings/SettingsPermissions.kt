@@ -101,22 +101,12 @@ fun SettingsPermissions() {
         modifier = Modifier.hazeSource(state = hazeState)
     ) {
         SettingsWithTitle(title = R.string.default_apps) {
-            // Header
-            Text(
-                text = stringResource(R.string.default_apps_desc),
-                style = MaterialTheme.typography.bodySmallEmphasized.copy(
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                ),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-            )
-            Spacer(Modifier.height(12.dp))
-
             Card(
                 colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceContainer),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 2.dp),
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
+                    .padding(horizontal = 16.dp, vertical = 1.dp),
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 2.dp, bottomEnd = 2.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -146,14 +136,8 @@ fun SettingsPermissions() {
                         Spacer(Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Default dialer",
+                                text = stringResource(R.string.default_dialer_app),
                                 style = MaterialTheme.typography.titleSmallEmphasized.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = if (isDefaultDialer) "Cinnamon is default" else "Not default - calls may open system dialer",
-                                style = MaterialTheme.typography.labelSmallEmphasized.copy(
-                                    color = if (isDefaultDialer) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                                )
                             )
                             Text(
                                 text = "Required for call screen & bubble over other apps",
@@ -184,7 +168,7 @@ fun SettingsPermissions() {
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(5.dp))
                             Text(
                                 text = "Is default dialer",
                                 style = MaterialTheme.typography.labelLargeEmphasized.copy(
@@ -197,7 +181,6 @@ fun SettingsPermissions() {
                 } else {
                     Button(
                         onClick = {
-                            // Fix: RoleManager intent must be launched without NEW_TASK for ActivityResultLauncher
                             val roleIntent = context.createDefaultDialerIntent()
                             if (roleIntent.action != null && roleIntent.action!!.isNotEmpty()) {
                                 try {
@@ -240,8 +223,8 @@ fun SettingsPermissions() {
                 colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceContainer),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 2.dp),
-                shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
+                    .padding(horizontal = 16.dp, vertical = 1.dp),
+                shape = RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -260,7 +243,7 @@ fun SettingsPermissions() {
                             modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
-                                painter = painterResource(R.drawable.message_rounded),
+                                painter = painterResource(R.drawable.messages_filled),
                                 contentDescription = null,
                                 tint = if (isDefaultSms) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier
@@ -271,14 +254,8 @@ fun SettingsPermissions() {
                         Spacer(Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Default messaging",
+                                text = stringResource(R.string.default_sms_app),
                                 style = MaterialTheme.typography.titleSmallEmphasized.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = if (isDefaultSms) "Cinnamon is default" else "Not default - messages may open system app",
-                                style = MaterialTheme.typography.labelSmallEmphasized.copy(
-                                    color = if (isDefaultSms) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
-                                )
                             )
                             Text(
                                 text = "Required for SMS/MMS handling",
@@ -308,7 +285,7 @@ fun SettingsPermissions() {
                                 tint = MaterialTheme.colorScheme.onTertiaryContainer,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(5.dp))
                             Text(
                                 text = "Is default messaging",
                                 style = MaterialTheme.typography.labelLargeEmphasized.copy(
@@ -335,14 +312,17 @@ fun SettingsPermissions() {
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        Text("Set as default SMS", style = MaterialTheme.typography.labelLargeEmphasized.copy(fontWeight = FontWeight.Bold))
+                        Text(
+                            text = stringResource(R.string.set_as_sms_app),
+                            style = MaterialTheme.typography.labelLargeEmphasized
+                        )
                     }
                 }
             }
 
             Spacer(Modifier.height(12.dp))
             Text(
-                text = "Tips: grant overlay permission for bubble over other apps (Settings → Apps → Cinnamon → Display over other apps). Full-screen requires \"Display over other apps\" + notification permission.",
+                text = "Tip: For bubbles, enable Display over other apps. Full-screen requires \"Display over other apps\" + notification permission.",
                 style = MaterialTheme.typography.labelSmall.copy(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 ),

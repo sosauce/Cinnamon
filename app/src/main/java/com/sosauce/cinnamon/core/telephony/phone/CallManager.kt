@@ -66,13 +66,14 @@ class CallManager(
         val savedHandle = runBlocking { userPreferences.getDefaultPhoneHandle().first() }
         // Avoid system SIM chooser: if no saved handle and multiple SIMs, pick first capable account
         // This keeps call inside Cinnamon's CallScreen instead of opening system dialer's chooser.
-        val fallbackHandle = if (forcedHandle != null) forcedHandle else savedHandle ?: run {
-            try {
-                @Suppress("MissingPermission")
-                telecomManager.callCapablePhoneAccounts?.firstOrNull() as? android.telecom.PhoneAccountHandle
-                    ?: telecomManager.getDefaultOutgoingPhoneAccount(android.telecom.PhoneAccount.SCHEME_TEL)
-            } catch (_: SecurityException) { null }
-        }
+        val fallbackHandle = forcedHandle
+            ?: (savedHandle ?: run {
+                try {
+                    @Suppress("MissingPermission")
+                    telecomManager.callCapablePhoneAccounts?.firstOrNull() as? android.telecom.PhoneAccountHandle
+                        ?: telecomManager.getDefaultOutgoingPhoneAccount(android.telecom.PhoneAccount.SCHEME_TEL)
+                } catch (_: SecurityException) { null }
+            })
 
         val bundle = Bundle().apply {
             putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, fallbackHandle)
@@ -163,7 +164,7 @@ class CallManager(
     fun updateNumber(number: String) {
         _callingState.update {
             it.copy(
-                number = number,
+                number = number.beautifyNumber(),
                 displayName = number.getContactNameOrNothing(context).beautifyNumber()
             )
         }

@@ -37,10 +37,11 @@ import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.ui.components.text.HeaderText
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.core.utils.formateEventDate
+import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsState
 
 @Composable
 fun ContactInfos(
-    contact: CuteContact,
+    state: ContactDetailsState,
     onHandleCallAction: (CallAction) -> Unit,
     onNavigate: (Screen) -> Unit
 ) {
@@ -48,10 +49,11 @@ fun ContactInfos(
     val resources = LocalResources.current
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
+    val hasInfo = state.contact.phoneNumbers.isNotEmpty() || state.details.emails.isNotEmpty() || state.details.addresses.isNotEmpty()
+    val hasAbout = state.details.websites.isNotEmpty() || state.details.note?.isNotEmpty() == true || state.details.events.isNotEmpty()
 
     Column {
-
-        if (contact.hasInfos) {
+        if (hasInfo) {
             HeaderText(stringResource(R.string.contact_info))
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -65,7 +67,7 @@ fun ContactInfos(
                     modifier = Modifier.padding(vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    contact.details.phoneNumbers.forEachIndexed { index, number ->
+                    state.contact.phoneNumbers.forEachIndexed { index, number ->
 
                         CuteListItem(
                             onClick = { onHandleCallAction(CallAction.LaunchCall(number.number)) },
@@ -121,7 +123,7 @@ fun ContactInfos(
                     }
 
 
-                    contact.details.emails.forEachIndexed { index, email ->
+                    state.details.emails.forEachIndexed { index, email ->
                         CuteListItem(
                             onClick = {
                                 try {
@@ -149,25 +151,25 @@ fun ContactInfos(
                                         .alpha(if (index == 0) 1f else 0f)
                                 )
                             },
-                            trailingContent = {
-                                if (email.isBlocked) {
-                                    IconButton(
-                                        onClick = {
-                                            Toast.makeText(
-                                                context,
-                                                "You blocked this email",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        },
-                                        shapes = IconButtonDefaults.shapes()
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.block),
-                                            contentDescription = null
-                                        )
-                                    }
-                                }
-                            }
+//                            trailingContent = {
+//                                if (email.isBlocked) {
+//                                    IconButton(
+//                                        onClick = {
+//                                            Toast.makeText(
+//                                                context,
+//                                                "You blocked this email",
+//                                                Toast.LENGTH_SHORT
+//                                            ).show()
+//                                        },
+//                                        shapes = IconButtonDefaults.shapes()
+//                                    ) {
+//                                        Icon(
+//                                            painter = painterResource(R.drawable.block),
+//                                            contentDescription = null
+//                                        )
+//                                    }
+//                                }
+//                            }
                         ) {
                             Text(email.email)
                             Text(
@@ -191,7 +193,7 @@ fun ContactInfos(
                         }
                     }
 
-                    contact.details.addresses.forEachIndexed { index, address ->
+                    state.details.addresses.forEachIndexed { index, address ->
                         CuteListItem(
                             onClick = {
                                 try {
@@ -250,7 +252,10 @@ fun ContactInfos(
             }
         } else {
             CuteListItem(
-                onClick = { onNavigate(Screen.ContactEditor(contact)) },
+                onClick = {
+                    TODO()
+                    //onNavigate(Screen.ContactEditor(contact))
+                          },
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                 shape = RoundedCornerShape(
                     topStart = 24.dp,
@@ -267,7 +272,10 @@ fun ContactInfos(
                 }
             ) { Text(stringResource(R.string.add_phone)) }
             CuteListItem(
-                onClick = { onNavigate(Screen.ContactEditor(contact)) },
+                onClick = {
+                    TODO()
+                    //onNavigate(Screen.ContactEditor(contact))
+                          },
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                 shape = RoundedCornerShape(
                     topStart = 4.dp,
@@ -286,8 +294,8 @@ fun ContactInfos(
         }
 
 
-        if (contact.hasAbout) {
-            HeaderText(stringResource(R.string.about) + " ${contact.displayName}")
+        if (hasAbout) {
+            HeaderText(stringResource(R.string.about) + " ${state.contact.displayName}")
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -300,9 +308,9 @@ fun ContactInfos(
                     modifier = Modifier.padding(vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    contact.details.websites.forEachIndexed { index, website ->
+                    state.details.websites.forEachIndexed { index, website ->
                         CuteListItem(
-                            onClick = { uriHandler.openUri(website.website) },
+                            onClick = { uriHandler.openUri(website) },
                             leadingContent = {
                                 Icon(
                                     painter = painterResource(R.drawable.website),
@@ -312,10 +320,10 @@ fun ContactInfos(
                                         .alpha(if (index == 0) 1f else 0f)
                                 )
                             }
-                        ) { Text(website.website) }
+                        ) { Text(website) }
                     }
 
-                    contact.details.events.forEachIndexed { index, event ->
+                    state.details.events.forEachIndexed { index, event ->
                         CuteListItem(
                             onClick = null,
                             leadingContent = {
@@ -342,8 +350,7 @@ fun ContactInfos(
                         }
                     }
 
-                    println("contact details: ${contact.details.note}")
-                    if (contact.details.note?.isNotEmpty() == true) {
+                    state.details.note?.let { note ->
                         CuteListItem(
                             onClick = null,
                             leadingContent = {
@@ -353,7 +360,7 @@ fun ContactInfos(
                                     modifier = Modifier.padding(start = 10.dp)
                                 )
                             }
-                        ) { Text(contact.details.note) }
+                        ) { Text(note) }
                     }
                 }
             }

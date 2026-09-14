@@ -13,13 +13,17 @@ import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContact
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact2
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -30,52 +34,41 @@ class DialpadViewModel(
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(DialpadState())
-    val state = _state.asStateFlow()
+    val textFieldState = TextFieldState(prefilledNumber)
+    val state = combine(
+        userPreferences.enableT9Dialing,
+        snapshotFlow { textFieldState.text }.debounce(250.milliseconds)
+    ) { t9, searchQuery ->
 
-    private val textFieldState = TextFieldState(prefilledNumber)
+        val contacts = contactsRepository.fetchDialpadContacts()
 
-    init {
-        viewModelScope.launch(Dispatchers.IO) {
-
-            combine(
-                contactsRepository.fetchLatestContacts(
-                    extraSelection = "${ContactsContract.Contacts.HAS_PHONE_NUMBER} = ?",
-                    extraSelectionArgs = arrayOf("1")
-                ),
-                userPreferences.enableT9Dialing,
-                snapshotFlow { textFieldState.text }.debounce(250.milliseconds)
-            ) { contacts, t9, searchQuery ->
-
-                if (t9) {
-                    contacts.fastFilter { contact ->
-                        nameToT9(contact.displayName).contains(searchQuery, true) ||
-                                contact.details.phoneNumbers.fastAny {
-                                    it.number.contains(
-                                        searchQuery
-                                    )
-                                }
-                    }
-                } else {
-                    contacts.fastFilter { contact ->
-                        contact.details.phoneNumbers.fastAny { it.number.contains(searchQuery) }
-                    }
-                }
-
-
-            }.collectLatest { contacts ->
-                _state.update {
-                    it.copy(
-                        contacts = contacts,
-                        textFieldState = textFieldState
-                    )
-                }
+        val filteredContacts = if (t9) {
+            contacts.fastFilter { contact ->
+                nameToT9(contact.displayName).contains(searchQuery, true) ||
+                        contact.phoneNumbers.fastAny {
+                            it.number.contains(
+                                searchQuery
+                            )
+                        }
+            }
+        } else {
+            contacts.fastFilter { contact ->
+                contact.phoneNumbers.fastAny { it.number.contains(searchQuery) }
             }
         }
-    }
 
+        DialpadState(
+            isLoading = false,
+            contacts = filteredContacts
+        )
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        DialpadState(
+            isLoading = true
+        )
+    )
 
-    fun addPlus() = textFieldState.edit { insert(length, "+") }
 
 
     private fun nameToT9(name: String): String {
@@ -99,6 +92,5 @@ class DialpadViewModel(
 
 data class DialpadState(
     val isLoading: Boolean = false,
-    val contacts: List<CuteContact> = emptyList(),
-    val textFieldState: TextFieldState = TextFieldState()
+    val contacts: List<CuteContact2> = emptyList()
 )

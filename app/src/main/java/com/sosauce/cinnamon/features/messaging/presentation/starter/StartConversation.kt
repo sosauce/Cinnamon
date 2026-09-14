@@ -61,6 +61,7 @@ import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact2
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
 
@@ -267,7 +268,7 @@ fun SharedTransitionScope.StartConversation(
 
                                 ContactListItem(
                                     modifier = Modifier.animateItem(),
-                                    contact = contact,
+                                    contact = CuteContact2(),
                                     isSelected = isSelected,
                                     onClick = {
                                         val phoneNumbers = contact.details.phoneNumbers
@@ -322,7 +323,7 @@ fun SharedTransitionScope.StartConversation(
                                     }
                                     ContactListItem(
                                         modifier = Modifier.animateItem(),
-                                        contact = contact,
+                                        contact = CuteContact2(),
                                         isSelected = isSelected,
                                         onClick = {
                                             val phoneNumbers = contact.details.phoneNumbers

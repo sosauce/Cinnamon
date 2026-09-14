@@ -31,9 +31,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CinnamonTheme {
-
-                // Dialer role no longer required — always use Cinnamon's call UI (CallScreen/Incoming UI)
-                // Only gate on SMS default (needed for messaging). hasBothRoles kept for legacy but dialer part ignored.
                 var hasSmsRole by remember {
                     mutableStateOf(
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

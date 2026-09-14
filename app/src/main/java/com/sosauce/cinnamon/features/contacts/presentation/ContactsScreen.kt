@@ -39,6 +39,7 @@ import com.sosauce.cinnamon.core.ui.components.menus.SortingDropdownMenu
 import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar
 import com.sosauce.cinnamon.core.utils.LazyListKeys
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact2
 import com.sosauce.nekobites.animations.AnimatedFab
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
@@ -54,7 +55,7 @@ fun SharedTransitionScope.ContactsScreen(
 ) {
 
     var sortContactsAscending by rememberSortContactsAscending()
-    val sweetSelectState = rememberSweetSelectState<CuteContact>()
+    val sweetSelectState = rememberSweetSelectState<CuteContact2>()
 
 
 
@@ -153,7 +154,9 @@ fun SharedTransitionScope.ContactsScreen(
                             item(LazyListKeys.FAVORITE_CONTACTS) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                                    modifier = Modifier
+                                        .animateItem()
+                                        .padding(horizontal = 20.dp, vertical = 10.dp),
                                 ) {
                                     Icon(
                                         painter = painterResource(R.drawable.favorite_filled),
@@ -180,6 +183,7 @@ fun SharedTransitionScope.ContactsScreen(
                             ) { contact ->
 
                                 val isSelected by sweetSelectState.isSelectedAsState(contact)
+
 
                                 ContactListItem(
                                     modifier = Modifier.animateItem(),

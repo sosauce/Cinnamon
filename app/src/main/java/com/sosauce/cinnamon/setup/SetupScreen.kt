@@ -76,8 +76,8 @@ fun SetupScreen(
             targetState = setupProgress
         ) { progress ->
             when (progress) {
-                // Dialer setup removed — always open Cinnamon's call UI directly
-                0 -> SetupDefaultMessageApp { onGotoApp() }
+                0 -> SetupDefaultMessageApp { setupProgress = 1 }
+                1 -> SetupDefaultDialerScreen(onGotoApp)
             }
         }
 

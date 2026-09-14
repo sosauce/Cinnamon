@@ -7,7 +7,9 @@ import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderColors
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
@@ -28,12 +30,22 @@ fun WavySlider(
     isPlaying: Boolean = false
 ) {
 
+    val state = rememberSliderState(
+        value = value,
+        trackRange = valueRange
+    )
+
+    val animatedValue by animateFloatAsState(value)
+
+    LaunchedEffect(value) {
+        state.value = animatedValue
+    }
+
     Slider(
         modifier = modifier,
-        value = animateFloatAsState(value).value,
+        state = state,
         onValueChange = onValueChange,
         onValueChangeFinished = onValueChangeFinished,
-        valueRange = valueRange,
         colors = colors,
         thumb = {
             val animatedHeight by animateDpAsState(if (it.isDragging) 40.dp else 35.dp)

@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -51,23 +52,13 @@ fun IncomingBottomBar(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Expressive hint — M3 LabelLargeEmphasized with tonal color
-        Text(
-            text = "Incoming call",
-            style = MaterialTheme.typography.labelLargeEmphasized.copy(
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        )
 
-        // Expressive button row — 8dp system, tonal, elevated
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Decline — error container, full pill, icon rotated 135°
             androidx.compose.material3.Button(
                 onClick = {
                     haptics.performHapticFeedback(HapticFeedbackType.Reject)
@@ -88,19 +79,18 @@ fun IncomingBottomBar(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.phone_filled),
-                    contentDescription = "Decline",
+                    contentDescription = stringResource(R.string.decline),
                     modifier = Modifier
                         .size(22.dp)
                         .graphicsLayer { rotationZ = 135f }
                 )
                 Text(
-                    text = "Decline",
+                    text = stringResource(R.string.decline),
                     style = MaterialTheme.typography.titleSmallEmphasized.copy(fontWeight = FontWeight.ExtraBold),
                     modifier = Modifier.padding(start = 10.dp)
                 )
             }
 
-            // Answer — primary container, full pill
             androidx.compose.material3.Button(
                 onClick = {
                     haptics.performHapticFeedback(HapticFeedbackType.Confirm)
@@ -121,11 +111,11 @@ fun IncomingBottomBar(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.phone_filled),
-                    contentDescription = "Answer",
+                    contentDescription = stringResource(R.string.answer),
                     modifier = Modifier.size(22.dp)
                 )
                 Text(
-                    text = "Answer",
+                    text = stringResource(R.string.answer),
                     style = MaterialTheme.typography.titleSmallEmphasized.copy(fontWeight = FontWeight.ExtraBold),
                     modifier = Modifier.padding(start = 10.dp)
                 )

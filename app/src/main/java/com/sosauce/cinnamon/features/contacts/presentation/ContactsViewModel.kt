@@ -13,6 +13,7 @@ import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.Contact
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContact
 import com.sosauce.cinnamon.core.utils.copyMutate
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact2
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -48,7 +49,7 @@ class ContactsViewModel(
     init {
         viewModelScope.launch {
             combine(
-                contactsRepository.fetchLatestContacts(),
+                contactsRepository.fetchLatestContacts2(),
                 snapshotFlow { textFieldState.text }.debounce(250.milliseconds),
                 userPreferences.getSortContactsAscending(),
                 state.mapLatest { it.accountFilter }.distinctUntilChanged()
@@ -64,8 +65,8 @@ class ContactsViewModel(
                     .fastFilter {
                         if (accountFilter == ACCOUNT_FILTER_DEFAULT) true
                         else it.accountName == accountFilter
-                    }.copyMutate {
-                        if (!asc) reverse()
+                    }.apply {
+                        if (!asc) reversed()
                     }
             }.flowOn(Dispatchers.Default).collectLatest { contacts ->
                 _state.update {
@@ -126,7 +127,7 @@ class ContactsViewModel(
 
 data class ContactsState(
     val isLoading: Boolean = false,
-    val contacts: List<CuteContact> = emptyList(),
+    val contacts: List<CuteContact2> = emptyList(),
     val accountsToCount: Map<String, Int> = emptyMap(),
     val accountFilter: String = ContactsViewModel.ACCOUNT_FILTER_DEFAULT
 )
@@ -137,5 +138,5 @@ sealed interface ContactsAction {
         val ids: List<Long>
     ) : ContactsAction
 
-    data class ToggleFavorite(val contacts: List<CuteContact>) : ContactsAction
+    data class ToggleFavorite(val contacts: List<CuteContact2>) : ContactsAction
 }

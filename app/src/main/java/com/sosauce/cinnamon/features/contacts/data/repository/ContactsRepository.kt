@@ -12,12 +12,20 @@ import android.widget.Toast
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
+import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContact
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContactDetails
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContactDetailsBuilder
 import com.sosauce.cinnamon.core.utils.observe
-import com.sosauce.cinnamon.features.contacts.data.model.ContactPhoneEntity
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContactEntity
+import com.sosauce.cinnamon.features.contacts.data.model.toDomain
+import com.sosauce.cinnamon.features.contacts.domain.ContactAddress
+import com.sosauce.cinnamon.features.contacts.domain.ContactEmail
+import com.sosauce.cinnamon.features.contacts.domain.ContactEvent
+import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact2
+import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails2
+import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetailsBuilder2
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOn
@@ -29,23 +37,226 @@ class ContactsRepository(
 ) {
 
 
+
+    // Contact 2 start
+    fun fetchLatestContacts2() =
+        context.contentResolver
+            .observe(ContactsContract.Contacts.CONTENT_URI)
+            .mapLatest {
+                fetchContacts2().fastMap { it.toDomain() }
+            }
+            .flowOn(Dispatchers.IO)
+
+    fun fetchLatestContactsDetails2(contactId: Long) =
+        context.contentResolver
+            .observe(ContactsContract.Data.CONTENT_URI)
+            .mapLatest {
+                fetchContactDetails2(contactId)
+            }
+            .flowOn(Dispatchers.IO)
+
+    fun fetchDialpadContacts(): List<CuteContact2> =
+        fetchContacts2(
+            extraSelection = "${ContactsContract.Contacts.HAS_PHONE_NUMBER} = ?",
+            extraSelectionArgs = arrayOf("1")
+        ).fastMap { it.toDomain() }
+
+    fun fetchContact2(contactId: Long) =
+        context.contentResolver
+            .observe(ContactsContract.Contacts.CONTENT_URI)
+            .mapLatest {
+                fetchContacts2(
+                    extraSelection = "${ContactsContract.Contacts._ID} = ?",
+                    extraSelectionArgs = arrayOf(contactId.toString())
+                ).firstOrNull()?.toDomain() ?: CuteContact2()
+            }
+            .flowOn(Dispatchers.IO)
+
+    private fun fetchContacts2(
+        extraSelection: String? = null,
+        extraSelectionArgs: Array<String> = emptyArray(),
+    ): List<CuteContactEntity> {
+        val contacts = mutableListOf<CuteContactEntity>()
+
+        val projection = arrayOf(
+            ContactsContract.Contacts._ID,
+            ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
+            ContactsContract.Contacts.PHOTO_THUMBNAIL_URI,
+            ContactsContract.Contacts.STARRED
+        )
+
+        val allPhones = fetchAllPhoneNumbers2()
+        val accountNames = fetchAccountNames()
+
+        context.contentResolver.query(
+            ContactsContract.Contacts.CONTENT_URI,
+            projection,
+            extraSelection,
+            extraSelectionArgs,
+            "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} ASC"
+        )?.use { cursor ->
+
+            val idCol =
+                cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
+            val nameCol =
+                cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
+            val starCol =
+                cursor.getColumnIndexOrThrow(ContactsContract.Contacts.STARRED)
+            val photoCol =
+                cursor.getColumnIndexOrThrow(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI)
+
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idCol)
+
+                contacts.add(
+                    CuteContactEntity(
+                        id = id,
+                        displayName = cursor.getString(nameCol) ?: "<unknown>",
+                        isFavorite = cursor.getInt(starCol) == 1,
+                        thumbnail = cursor.getString(photoCol),
+                        accountName = accountNames[id] ?: "Device",
+                        phoneNumbers = allPhones[id] ?: emptyList()
+                    )
+                )
+            }
+        }
+
+        return contacts
+    }
+
+    private fun fetchAllPhoneNumbers2(): Map<Long, List<ContactPhone>> {
+        val map = mutableMapOf<Long, MutableList<ContactPhone>>()
+
+        context.contentResolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            arrayOf(
+                ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                ContactsContract.CommonDataKinds.Phone.NUMBER,
+                ContactsContract.Data.MIMETYPE,
+                ContactsContract.CommonDataKinds.Phone.IS_PRIMARY,
+            ),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+
+            val idColumn =
+                cursor.getColumnIndexOrThrow(
+                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID
+                )
+            val numColumn =
+                cursor.getColumnIndexOrThrow(
+                    ContactsContract.CommonDataKinds.Phone.NUMBER
+                )
+            val typeColumn =
+                cursor.getColumnIndexOrThrow(ContactsContract.Data.MIMETYPE)
+            val primColumn =
+                cursor.getColumnIndexOrThrow(
+                    ContactsContract.CommonDataKinds.Phone.IS_PRIMARY
+                )
+
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idColumn)
+                val number = cursor.getString(numColumn)
+                val phone = ContactPhone(
+                    number = number.beautifyNumber(),
+                    type = cursor.getInt(typeColumn),
+                    isDefault = cursor.getInt(primColumn) != 0,
+                    isBlocked = BlockedNumberContract.isBlocked(context, number)
+                )
+
+                map.getOrPut(id) { mutableListOf() }.add(phone)
+            }
+        }
+
+        return map
+    }
+
+    private fun fetchContactDetails2(contactId: Long): CuteContactDetails2 {
+        val builder = CuteContactDetailsBuilder2()
+
+        context.contentResolver.query(
+            ContactsContract.Data.CONTENT_URI,
+            arrayOf(
+                ContactsContract.Data.MIMETYPE,
+                ContactsContract.Data.DATA1,
+                ContactsContract.Data.DATA2,
+                ContactsContract.Data.DATA3,
+                ContactsContract.Data.IS_PRIMARY,
+                ContactsContract.Data.PHOTO_URI
+            ),
+            "${ContactsContract.Data.CONTACT_ID} = ?",
+            arrayOf(contactId.toString()),
+            null
+        )?.use { cursor ->
+
+            val mimeColumn =
+                cursor.getColumnIndexOrThrow(ContactsContract.Data.MIMETYPE)
+            val data1Column =
+                cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA1)
+            val data2Column =
+                cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA2)
+            val data3Column =
+                cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA3)
+            val isDefaultColumn =
+                cursor.getColumnIndexOrThrow(ContactsContract.Data.IS_PRIMARY)
+            val photoColumn =
+                cursor.getColumnIndexOrThrow(ContactsContract.Data.PHOTO_URI)
+
+            if (cursor.isFirst) {
+                val photo = cursor.getString(photoColumn).ifEmpty { null }
+                builder.setPhoto(photo)
+            }
+
+            while (cursor.moveToNext()) {
+                val mime = cursor.getString(mimeColumn)
+                val data1 = cursor.getString(data1Column) ?: continue
+                val data2 = cursor.getInt(data2Column)
+                val isDefault = cursor.getInt(isDefaultColumn) != 0
+
+                when (mime) {
+                    ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE ->
+                        builder.addEmail(
+                            ContactEmail(data1, data2, isDefault)
+                        )
+
+                    ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE -> {
+                        builder.setFirstName(cursor.getString(data2Column))
+                        builder.setLastName(cursor.getString(data3Column))
+                    }
+
+                    ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE ->
+                        builder.setCompany(data1)
+
+                    ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE ->
+                        builder.setNote(contactNote = data1.ifEmpty { null })
+
+                    ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE ->
+                        builder.addEvent(ContactEvent(data1, data2))
+
+                    ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE ->
+                        builder.addWebsite(data1)
+
+                    ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE ->
+                        builder.addAddress(
+                            ContactAddress(data1, data2, isDefault)
+                        )
+                }
+            }
+        }
+
+        return builder.build()
+    }
+
+    // Contact 2 end
+
+
     fun fetchLatestContacts(
         extraSelection: String? = null,
         extraSelectionArgs: Array<String> = emptyArray()
     ) = context.contentResolver.observe(ContactsContract.Contacts.CONTENT_URI).mapLatest {
         fetchContacts(extraSelection, extraSelectionArgs)
     }.flowOn(Dispatchers.IO)
-
-
-//    fun fetchLatestContacts2() = context.contentResolver.observe(ContactsContract.Contacts.CONTENT_URI).mapLatest {
-//        fetchContacts2().fastMap { it.to }
-//    }.flowOn(Dispatchers.IO)
-
-    fun fetchLatestContactsDetails(contactId: Long) =
-        context.contentResolver.observe(ContactsContract.Data.CONTENT_URI).mapLatest {
-            fetchContactDetails(contactId)
-        }.flowOn(Dispatchers.IO)
-
     private fun fetchAccountNames(): Map<Long, String> {
         val map = mutableMapOf<Long, String>()
         context.contentResolver.query(
@@ -63,93 +274,6 @@ class ContactsRepository(
                 if (!map.containsKey(contactId)) {
                     map[contactId] = cursor.getString(nameCol) ?: "Device"
                 }
-            }
-        }
-        return map
-    }
-
-
-
-    private fun fetchContacts2(): List<CuteContactEntity> {
-
-        val contacts = mutableListOf<CuteContactEntity>()
-
-        val uri = ContactsContract.Contacts.CONTENT_URI
-        val projection = arrayOf(
-            ContactsContract.Contacts._ID,
-            ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
-            ContactsContract.Contacts.PHOTO_THUMBNAIL_URI,
-            ContactsContract.Contacts.STARRED
-        )
-
-        val allPhones = fetchAllPhoneNumbers2()
-
-        val accountNames = fetchAccountNames()
-
-
-        context.contentResolver.query(
-            uri,
-            projection,
-            null,
-            null,
-            "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} ASC"
-        )?.use { cursor ->
-            val idCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
-            val nameCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
-            val starCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.STARRED)
-            val photoCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI)
-
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idCol)
-                val name = cursor.getString(nameCol) ?: "<unknown>"
-                val photoThumbnail = cursor.getString(photoCol)
-                val accountName = accountNames[id] ?: "Device"
-
-                contacts.add(
-                    CuteContactEntity(
-                        id = id,
-                        displayName = name,
-                        isFavorite = starCol != 0,
-                        thumbnail = photoThumbnail,
-                        accountName = accountName,
-                        phoneNumbers = allPhones.getOrElse(id) { emptyList() }
-                    )
-                )
-            }
-        }
-        return contacts
-    }
-
-    private fun fetchAllPhoneNumbers2(): Map<Long, List<ContactPhoneEntity>> {
-        val map = mutableMapOf<Long, MutableList<ContactPhoneEntity>>()
-        context.contentResolver.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(
-                ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-                ContactsContract.CommonDataKinds.Phone.NUMBER,
-                ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE,
-                ContactsContract.CommonDataKinds.Phone.IS_PRIMARY,
-            ),
-            null, null, null
-        )?.use { cursor ->
-            val idColumn = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
-            val numColumn = cursor.getColumnIndexOrThrow( ContactsContract.CommonDataKinds.Phone.NUMBER)
-            val typeColumn = cursor.getColumnIndexOrThrow( ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
-            val primColumn = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.IS_PRIMARY)
-
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idColumn)
-                val number = cursor.getString(numColumn)
-                val type = cursor.getInt(typeColumn)
-                val isDefault = cursor.getInt(primColumn) != 0
-                val phone = ContactPhoneEntity(
-                    number = number,
-                    type = type,
-                    isDefault = isDefault,
-                    isBlocked = false
-                )
-
-                map.getOrPut(id) { mutableListOf() }.add(phone)
             }
         }
         return map
@@ -229,96 +353,6 @@ class ContactsRepository(
             }
         }
         return map
-    }
-
-
-    private fun fetchContactDetails(contactId: Long): CuteContact {
-        val builder = CuteContactDetailsBuilder()
-
-        val uri = ContactsContract.Data.CONTENT_URI
-        val selection = "${ContactsContract.Data.CONTACT_ID} = ?"
-        val selectionArgs = arrayOf(contactId.toString())
-
-        var displayName = ""
-        var photoUri = Uri.EMPTY
-        var starred = false
-
-        context.contentResolver.query(
-            uri,
-            arrayOf(
-                ContactsContract.Data.DISPLAY_NAME_PRIMARY,
-                ContactsContract.Data.PHOTO_URI,
-                ContactsContract.Data.STARRED,
-                ContactsContract.Data.MIMETYPE,
-                ContactsContract.Data.DATA1,
-                ContactsContract.Data.DATA2,
-                ContactsContract.Data.DATA3,
-                ContactsContract.Data.IS_PRIMARY
-            ),
-            selection,
-            selectionArgs,
-            null
-        )?.use { cursor ->
-            val displayNameColumn =
-                cursor.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME_PRIMARY)
-            val photoColumn = cursor.getColumnIndexOrThrow(ContactsContract.Data.PHOTO_URI)
-            val starredColumn = cursor.getColumnIndexOrThrow(ContactsContract.Data.STARRED)
-            val mimeColumn = cursor.getColumnIndexOrThrow(ContactsContract.Data.MIMETYPE)
-            val data1Column = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA1)
-            val data2Column = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA2)
-            val data3Column = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA3)
-            val isDefaultColumn = cursor.getColumnIndexOrThrow(ContactsContract.Data.IS_PRIMARY)
-
-            while (cursor.moveToNext()) {
-
-                if (cursor.isFirst) {
-                    displayName = cursor.getString(displayNameColumn) ?: ""
-                    photoUri = cursor.getString(photoColumn)?.toUri() ?: Uri.EMPTY
-                    starred = cursor.getInt(starredColumn) != 0
-                }
-
-                val mime = cursor.getString(mimeColumn)
-                val data1 = cursor.getString(data1Column) ?: continue
-                val data2 = cursor.getInt(data2Column)
-                val isDefault = cursor.getInt(isDefaultColumn) != 0
-
-                when (mime) {
-                    ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE ->
-                        builder.addPhoneNumber(CuteContact.Phone(data1, data2, isDefault))
-
-                    ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE ->
-                        builder.addEmail(CuteContact.Email(data1, data2, isDefault))
-
-                    ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE -> {
-                        builder.firstName = cursor.getString(data2Column) ?: ""
-                        builder.lastName = cursor.getString(data3Column) ?: ""
-                    }
-
-                    ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE -> builder.company =
-                        data1
-
-                    ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE -> builder.note = data1
-                    ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE -> builder.addEvent(
-                        CuteContact.Event(data1, data2)
-                    )
-
-                    ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE -> builder.addWebsite(
-                        CuteContact.Website(data1)
-                    )
-
-                    ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE -> builder.addAddress(
-                        CuteContact.Address(data1, data2, isDefault)
-                    )
-                }
-            }
-        }
-        return CuteContact(
-            id = contactId,
-            displayName = displayName,
-            isFavorite = starred,
-            photo = photoUri,
-            details = builder.build()
-        )
     }
 
     /**
@@ -784,7 +818,7 @@ class ContactsRepository(
 
     }
 
-    suspend fun toggleFavorite(contacts: List<CuteContact>) = withContext(Dispatchers.IO) {
+    suspend fun toggleFavorite(contacts: List<CuteContact2>) = withContext(Dispatchers.IO) {
 
         val ops = ArrayList<ContentProviderOperation>()
 
@@ -802,16 +836,13 @@ class ContactsRepository(
     }
 
     suspend fun blockContact(
-        contact: CuteContact,
-        emails: Boolean
+        phones: List<String>,
+        emails: List<String> = emptyList()
     ): Boolean = withContext(Dispatchers.IO) {
-        val toBlock = if (emails) {
-            contact.details.phoneNumbers.fastMap { it.number } + contact.details.emails.fastMap { it.email }
-        } else contact.details.phoneNumbers.fastMap { it.number }
 
         val ops = ArrayList<ContentProviderOperation>()
 
-        toBlock.fastForEach { number ->
+        (phones + emails).fastForEach { number ->
             ops.add(
                 ContentProviderOperation.newInsert(BlockedNumbers.CONTENT_URI)
                     .withValue(BlockedNumbers.COLUMN_ORIGINAL_NUMBER, number)

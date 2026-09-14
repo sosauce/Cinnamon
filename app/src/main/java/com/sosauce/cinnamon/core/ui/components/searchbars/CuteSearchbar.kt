@@ -31,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -42,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -55,6 +57,7 @@ import com.sosauce.cinnamon.core.ui.nunitoFontFamily
 import com.sosauce.cinnamon.core.utils.LocalScreen
 import com.sosauce.cinnamon.core.utils.rememberSearchbarMaxFloatValue
 import com.sosauce.cinnamon.core.utils.rememberSearchbarRightPadding
+import com.sosauce.cinnamon.core.utils.thenIf
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 
 @Composable
@@ -63,7 +66,6 @@ fun CuteSearchbar(
     textFieldState: TextFieldState = rememberTextFieldState(),
     sortingMenu: @Composable (() -> Unit)? = null,
     navigationIcon: @Composable (() -> Unit)? = null,
-    showSearchField: Boolean = true,
     fab: @Composable (() -> Unit)? = null,
     onNavigate: (Screen) -> Unit,
 ) {
@@ -77,7 +79,6 @@ fun CuteSearchbar(
     val currentScreen = LocalScreen.current
     var isInScreenSelectionMode by remember { mutableStateOf(false) }
     val isSearching = textFieldState.text.isNotEmpty()
-
 
 
     Column(
@@ -98,121 +99,111 @@ fun CuteSearchbar(
             Spacer(Modifier.weight(1f))
             fab?.invoke()
         }
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(24.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainer)
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            shadowElevation = 5.dp,
+            color = MaterialTheme.colorScheme.surfaceContainer
         ) {
-            this@Column.AnimatedVisibility(
-                visible = showSearchField
+            SharedTransitionLayout(
+                modifier = Modifier.padding(6.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainer)
-                        .padding(6.dp)
+                AnimatedContent(
+                    targetState = isInScreenSelectionMode,
                 ) {
-                    SharedTransitionLayout {
-                        AnimatedContent(
-                            targetState = isInScreenSelectionMode,
-                        ) {
-                            CompositionLocalProvider(LocalNavAnimatedContentScope provides this) {
-                                if (it) {
-                                    ScreenSelection(
-                                        onNavigate = onNavigate,
-                                        dismiss = { isInScreenSelectionMode = false }
+                    CompositionLocalProvider(LocalNavAnimatedContentScope provides this) {
+                        if (it) {
+                            ScreenSelection(
+                                onNavigate = onNavigate,
+                                dismiss = { isInScreenSelectionMode = false }
+                            )
+                        } else {
+                            TextField(
+                                state = textFieldState,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = TextFieldDefaults.colors(
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                ),
+                                placeholder = {
+                                    Text(
+                                        text = stringResource(R.string.search_here),
+                                        maxLines = 1
                                     )
-                                } else {
-                                    TextField(
-                                        state = textFieldState,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        colors = TextFieldDefaults.colors(
-                                            focusedIndicatorColor = Color.Transparent,
-                                            unfocusedIndicatorColor = Color.Transparent,
-                                        ),
-                                        placeholder = {
-                                            Text(
-                                                text = stringResource(R.string.search_here),
-                                                maxLines = 1
+                                },
+                                leadingIcon = {
+
+                                    AnimatedContent(
+                                        targetState = isSearching
+                                    ) {
+                                        if (it) {
+                                            Icon(
+                                                painter = painterResource(R.drawable.search),
+                                                contentDescription = null
                                             )
-                                        },
-                                        leadingIcon = {
+                                        } else {
+                                            val icon = screenToLeadingIcon[currentScreen]
+                                                ?: R.drawable.search
 
-                                            AnimatedContent(
-                                                targetState = isSearching
+                                            IconButton(
+                                                onClick = {
+                                                    isInScreenSelectionMode = true
+                                                },
+                                                shapes = IconButtonDefaults.shapes()
                                             ) {
-                                                if (it) {
+                                                Icon(
+                                                    painter = painterResource(icon),
+                                                    contentDescription = null,
+                                                    modifier = Modifier
+                                                        .sharedElement(
+                                                            sharedContentState = rememberSharedContentState(
+                                                                icon
+                                                            ),
+                                                            animatedVisibilityScope = LocalNavAnimatedContentScope.current
+                                                        )
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                },
+                                trailingIcon = {
+                                    AnimatedContent(
+                                        targetState = isSearching
+                                    ) {
+                                        if (it) {
+                                            IconButton(
+                                                onClick = textFieldState::clearText,
+                                                shapes = IconButtonDefaults.shapes()
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.cancel_filled),
+                                                    contentDescription = null
+                                                )
+                                            }
+                                        } else {
+                                            Row {
+                                                sortingMenu?.invoke()
+                                                IconButton(
+                                                    onClick = { onNavigate(Screen.Settings) },
+                                                    shapes = IconButtonDefaults.shapes()
+                                                ) {
                                                     Icon(
-                                                        painter = painterResource(R.drawable.search),
-                                                        contentDescription = null
+                                                        painter = painterResource(R.drawable.settings_filled),
+                                                        contentDescription = stringResource(
+                                                            R.string.settings
+                                                        )
                                                     )
-                                                } else {
-                                                    val icon = screenToLeadingIcon[currentScreen]
-                                                        ?: R.drawable.search
-
-                                                    IconButton(
-                                                        onClick = {
-                                                            isInScreenSelectionMode = true
-                                                        },
-                                                        shapes = IconButtonDefaults.shapes()
-                                                    ) {
-                                                        Icon(
-                                                            painter = painterResource(icon),
-                                                            contentDescription = null,
-                                                            modifier = Modifier
-                                                                .sharedElement(
-                                                                    sharedContentState = rememberSharedContentState(
-                                                                        icon
-                                                                    ),
-                                                                    animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                                                                )
-                                                        )
-                                                    }
                                                 }
                                             }
-
-                                        },
-                                        trailingIcon = {
-                                            AnimatedContent(
-                                                targetState = isSearching
-                                            ) {
-                                                if (it) {
-                                                    IconButton(
-                                                        onClick = textFieldState::clearText,
-                                                        shapes = IconButtonDefaults.shapes()
-                                                    ) {
-                                                        Icon(
-                                                            painter = painterResource(R.drawable.cancel_filled),
-                                                            contentDescription = null
-                                                        )
-                                                    }
-                                                } else {
-                                                    Row {
-                                                        sortingMenu?.invoke()
-                                                        IconButton(
-                                                            onClick = { onNavigate(Screen.Settings) },
-                                                            shapes = IconButtonDefaults.shapes()
-                                                        ) {
-                                                            Icon(
-                                                                painter = painterResource(R.drawable.settings_filled),
-                                                                contentDescription = stringResource(
-                                                                    R.string.settings
-                                                                )
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        lineLimits = TextFieldLineLimits.SingleLine,
-                                        shape = FloatingToolbarDefaults.ContainerShape
-                                    )
-                                }
-                            }
-
+                                        }
+                                    }
+                                },
+                                lineLimits = TextFieldLineLimits.SingleLine,
+                                shape = FloatingToolbarDefaults.ContainerShape
+                            )
                         }
                     }
+
                 }
             }
         }

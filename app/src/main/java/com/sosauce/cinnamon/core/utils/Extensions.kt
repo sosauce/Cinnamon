@@ -133,13 +133,6 @@ fun Long.toTime(): String {
     return dateTime.format(formatter)
 }
 
-// I have way too many functions to convert time and date lmao needs cleanup
-fun Long.toStopwatch(
-    durationUnit: DurationUnit = DurationUnit.MILLISECONDS
-): String {
-    val duration = this.toDuration(durationUnit)
-    return duration.toString()
-}
 
 /**
  * Returns the contact name if available, if not, returns the number as is

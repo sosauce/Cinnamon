@@ -32,7 +32,6 @@ import com.materialkolor.DynamicMaterialExpressiveTheme
 import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicMaterialThemeState
 import com.sosauce.cinnamon.core.datastore.rememberAppTheme
-import com.sosauce.cinnamon.core.ui.defaultColorScheme
 import com.sosauce.cinnamon.core.utils.CuteTheme
 import com.sosauce.cinnamon.core.utils.toPaletteStyle
 import com.sosauce.nekobites.components.Spacer

@@ -14,12 +14,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,10 +30,12 @@ import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import com.sosauce.cinnamon.R
 
 @Composable
 fun Dialpad(
@@ -53,7 +57,7 @@ fun Dialpad(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Expressive display — tonal pill with emphasis
+        // Expressive display - tonal pill with emphasis
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -70,7 +74,7 @@ fun Dialpad(
             ) {
                 if (value.isEmpty()) {
                     Text(
-                        text = "Enter number",
+                        text = stringResource(R.string.enter_number),
                         style = MaterialTheme.typography.titleMedium.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         ),
@@ -107,23 +111,15 @@ fun Dialpad(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     row.fastForEach { number ->
-                        val isSpecial = number == '*' || number == '#'
-                        FilledTonalButton(
+                        Button(
                             onClick = {
                                 value += number
                                 onSendTone(number)
                             },
-                            shapes = ButtonDefaults.shapes(
-                                shape = RoundedCornerShape(20.dp),
-                                pressedShape = RoundedCornerShape(14.dp)
-                            ),
+                            shapes = ButtonDefaults.shapes(),
                             colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = if (isSpecial) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerHigh,
-                                contentColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            elevation = ButtonDefaults.filledTonalButtonElevation(
-                                defaultElevation = 1.dp,
-                                pressedElevation = 3.dp
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHighest)
                             ),
                             modifier = Modifier
                                 .weight(1f)

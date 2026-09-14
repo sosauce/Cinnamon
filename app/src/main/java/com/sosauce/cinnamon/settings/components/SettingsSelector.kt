@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,6 +49,7 @@ fun SettingsSelector(
     Column(
         modifier = Modifier
             .padding(10.dp)
+            .height(100.dp)
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -75,6 +77,9 @@ fun SettingsSelector(
             text = stringResource(text),
             style = MaterialTheme.typography.bodyMediumEmphasized.copy(
                 color = textColor
+            ),
+            modifier = Modifier.padding(
+                horizontal = 5.dp
             )
         )
     }

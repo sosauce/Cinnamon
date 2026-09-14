@@ -37,12 +37,12 @@ fun SettingsScreen(
     val backStack = rememberNavBackStack(SettingsScreens.Settings)
     val scrollState = rememberScrollState()
     val items = listOf(
-        Item(
-            icon = R.drawable.phone_filled,
-            name = stringResource(R.string.permissions),
-            description = stringResource(R.string.permissions_desc),
-            onNavigate = { backStack.add(SettingsScreens.Permissions) }
-        ),
+//        Item(
+//            icon = R.drawable.security,
+//            name = stringResource(R.string.permissions),
+//            description = stringResource(R.string.permissions_desc),
+//            onNavigate = { backStack.add(SettingsScreens.Permissions) }
+//        ),
         Item(
             icon = R.drawable.palette,
             name = stringResource(R.string.look_and_feel),
@@ -146,11 +146,20 @@ fun SettingsScreen(
                                 icon = item.icon,
                                 name = item.name,
                                 description = item.description,
-                                topDp = if (index == 0) 24.dp else 4.dp,
-                                bottomDp = if (index == items.lastIndex) 24.dp else 4.dp,
+                                topDp = if (index == 0) 24.dp else 2.dp,
+                                bottomDp = if (index == items.lastIndex) 24.dp else 2.dp,
                                 onNavigate = item.onNavigate
                             )
                         }
+                        Spacer(Modifier.height(20.dp))
+                        SettingsCategoryCard(
+                            icon = R.drawable.security,
+                            name = stringResource(R.string.permissions),
+                            description = stringResource(R.string.permissions_desc),
+                            topDp = 24.dp,
+                            bottomDp = 24.dp,
+                            onNavigate = { backStack.add(SettingsScreens.Permissions) }
+                        )
                     }
                 }
 

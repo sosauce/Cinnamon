@@ -27,12 +27,13 @@ import com.sosauce.cinnamon.features.contacts.presentation.components.dialogs.Nu
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
+import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsState
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @Composable
 fun ContactActionsRow(
-    contact: CuteContact,
+    state: ContactDetailsState,
     onNavigate: (Screen) -> Unit,
     onHandleCallAction: (CallAction) -> Unit,
     onHandleContactDetailsAction: (ContactDetailsAction) -> Unit,
@@ -44,16 +45,16 @@ fun ContactActionsRow(
     var showNumberPicker by remember { mutableStateOf(false) }
     var action by remember { mutableStateOf(NumberPickerAction.MESSAGE) }
     val actions = buildList {
-        if (contact.details.phoneNumbers.isNotEmpty()) {
+        if (state.contact.phoneNumbers.isNotEmpty()) {
             add(
                 ContactActionsItem(
                     icon = R.drawable.call,
                     onClick = {
-                        if (contact.details.phoneNumbers.size > 1) {
+                        if (state.contact.phoneNumbers.size > 1) {
                             action = NumberPickerAction.CALL
                             showNumberPicker = true
                         } else {
-                            val number = contact.details.phoneNumbers.first().number
+                            val number = state.contact.phoneNumbers.first().number
                             onHandleCallAction(CallAction.LaunchCall(number))
                         }
                     }
@@ -63,12 +64,12 @@ fun ContactActionsRow(
                 ContactActionsItem(
                     icon = R.drawable.messages_filled,
                     onClick = {
-                        if (contact.details.phoneNumbers.size > 1) {
+                        if (state.contact.phoneNumbers.size > 1) {
                             action = NumberPickerAction.MESSAGE
                             showNumberPicker = true
                         } else {
                             val threadId =
-                                contact.details.phoneNumbers.first().number.getThreadIdOrCreate(
+                                state.contact.phoneNumbers.first().number.getThreadIdOrCreate(
                                     context
                                 )
                             onNavigate(Screen.ConversationDetails(threadId))
@@ -79,12 +80,12 @@ fun ContactActionsRow(
         }
         add(
             ContactActionsItem(
-                icon = if (contact.isFavorite) R.drawable.favorite_filled else R.drawable.favorite,
+                icon = if (state.contact.isFavorite) R.drawable.favorite_filled else R.drawable.favorite,
                 onClick = {
                     onHandleContactDetailsAction(ContactDetailsAction.ToggleFavorite)
                     onPlayFavoriteAnimation()
                 },
-                tint = if (contact.isFavorite) MaterialTheme.colorScheme.error else null
+                tint = if (state.contact.isFavorite) MaterialTheme.colorScheme.error else null
             )
         )
 
@@ -104,7 +105,7 @@ fun ContactActionsRow(
                     NumberPickerAction.CALL -> onHandleCallAction(CallAction.LaunchCall(number))
                 }
             },
-            phoneNumbers = contact.details.phoneNumbers.fastMap { it.number }
+            phoneNumbers = state.contact.phoneNumbers.fastMap { it.number }
         )
     }
 

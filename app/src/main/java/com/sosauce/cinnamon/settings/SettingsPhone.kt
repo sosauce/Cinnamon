@@ -46,18 +46,18 @@ fun SettingsPhone() {
                 colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceContainer),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 2.dp),
+                    .padding(horizontal = 16.dp, vertical = 1.dp),
                 shape = RoundedCornerShape(
                     topStart = 24.dp,
                     topEnd = 24.dp,
-                    bottomEnd = 4.dp,
-                    bottomStart = 4.dp
+                    bottomEnd = 2.dp,
+                    bottomStart = 2.dp
                 )
             ) {
 
                 if (allHandles.isEmpty()) {
                     Text(
-                        text = "No SIM available or permission needed — grant Phone permission to choose default SIM",
+                        text = "No SIM available or permission needed, grant Phone permission to choose default SIM",
                         style = MaterialTheme.typography.bodySmallEmphasized.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
@@ -88,14 +88,14 @@ fun SettingsPhone() {
             SwitchSettingsCard(
                 checked = t9Dialing,
                 onCheckedChange = { t9Dialing = !t9Dialing },
-                topDp = 4.dp,
-                bottomDp = 4.dp,
+                topDp = 2.dp,
+                bottomDp = 2.dp,
                 text = stringResource(R.string.enable_t9_dialing)
             )
             SwitchSettingsCard(
                 checked = groupSubCalls,
                 onCheckedChange = { groupSubCalls = !groupSubCalls },
-                topDp = 4.dp,
+                topDp = 2.dp,
                 bottomDp = 24.dp,
                 text = stringResource(R.string.group_sub_calls)
             )

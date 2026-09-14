@@ -10,13 +10,19 @@ import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.Contact
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContact
 import com.sosauce.cinnamon.core.utils.observe
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact2
+import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails2
+import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetailsBuilder2
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
@@ -29,59 +35,56 @@ class ContactDetailsViewModel(
 ) : AndroidViewModel(application) {
 
 
-    private val _state = MutableStateFlow(ContactDetailsState(isLoading = true))
-    val state = _state.asStateFlow()
+
+
+    val state = combine(
+        contactsRepository.fetchContact2(contactId),
+        contactsRepository.fetchLatestContactsDetails2(contactId),
+        contactSettingsDao.getContactSettings(contactId)
+    ) { contact, details, settings ->
+        ContactDetailsState(
+            isLoading = false,
+            contact = contact,
+            details = details,
+            settings = settings ?: ContactSettingsEntity(contactId = contactId)
+        )
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        ContactDetailsState(isLoading = true)
+    )
 
 
     init {
 
-        viewModelScope.launch(Dispatchers.IO) {
-            contactsRepository.fetchLatestContactsDetails(contactId).collectLatest { contact ->
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        contact = contact
-                    )
-                }
-            }
-        }
-
-        viewModelScope.launch(Dispatchers.IO) {
-            contactSettingsDao.getContactSettings(contactId).collectLatest { settings ->
-                _state.update {
-                    it.copy(settings = settings ?: ContactSettingsEntity(contactId = contactId))
-                }
-            }
-        }
-
-        application.contentResolver.observe(BlockedNumberContract.BlockedNumbers.CONTENT_URI)
-            .onEach {
-                _state.update { state ->
-
-                    val contact = state.contact
-
-                    val updatedPhones = contact.details.phoneNumbers.fastMap { phone ->
-                        phone.copy(
-                            isBlocked = BlockedNumberContract.isBlocked(application, phone.number)
-                        )
-                    }
-
-                    val updatedEmails = contact.details.emails.fastMap { email ->
-                        email.copy(
-                            isBlocked = BlockedNumberContract.isBlocked(application, email.email)
-                        )
-                    }
-
-                    state.copy(
-                        contact = contact.copy(
-                            details = contact.details.copy(
-                                phoneNumbers = updatedPhones,
-                                emails = updatedEmails
-                            )
-                        )
-                    )
-                }
-            }.flowOn(Dispatchers.Default).launchIn(viewModelScope)
+//        application.contentResolver.observe(BlockedNumberContract.BlockedNumbers.CONTENT_URI)
+//            .onEach {
+//                _state.update { state ->
+//
+//                    val contact = state.contact
+//
+//                    val updatedPhones = contact.details.phoneNumbers.fastMap { phone ->
+//                        phone.copy(
+//                            isBlocked = BlockedNumberContract.isBlocked(application, phone.number)
+//                        )
+//                    }
+//
+//                    val updatedEmails = contact.details.emails.fastMap { email ->
+//                        email.copy(
+//                            isBlocked = BlockedNumberContract.isBlocked(application, email.email)
+//                        )
+//                    }
+//
+//                    state.copy(
+//                        contact = contact.copy(
+//                            details = contact.details.copy(
+//                                phoneNumbers = updatedPhones,
+//                                emails = updatedEmails
+//                            )
+//                        )
+//                    )
+//                }
+//            }.flowOn(Dispatchers.Default).launchIn(viewModelScope)
 
 
     }
@@ -90,7 +93,8 @@ class ContactDetailsViewModel(
         when (action) {
             is ContactDetailsAction.ToggleFavorite -> {
                 viewModelScope.launch {
-                    contactsRepository.toggleFavorite(listOf(state.value.contact))
+                    TODO()
+                    //contactsRepository.toggleFavorite(listOf(state.value.contact))
                 }
             }
 
@@ -107,8 +111,12 @@ class ContactDetailsViewModel(
 
             is ContactDetailsAction.BlockContact -> {
                 viewModelScope.launch(Dispatchers.IO) {
-                    val contact = _state.value.contact
-                    contactsRepository.blockContact(contact, action.emailsToo)
+                    val contact = state.value.contact
+                    val emails = if (action.emailsToo) state.value.details.emails.fastMap { it.email } else emptyList()
+                    contactsRepository.blockContact(
+                        phones = contact.phoneNumbers.fastMap { it.number },
+                        emails = emails
+                    )
                 }
             }
         }
@@ -118,7 +126,8 @@ class ContactDetailsViewModel(
 
 data class ContactDetailsState(
     val isLoading: Boolean = false,
-    val contact: CuteContact = CuteContact(),
+    val contact: CuteContact2 = CuteContact2(),
+    val details: CuteContactDetails2 = CuteContactDetails2(),
     val settings: ContactSettingsEntity = ContactSettingsEntity(),
 )
 

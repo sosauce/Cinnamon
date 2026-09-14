@@ -88,7 +88,7 @@ fun DefaultContactIcon(
     firstLetter: Char?,
     size: Dp = 50.dp,
     color: Color = MaterialTheme.colorScheme.primary,
-    contactPfp: Uri = Uri.EMPTY,
+    contactPfp: Uri? = null,
     shape: Shape = MaterialShapes.Circle.toShape(),
     @DrawableRes icon: Int = R.drawable.person_filled
 ) {

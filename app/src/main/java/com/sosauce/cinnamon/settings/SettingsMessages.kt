@@ -44,12 +44,12 @@ fun SettingsMessages() {
                 colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceContainer),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 2.dp),
+                    .padding(horizontal = 16.dp, vertical = 1.dp),
                 shape = RoundedCornerShape(
                     topStart = 24.dp,
                     topEnd = 24.dp,
-                    bottomEnd = 4.dp,
-                    bottomStart = 4.dp
+                    bottomEnd = 2.dp,
+                    bottomStart = 2.dp
                 )
             ) {
                 LazyRowWithScrollButton(
@@ -72,28 +72,28 @@ fun SettingsMessages() {
             SwitchSettingsCard(
                 checked = showCharCount,
                 onCheckedChange = { showCharCount = !showCharCount },
-                topDp = 4.dp,
-                bottomDp = 4.dp,
+                topDp = 2.dp,
+                bottomDp = 2.dp,
                 text = "Show character count on typing"
             )
             SwitchSettingsCard(
                 checked = sendGroupAsMms,
                 onCheckedChange = { sendGroupAsMms = !sendGroupAsMms },
-                topDp = 4.dp,
-                bottomDp = 4.dp,
+                topDp = 2.dp,
+                bottomDp = 2.dp,
                 text = "Send group messages as MMS"
             )
             SwitchSettingsCard(
                 checked = sendLongAsMms,
                 onCheckedChange = { sendLongAsMms = !sendLongAsMms },
-                topDp = 4.dp,
-                bottomDp = 4.dp,
+                topDp = 2.dp,
+                bottomDp = 2.dp,
                 text = "Send long messages as MMS"
             )
             SwitchSettingsCard(
                 checked = enableDeliveryReports,
                 onCheckedChange = { enableDeliveryReports = !enableDeliveryReports },
-                topDp = 4.dp,
+                topDp = 2.dp,
                 bottomDp = 24.dp,
                 text = "Enable delivery reports"
             )

@@ -39,6 +39,7 @@ import com.sosauce.cinnamon.core.utils.LocalScreen
 import com.sosauce.cinnamon.core.utils.rememberInteractionSource
 import com.sosauce.cinnamon.core.utils.rememberSearchbarMaxFloatValue
 import com.sosauce.cinnamon.core.utils.rememberSearchbarRightPadding
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact2
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.dialogs.DeleteConversationsDialog
 import com.sosauce.sweetselect.SweetSelectState
 
@@ -237,8 +238,8 @@ fun ConversationsSelectedBar(
 @Composable
 fun ContactsSelectedBar(
     modifier: Modifier = Modifier,
-    items: List<CuteContact>,
-    multiSelectState: SweetSelectState<CuteContact>,
+    items: List<CuteContact2>,
+    multiSelectState: SweetSelectState<CuteContact2>,
     onToggleFavorite: () -> Unit,
     onDeleteContacts: () -> Unit
 ) {

@@ -2,7 +2,9 @@
 
 package com.sosauce.cinnamon.features.phone.presentation.call.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,6 +19,7 @@ import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -35,14 +38,6 @@ fun AudioSwitcher(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(
-            text = "Audio output",
-            style = MaterialTheme.typography.labelLargeEmphasized.copy(
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-        )
         Surface(
             shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -59,28 +54,27 @@ fun AudioSwitcher(
                         shape = MenuDefaults.getItemShape(index, routes.lastIndex),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainerLow,
                         leadingContent = {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                androidx.compose.foundation.layout.Box(
-                                    contentAlignment = androidx.compose.ui.Alignment.Center
-                                ) {
-                                    Icon(
-                                        painter = painterResource(route.type.routeToIcon()),
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        modifier = Modifier.size(20.dp)
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        shape = RoundedCornerShape(12.dp)
                                     )
-                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(route.type.routeToIcon()),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondary,
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
                         }
                     ) {
                         Text(
                             text = route.name.lowercase().replaceFirstChar { it.uppercase() },
                             style = MaterialTheme.typography.titleSmallEmphasized.copy(
-                                fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         )
@@ -88,12 +82,5 @@ fun AudioSwitcher(
                 }
             }
         }
-        Text(
-            text = "Tap to switch audio route",
-            style = MaterialTheme.typography.labelSmall.copy(
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            modifier = Modifier.padding(horizontal = 12.dp)
-        )
     }
 }

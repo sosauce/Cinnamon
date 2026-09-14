@@ -253,7 +253,10 @@ fun SharedTransitionScope.ContactDetailsScreen(
                             )
                     ) {
                         IconButton(
-                            onClick = { onNavigate(Screen.ContactEditor(state.contact)) },
+                            onClick = {
+                                TODO()
+                            /*onNavigate(Screen.ContactEditor(state.contact))*/
+                            },
                             shapes = IconButtonDefaults.shapes()
                         ) {
                             Icon(
@@ -351,7 +354,7 @@ fun SharedTransitionScope.ContactDetailsScreen(
                                 animatedVisibilityScope = LocalNavAnimatedContentScope.current
                             ),
                         size = 170.dp,
-                        contactPfp = state.contact.photo,
+                        contactPfp = state.details.photo,
                         shape = MaterialShapes.Cookie9Sided.toShape()
                     )
 
@@ -367,9 +370,9 @@ fun SharedTransitionScope.ContactDetailsScreen(
                         .basicMarquee(),
                     style = MaterialTheme.typography.headlineLargeEmphasized
                 )
-                if (state.contact.details.company.isNotEmpty()) {
+                state.details.company?.let { company ->
                     Text(
-                        text = state.contact.details.company,
+                        text = company,
                         style = MaterialTheme.typography.bodyLargeEmphasized.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -377,7 +380,7 @@ fun SharedTransitionScope.ContactDetailsScreen(
                 }
                 Spacer(Modifier.height(15.dp))
                 ContactActionsRow(
-                    contact = state.contact,
+                    state = state,
                     onNavigate = onNavigate,
                     onHandleCallAction = onHandleCallAction,
                     onHandleContactDetailsAction = onHandleContactDetailsAction,
@@ -385,7 +388,7 @@ fun SharedTransitionScope.ContactDetailsScreen(
                 )
                 Spacer(Modifier.height(25.dp))
                 ContactInfos(
-                    contact = state.contact,
+                    state = state,
                     onHandleCallAction = onHandleCallAction,
                     onNavigate = onNavigate
                 )

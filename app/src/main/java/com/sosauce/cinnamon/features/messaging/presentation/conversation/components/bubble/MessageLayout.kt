@@ -155,7 +155,7 @@ fun BubbleShape(
             }
         )
 
-        GentleSquircleShape(
+        RoundedCornerShape(
             topStart = 24.dp,
             bottomStart = 24.dp,
             topEnd = topEnd,
@@ -177,7 +177,7 @@ fun BubbleShape(
             }
         )
 
-        GentleSquircleShape(
+        RoundedCornerShape(
             topStart = topStart,
             bottomStart = bottomStart,
             topEnd = 24.dp,

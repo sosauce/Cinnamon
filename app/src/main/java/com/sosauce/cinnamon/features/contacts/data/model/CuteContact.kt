@@ -8,6 +8,7 @@ import com.sosauce.cinnamon.features.contacts.data.model.CuteContact.Email
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContact.Event
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContact.Phone
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContact.Website
+import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
 import kotlinx.serialization.Serializable
 
 
@@ -17,14 +18,7 @@ data class CuteContactEntity(
     val thumbnail: String?,
     val isFavorite: Boolean,
     val accountName: String,
-    val phoneNumbers: List<ContactPhoneEntity>
-)
-
-data class ContactPhoneEntity(
-    val number: String,
-    val type: Int,
-    val isDefault: Boolean,
-    val isBlocked: Boolean
+    val phoneNumbers: List<ContactPhone>
 )
 
 @Serializable

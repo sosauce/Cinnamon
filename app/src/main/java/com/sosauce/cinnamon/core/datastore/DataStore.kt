@@ -7,6 +7,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -47,6 +48,8 @@ data object PreferencesKeys {
     val ENABLE_T9_DIALING = booleanPreferencesKey("ENABLE_T9_DIALING")
     val SORT_LOGS_ASCENDING = booleanPreferencesKey("SORT_LOGS_ASCENDING")
     val INCOMING_CALL_FULLSCREEN = booleanPreferencesKey("INCOMING_CALL_FULLSCREEN")
+    val ENABLE_PINCH_TO_ZOOM = booleanPreferencesKey("ENABLE_PINCH_TO_ZOOM")
+    val CHAT_ZOOM_SCALE = floatPreferencesKey("CHAT_ZOOM_SCALE")
 }
 
 
@@ -110,7 +113,13 @@ fun rememberSortLogsAscending() = rememberPreference(PreferencesKeys.SORT_LOGS_A
 fun rememberIncomingCallFullscreen() = rememberPreference(PreferencesKeys.INCOMING_CALL_FULLSCREEN, true)
 
 @Composable
-fun rememberInitialScreen() = rememberPreference(PreferencesKeys.DEFAULT_TAB, DefaultTabOption.MESSAGES)
+fun rememberChatZoomScale() = rememberPreference(PreferencesKeys.CHAT_ZOOM_SCALE, 1f)
+
+@Composable
+fun rememberEnablePinchToZoom() = rememberPreference(PreferencesKeys.ENABLE_PINCH_TO_ZOOM, false)
+
+@Composable
+fun rememberInitialScreen() = rememberPreference(DEFAULT_TAB, DefaultTabOption.MESSAGES)
 
 @Composable
 fun rememberInitialScreenBlocking(): Int {

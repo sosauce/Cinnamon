@@ -3,6 +3,7 @@ package com.sosauce.cinnamon.features.phone.presentation.call
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.telecom.TelecomManager
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
@@ -30,13 +31,11 @@ class CallingViewModel(
     init {
         viewModelScope.launch(Dispatchers.IO) {
 
-            val poster =
-                contactSettingsDao.getContactPoster(state.value.number.getContactId(application.applicationContext))
-                    ?: ""
-
+            val id = state.value.number.getContactId(application.applicationContext)
+            val poster = contactSettingsDao.getContactPoster(id)
             callManager._callingState.update {
                 it.copy(
-                    poster = poster
+                    poster = poster?.toUri()
                 )
             }
 
@@ -48,9 +47,6 @@ class CallingViewModel(
         when (action) {
             is CallAction.LaunchCall -> {
                 if (callManager.isInCall()) return
-                // Always open Cinnamon's call UI — no default-dialer gating.
-                // Telecom will still place the call via CallManager; we show our
-                // expressive CallScreen immediately for instant feedback.
                 val success = try {
                     callManager.startCall(action.number)
                 } catch (_: Exception) { false }
@@ -98,7 +94,7 @@ data class CallingState(
     val timeSpentInCall: Long = 0,
     val availableAudioRoutes: List<AudioRoute> = emptyList(),
     val currentAudioRoute: AudioRoute = AudioRoute(),
-    val poster: String = "", // contact that may or may nor be associated with the caller
+    val poster: Uri? = null, // contact that may or may nor be associated with the caller
     val activeSim: CuteSimCard = CuteSimCard()
 
 )

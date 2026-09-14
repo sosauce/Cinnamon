@@ -276,10 +276,9 @@ fun Nav(
 
                         DialpadScreen(
                             state = state,
-                            onNavigate = backStack::add,
+                            textFieldState = viewModel.textFieldState,
                             onNavigateUp = backStack::navigateBack,
-                            onHandleCallAction = callViewModel::handleCallAction,
-                            onAddPlus = viewModel::addPlus
+                            onHandleCallAction = callViewModel::handleCallAction
                         )
                     }
 

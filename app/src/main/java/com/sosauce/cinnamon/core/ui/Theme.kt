@@ -13,6 +13,7 @@ import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
@@ -45,8 +46,8 @@ fun CinnamonTheme(
     val paletteStyle by rememberPaletteStyle()
 
     val isDark = when (theme) {
-        CuteTheme.DARK, CuteTheme.AMOLED -> true
         CuteTheme.SYSTEM -> isSystemInDarkTheme
+        CuteTheme.DARK, CuteTheme.AMOLED -> true
         else -> false
     }
     val seedColor = rememberSeedColor(
@@ -77,25 +78,7 @@ fun CinnamonTheme(
         typography = if (useSystemFont) MaterialTheme.typography else NunitoTypography,
         content = content
     )
-}
 
-
-@Composable
-fun defaultColorScheme(
-    forcedColor: Color? = null,
-    palette: String = rememberPaletteStyle().value
-): ColorScheme {
-    val context = LocalContext.current
-    val isSystemInDarkTheme = isSystemInDarkTheme()
-    val theme by rememberAppTheme()
-
-    return rememberDynamicColorScheme(
-        seedColor = forcedColor ?: context.getAdaptivePrimaryColor(Color.Unspecified),
-        isDark = if (theme == CuteTheme.SYSTEM) isSystemInDarkTheme else if (theme == CuteTheme.AMOLED) true else theme == CuteTheme.DARK,
-        isAmoled = theme == CuteTheme.AMOLED,
-        specVersion = ColorSpec.SpecVersion.SPEC_2025,
-        style = palette.toPaletteStyle()
-    )
 }
 
 val nunitoFontFamily = FontFamily(

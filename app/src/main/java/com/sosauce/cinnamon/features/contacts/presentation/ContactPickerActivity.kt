@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.LazyListKeys
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact2
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
 import org.koin.androidx.compose.koinViewModel
@@ -87,8 +88,8 @@ class ContactPickerActivity : ComponentActivity() {
 
 
                                         ContactListItem(
-                                            modifier = Modifier.Companion.animateItem(),
-                                            contact = contact,
+                                            modifier = Modifier.animateItem(),
+                                            contact = CuteContact2(),
                                             isSelected = false,
                                             onClick = {
                                                 //onNavigate(Screen.ContactDetails(contact.id))
@@ -122,7 +123,7 @@ class ContactPickerActivity : ComponentActivity() {
 
                                         ContactListItem(
                                             modifier = Modifier.Companion.animateItem(),
-                                            contact = contact,
+                                            contact = CuteContact2(),
                                             isSelected = false,
                                             onClick = {
                                                 //onNavigate(Screen.ContactDetails(contact.id))

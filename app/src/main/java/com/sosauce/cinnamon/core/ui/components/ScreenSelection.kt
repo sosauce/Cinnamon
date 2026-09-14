@@ -4,6 +4,7 @@ package com.sosauce.cinnamon.core.ui.components
 
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -13,10 +14,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
@@ -52,7 +55,9 @@ fun SharedTransitionScope.ScreenSelection(
             selectedIcon = R.drawable.phone_filled
         )
     )
-    ShortNavigationBar {
+    ShortNavigationBar(
+        modifier = Modifier.clip(RoundedCornerShape(24.dp))
+    ) {
             screens.forEach { screen ->
 
                 val haptic = LocalHapticFeedback.current

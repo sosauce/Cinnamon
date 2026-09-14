@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -74,7 +75,11 @@ fun SimSelector(
             )
         }
         Spacer(Modifier.weight(1f))
-        Text(simCard.name)
+        Text(
+            text = simCard.name,
+            style = MaterialTheme.typography.bodyMediumEmphasized,
+            modifier = Modifier.padding(5.dp)
+        )
     }
 }
 
@@ -87,10 +92,8 @@ fun PhoneAccountHandleSelector(
 
 
     val borderColor by animateColorAsState(
-        targetValue = if (isDefaultHandle) MaterialTheme.colorScheme.primary else Color.Transparent,
+        targetValue = if (isDefaultHandle) Color(account.highlightColor) else Color.Transparent,
     )
-
-    println("List handle: ${Color(account.highlightColor)}")
 
     Column(
         verticalArrangement = Arrangement.Center,
@@ -117,10 +120,14 @@ fun PhoneAccountHandleSelector(
             Icon(
                 painter = painterResource(R.drawable.sim_card_filled),
                 contentDescription = null,
-                tint = LocalContentColor.current
+                tint = Color(account.highlightColor)
             )
         }
         Spacer(Modifier.weight(1f))
-        Text(account.label.toString())
+        Text(
+            text = account.label?.toString() ?: "<unknown>",
+            style = MaterialTheme.typography.bodyMediumEmphasized,
+            modifier = Modifier.padding(5.dp)
+        )
     }
 }
