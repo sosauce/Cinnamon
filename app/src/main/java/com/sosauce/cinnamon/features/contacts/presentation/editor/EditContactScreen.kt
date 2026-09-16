@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalGridApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -75,6 +76,7 @@ import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.ImagePickerCard
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
+import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsActions
 import com.sosauce.cinnamon.features.contacts.domain.ContactAddress
 import com.sosauce.cinnamon.features.contacts.domain.ContactEmail
@@ -214,52 +216,41 @@ fun SharedTransitionScope.EditContactScreen(
 
             Spacer(Modifier.height(25.dp))
 
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                )
-            ) {
-                Column(Modifier.padding(10.dp)) {
+            ContactEditTextField(
+                value = details.firstName ?: "",
+                label = R.string.first_name,
+                leadingIcon = R.drawable.contact,
+                onValueChange = {
+                    details = details.copy(firstName = it)
+                },
+                onClickRemove = null
+            )
+            ContactEditTextField(
+                value = details.lastName ?: "",
+                label = R.string.last_name,
+                leadingIcon = R.drawable.contact,
+                onValueChange = {
+                    details = details.copy(lastName = it)
+                },
+                onClickRemove = null
+            )
 
-                    ContactEditTextField(
-                        value = details.firstName ?: "",
-                        label = R.string.first_name,
-                        leadingIcon = R.drawable.contact,
-                        onValueChange = {
-                            details = details.copy(firstName = it)
-                        },
-                        onClickRemove = null
-                    )
 
-                    ContactEditTextField(
-                        value = details.lastName ?: "",
-                        label = R.string.last_name,
-                        leadingIcon = R.drawable.contact,
-                        onValueChange = {
-                            details = details.copy(lastName = it)
-                        },
-                        onClickRemove = null
-                    )
-
-                    if (!details.company.isNullOrEmpty()) {
-                        ContactEditTextField(
-                            value = details.company ?: "",
-                            label = R.string.company,
-                            leadingIcon = R.drawable.business,
-                            onValueChange = {
-                                details = details.copy(company = it)
-                            },
-                            onClickRemove = {
-                                details = details.copy(company = "")
-                            }
-                        )
+            if (!details.company.isNullOrEmpty()) {
+                ContactEditTextField(
+                    value = details.company ?: "",
+                    label = R.string.company,
+                    leadingIcon = R.drawable.business,
+                    onValueChange = {
+                        details = details.copy(company = it)
+                    },
+                    onClickRemove = {
+                        details = details.copy(company = "")
                     }
-                }
+                )
             }
 
-            Spacer(Modifier.height(15.dp))
+            Spacer(Modifier.height(25.dp))
 
             ContactDataSection(
                 items = contact.phoneNumbers,
@@ -295,7 +286,6 @@ fun SharedTransitionScope.EditContactScreen(
                 }
             )
 
-            Spacer(Modifier.height(15.dp))
 
             ContactDataSection(
                 items = details.emails,
@@ -332,7 +322,7 @@ fun SharedTransitionScope.EditContactScreen(
                 }
             )
 
-            Spacer(Modifier.height(15.dp))
+            Spacer(Modifier.height(10.dp))
 
             ContactDataSection(
                 items = details.addresses,
@@ -369,7 +359,7 @@ fun SharedTransitionScope.EditContactScreen(
                 }
             )
 
-            Spacer(Modifier.height(15.dp))
+            Spacer(Modifier.height(10.dp))
 
             ContactDataSection(
                 items = details.websites,
@@ -400,29 +390,21 @@ fun SharedTransitionScope.EditContactScreen(
                 }
             )
 
-            Spacer(Modifier.height(15.dp))
+            Spacer(Modifier.height(10.dp))
 
 
             details.note?.let { note ->
-                Card(
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    )
-                ) {
-                    ContactEditTextField(
-                        modifier = Modifier.padding(10.dp),
-                        value = note,
-                        label = R.string.notes,
-                        leadingIcon = R.drawable.note,
-                        onValueChange = {
-                            details = details.copy(note = it)
-                        },
-                        onClickRemove = {
-                            details = details.copy(note = null)
-                        }
-                    )
-                }
+                ContactEditTextField(
+                    value = note,
+                    label = R.string.notes,
+                    leadingIcon = R.drawable.note,
+                    onValueChange = {
+                        details = details.copy(note = it)
+                    },
+                    onClickRemove = {
+                        details = details.copy(note = null)
+                    }
+                )
 
             }
 
@@ -654,36 +636,29 @@ private fun <T> ContactDataSection(
     valueProvider: (T) -> String
 ) {
     if (items.isNotEmpty()) {
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
-        ) {
-            Column(modifier = Modifier.padding(10.dp)) {
-                items.fastForEachIndexed { index, item ->
-                    ContactEditTextField(
-                        value = valueProvider(item),
-                        keyboardType = keyboardType,
-                        label = labelRes,
-                        leadingIcon = iconRes,
-                        onValueChange = { newValue -> onValueChange(index, newValue) },
-                        onClickRemove = { onRemove(index) }
-                    )
-                }
+        Column {
+            items.fastForEachIndexed { index, item ->
+                ContactEditTextField(
+                    value = valueProvider(item),
+                    keyboardType = keyboardType,
+                    label = labelRes,
+                    leadingIcon = iconRes,
+                    onValueChange = { newValue -> onValueChange(index, newValue) },
+                    onClickRemove = { onRemove(index) }
+                )
+            }
 
-                Button(
-                    onClick = onAdd,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                    shapes = ButtonDefaults.shapes()
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.add),
-                        contentDescription = null
-                    )
-                    Spacer(Modifier.width(5.dp))
-                    Text(stringResource(addLabelRes))
-                }
+            Button(
+                onClick = onAdd,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                shapes = ButtonDefaults.shapes()
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.add),
+                    contentDescription = null
+                )
+                Spacer(Modifier.width(5.dp))
+                Text(stringResource(addLabelRes))
             }
         }
     }
