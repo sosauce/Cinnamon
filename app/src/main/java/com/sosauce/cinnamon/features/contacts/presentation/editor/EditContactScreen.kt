@@ -339,6 +339,7 @@ fun SharedTransitionScope.EditContactScreen(
                         }
                     )
                 },
+                
 
                 onRemove = { index ->
                     details = details.copy(
