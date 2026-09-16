@@ -3,19 +3,19 @@ package com.sosauce.cinnamon.features.contacts.domain
 import android.net.Uri
 import androidx.compose.ui.util.fastForEach
 import androidx.core.net.toUri
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact.Address
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact.Email
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact.Event
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact.Phone
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact.Website
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContactDetails
+import com.sosauce.cinnamon.core.NullableUriSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
-data class CuteContact2(
+@Serializable
+data class CuteContact(
     val id: Long = 0,
     val displayName: String = "",
+    @Serializable(with = NullableUriSerializer::class)
     val thumbnail: Uri? = null,
     val isFavorite: Boolean = false,
     val accountName: String = "",
+    val accountType: String? = null,
     val phoneNumbers: List<ContactPhone> = emptyList()
 ) {
     val searchIndex: String by lazy {
@@ -27,7 +27,8 @@ data class CuteContact2(
     }
 }
 
-data class CuteContactDetails2(
+@Serializable
+data class CuteContactDetails(
     val photoString: String? = null,
     val emails: List<ContactEmail> = emptyList(),
     val addresses: List<ContactAddress> = emptyList(),
@@ -35,40 +36,47 @@ data class CuteContactDetails2(
     val websites: List<String> = emptyList(),
     val company: String? = null,
     val firstName: String? = null,
+    val middleName: String? = null,
     val lastName: String? = null,
     val note: String? = null
 ) {
+    @Transient
     val photo = photoString?.toUri()
 }
 
+@Serializable
 data class ContactPhone(
     val number: String,
     val type: Int,
     val isDefault: Boolean,
-    val isBlocked: Boolean
+    val isBlocked: Boolean = false
 )
 
+@Serializable
 data class ContactEmail(
     val email: String,
     val type: Int,
     val isDefault: Boolean
 )
 
+@Serializable
 data class ContactAddress(
     val address: String,
     val type: Int,
     val isDefault: Boolean
 )
 
+@Serializable
 data class ContactEvent(
     val date: String,
     val type: Int
 )
 
-class CuteContactDetailsBuilder2 {
+class CuteContactDetailsBuilder {
     private var note: String? = null
     private var company: String? = null
     private var firstName: String? = null
+    private var middleName: String? = null
     private var lastName: String? = null
 
     private var photo: String? = null
@@ -95,6 +103,10 @@ class CuteContactDetailsBuilder2 {
         firstName = contactFirstName
     }
 
+    fun setMiddleName(contactMiddleName: String?) {
+        middleName = contactMiddleName
+    }
+
     fun setLastName(contactLastName: String?) {
         lastName = contactLastName
     }
@@ -104,8 +116,8 @@ class CuteContactDetailsBuilder2 {
     }
 
 
-    fun build(): CuteContactDetails2 {
-        return CuteContactDetails2(
+    fun build(): CuteContactDetails {
+        return CuteContactDetails(
             emails = emails.toList(),
             addresses = addresses.toList(),
             websites = websites.toList(),
@@ -113,6 +125,7 @@ class CuteContactDetailsBuilder2 {
             note = note,
             company = company,
             firstName = firstName,
+            middleName = middleName,
             lastName = lastName,
             photoString = photo
         )

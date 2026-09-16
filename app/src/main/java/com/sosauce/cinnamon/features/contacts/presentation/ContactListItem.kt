@@ -32,16 +32,15 @@ import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact
 import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.core.utils.beautifyNumber
-import com.sosauce.cinnamon.features.contacts.domain.CuteContact2
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.nekobites.components.AnimatedSelectedIcon
 
 @Composable
 fun SharedTransitionScope.ContactListItem(
     modifier: Modifier = Modifier,
-    contact: CuteContact2,
+    contact: CuteContact,
     isSelected: Boolean,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,

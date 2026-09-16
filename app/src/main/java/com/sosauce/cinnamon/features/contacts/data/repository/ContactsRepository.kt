@@ -11,11 +11,7 @@ import android.provider.ContactsContract
 import android.widget.Toast
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
-import androidx.core.net.toUri
 import com.sosauce.cinnamon.core.utils.beautifyNumber
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContactDetails
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContactDetailsBuilder
 import com.sosauce.cinnamon.core.utils.observe
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContactEntity
 import com.sosauce.cinnamon.features.contacts.data.model.toDomain
@@ -23,9 +19,9 @@ import com.sosauce.cinnamon.features.contacts.domain.ContactAddress
 import com.sosauce.cinnamon.features.contacts.domain.ContactEmail
 import com.sosauce.cinnamon.features.contacts.domain.ContactEvent
 import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
-import com.sosauce.cinnamon.features.contacts.domain.CuteContact2
-import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails2
-import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetailsBuilder2
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact
+import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails
+import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetailsBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOn
@@ -38,8 +34,7 @@ class ContactsRepository(
 
 
 
-    // Contact 2 start
-    fun fetchLatestContacts2() =
+    fun fetchLatestContacts() =
         context.contentResolver
             .observe(ContactsContract.Contacts.CONTENT_URI)
             .mapLatest {
@@ -47,7 +42,7 @@ class ContactsRepository(
             }
             .flowOn(Dispatchers.IO)
 
-    fun fetchLatestContactsDetails2(contactId: Long) =
+    fun fetchLatestContactsDetails(contactId: Long) =
         context.contentResolver
             .observe(ContactsContract.Data.CONTENT_URI)
             .mapLatest {
@@ -55,7 +50,7 @@ class ContactsRepository(
             }
             .flowOn(Dispatchers.IO)
 
-    fun fetchDialpadContacts(): List<CuteContact2> =
+    fun fetchDialpadContacts(): List<CuteContact> =
         fetchContacts2(
             extraSelection = "${ContactsContract.Contacts.HAS_PHONE_NUMBER} = ?",
             extraSelectionArgs = arrayOf("1")
@@ -68,7 +63,7 @@ class ContactsRepository(
                 fetchContacts2(
                     extraSelection = "${ContactsContract.Contacts._ID} = ?",
                     extraSelectionArgs = arrayOf(contactId.toString())
-                ).firstOrNull()?.toDomain() ?: CuteContact2()
+                ).firstOrNull()?.toDomain() ?: CuteContact()
             }
             .flowOn(Dispatchers.IO)
 
@@ -172,8 +167,8 @@ class ContactsRepository(
         return map
     }
 
-    private fun fetchContactDetails2(contactId: Long): CuteContactDetails2 {
-        val builder = CuteContactDetailsBuilder2()
+    private fun fetchContactDetails2(contactId: Long): CuteContactDetails {
+        val builder = CuteContactDetailsBuilder()
 
         context.contentResolver.query(
             ContactsContract.Data.CONTENT_URI,
@@ -203,16 +198,18 @@ class ContactsRepository(
             val photoColumn =
                 cursor.getColumnIndexOrThrow(ContactsContract.Data.PHOTO_URI)
 
-            if (cursor.isFirst) {
-                val photo = cursor.getString(photoColumn).ifEmpty { null }
-                builder.setPhoto(photo)
-            }
 
             while (cursor.moveToNext()) {
                 val mime = cursor.getString(mimeColumn)
                 val data1 = cursor.getString(data1Column) ?: continue
                 val data2 = cursor.getInt(data2Column)
                 val isDefault = cursor.getInt(isDefaultColumn) != 0
+
+
+                if (cursor.isFirst) {
+                    val photo = cursor.getString(photoColumn).ifEmpty { null }
+                    builder.setPhoto(photo)
+                }
 
                 when (mime) {
                     ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE ->
@@ -248,15 +245,8 @@ class ContactsRepository(
         return builder.build()
     }
 
-    // Contact 2 end
 
 
-    fun fetchLatestContacts(
-        extraSelection: String? = null,
-        extraSelectionArgs: Array<String> = emptyArray()
-    ) = context.contentResolver.observe(ContactsContract.Contacts.CONTENT_URI).mapLatest {
-        fetchContacts(extraSelection, extraSelectionArgs)
-    }.flowOn(Dispatchers.IO)
     private fun fetchAccountNames(): Map<Long, String> {
         val map = mutableMapOf<Long, String>()
         context.contentResolver.query(
@@ -274,82 +264,6 @@ class ContactsRepository(
                 if (!map.containsKey(contactId)) {
                     map[contactId] = cursor.getString(nameCol) ?: "Device"
                 }
-            }
-        }
-        return map
-    }
-
-    private fun fetchContacts(
-        extraSelection: String?,
-        extraSelectionArgs: Array<String>,
-    ): List<CuteContact> {
-        val contacts = mutableListOf<CuteContact>()
-
-        val allPhones = fetchAllPhoneNumbers()
-
-        val accountNames = fetchAccountNames()
-
-        context.contentResolver.query(
-            ContactsContract.Contacts.CONTENT_URI,
-            arrayOf(
-                ContactsContract.Contacts._ID,
-                ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
-                ContactsContract.Contacts.STARRED,
-                ContactsContract.Contacts.PHOTO_THUMBNAIL_URI
-            ),
-            extraSelection,
-            extraSelectionArgs,
-            "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} ASC"
-        )?.use { cursor ->
-            val idCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
-            val nameCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
-            val starCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.STARRED)
-            val photoCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI)
-
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idCol)
-                val accountName = accountNames[id] ?: "Device"
-
-                contacts.add(
-                    CuteContact(
-                        id = id,
-                        displayName = cursor.getString(nameCol) ?: "",
-                        photo = cursor.getString(photoCol)?.toUri() ?: Uri.EMPTY,
-                        isFavorite = cursor.getInt(starCol) == 1,
-                        details = CuteContactDetails(phoneNumbers = allPhones[id] ?: emptyList()),
-                        accountName = accountName
-                    )
-                )
-            }
-        }
-        return contacts
-    }
-
-    private fun fetchAllPhoneNumbers(): Map<Long, List<CuteContact.Phone>> {
-        val map = mutableMapOf<Long, MutableList<CuteContact.Phone>>()
-        context.contentResolver.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(
-                ContactsContract.Data.CONTACT_ID,
-                ContactsContract.Data.DATA1,
-                ContactsContract.Data.DATA2,
-                ContactsContract.Data.IS_PRIMARY
-            ),
-            null, null, null
-        )?.use { cursor ->
-            val idCol = cursor.getColumnIndexOrThrow(ContactsContract.Data.CONTACT_ID)
-            val numCol = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA1)
-            val typeCol = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA2)
-            val primCol = cursor.getColumnIndexOrThrow(ContactsContract.Data.IS_PRIMARY)
-
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idCol)
-                val phone = CuteContact.Phone(
-                    number = cursor.getString(numCol),
-                    type = cursor.getInt(typeCol),
-                    isDefault = cursor.getInt(primCol) != 0
-                )
-                map.getOrPut(id) { mutableListOf() }.add(phone)
             }
         }
         return map
@@ -378,7 +292,9 @@ class ContactsRepository(
     }
 
     suspend fun createOrEditContact(
-        contact: CuteContact
+        contact: CuteContact,
+        details: CuteContactDetails,
+        photo: Uri? = contact.thumbnail
     ): Boolean = withContext(Dispatchers.IO) {
 
         val rawId = getContactRawId(contact.id)
@@ -387,7 +303,7 @@ class ContactsRepository(
         return@withContext try {
             val operations = arrayListOf<ContentProviderOperation>()
 
-            val pfpByteArray = uriToByteArray(contact.photo)
+            val pfpByteArray = uriToByteArray(photo)
 
             if (rawId == 0L) {
                 operations.add(
@@ -419,21 +335,21 @@ class ContactsRepository(
                         )
                         .withValue(
                             ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME,
-                            contact.details.firstName
+                            details.firstName
                         )
                         .withValue(
                             ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME,
-                            contact.details.middleName
+                            details.middleName
                         )
                         .withValue(
                             ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME,
-                            contact.details.lastName
+                            details.lastName
                         )
                         .withYieldAllowed(true) // from what I understand, this allows the content resolver to not take too long/freeze thread for each operation
                         .build()
                 )
 
-                contact.details.phoneNumbers.fastForEach { phone ->
+                contact.phoneNumbers.fastForEach { phone ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
@@ -452,7 +368,7 @@ class ContactsRepository(
                     )
                 }
 
-                contact.details.emails.fastForEach { email ->
+                details.emails.fastForEach { email ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
@@ -471,7 +387,7 @@ class ContactsRepository(
                     )
                 }
 
-                contact.details.addresses.fastForEach { address ->
+                details.addresses.fastForEach { address ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
@@ -492,7 +408,7 @@ class ContactsRepository(
                     )
                 }
 
-                contact.details.websites.fastForEach { website ->
+                details.websites.fastForEach { website ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
@@ -502,7 +418,7 @@ class ContactsRepository(
                             )
                             .withValue(
                                 ContactsContract.CommonDataKinds.Website.URL,
-                                website.website
+                                website
                             )
                             .withYieldAllowed(true)
                             .build()
@@ -516,12 +432,12 @@ class ContactsRepository(
                             ContactsContract.Data.MIMETYPE,
                             ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE
                         )
-                        .withValue(ContactsContract.CommonDataKinds.Note.NOTE, contact.details.note)
+                        .withValue(ContactsContract.CommonDataKinds.Note.NOTE, details.note)
                         .withYieldAllowed(true)
                         .build()
                 )
 
-                contact.details.events.fastForEach { event ->
+                details.events.fastForEach { event ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
@@ -553,15 +469,15 @@ class ContactsRepository(
                         )
                         .withValue(
                             ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME,
-                            contact.details.firstName
+                            details.firstName
                         )
                         .withValue(
                             ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME,
-                            contact.details.middleName
+                            details.middleName
                         )
                         .withValue(
                             ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME,
-                            contact.details.lastName
+                            details.lastName
                         )
                         .withYieldAllowed(true) // from what I understand, this allows the content resolver to not take too long/freeze thread for each operation
                         .build()
@@ -581,7 +497,7 @@ class ContactsRepository(
                         .build()
                 )
 
-                contact.details.phoneNumbers.fastForEach { phone ->
+                contact.phoneNumbers.fastForEach { phone ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
@@ -637,7 +553,7 @@ class ContactsRepository(
                         .build()
                 )
 
-                contact.details.emails.fastForEach { email ->
+                details.emails.fastForEach { email ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
@@ -667,7 +583,7 @@ class ContactsRepository(
                         .build()
                 )
 
-                contact.details.addresses.fastForEach { address ->
+                details.addresses.fastForEach { address ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
@@ -699,7 +615,7 @@ class ContactsRepository(
                         .build()
                 )
 
-                contact.details.websites.fastForEach { website ->
+                details.websites.fastForEach { website ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
@@ -709,7 +625,7 @@ class ContactsRepository(
                             )
                             .withValue(
                                 ContactsContract.CommonDataKinds.Website.URL,
-                                website.website
+                                website
                             )
                             .build()
                     )
@@ -727,7 +643,7 @@ class ContactsRepository(
                         .build()
                 )
 
-                contact.details.events.fastForEach { event ->
+                details.events.fastForEach { event ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
@@ -755,7 +671,7 @@ class ContactsRepository(
                         .build()
                 )
 
-                if (!contact.details.note.isNullOrBlank()) {
+                if (!details.note.isNullOrBlank()) {
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
@@ -765,7 +681,7 @@ class ContactsRepository(
                             )
                             .withValue(
                                 ContactsContract.CommonDataKinds.Note.NOTE,
-                                contact.details.note
+                                details.note
                             )
                             .build()
                     )
@@ -785,9 +701,9 @@ class ContactsRepository(
         }
     }
 
-    private fun uriToByteArray(uri: Uri): ByteArray? {
+    private fun uriToByteArray(uri: Uri?): ByteArray? {
 
-        if (uri == Uri.EMPTY) return null
+        if (uri == null || uri == Uri.EMPTY) return null
 
         context.contentResolver.openInputStream(uri)?.use {
             return it.readBytes()
@@ -818,7 +734,7 @@ class ContactsRepository(
 
     }
 
-    suspend fun toggleFavorite(contacts: List<CuteContact2>) = withContext(Dispatchers.IO) {
+    suspend fun toggleFavorite(contacts: List<CuteContact>) = withContext(Dispatchers.IO) {
 
         val ops = ArrayList<ContentProviderOperation>()
 

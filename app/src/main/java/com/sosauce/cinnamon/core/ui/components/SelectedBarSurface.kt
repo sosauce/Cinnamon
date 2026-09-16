@@ -32,14 +32,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.cinnamon.core.utils.LocalScreen
 import com.sosauce.cinnamon.core.utils.rememberInteractionSource
 import com.sosauce.cinnamon.core.utils.rememberSearchbarMaxFloatValue
 import com.sosauce.cinnamon.core.utils.rememberSearchbarRightPadding
-import com.sosauce.cinnamon.features.contacts.domain.CuteContact2
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.dialogs.DeleteConversationsDialog
 import com.sosauce.sweetselect.SweetSelectState
 
@@ -238,8 +237,8 @@ fun ConversationsSelectedBar(
 @Composable
 fun ContactsSelectedBar(
     modifier: Modifier = Modifier,
-    items: List<CuteContact2>,
-    multiSelectState: SweetSelectState<CuteContact2>,
+    items: List<CuteContact>,
+    multiSelectState: SweetSelectState<CuteContact>,
     onToggleFavorite: () -> Unit,
     onDeleteContacts: () -> Unit
 ) {

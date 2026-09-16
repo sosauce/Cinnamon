@@ -2,14 +2,13 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.starter
 
-import android.provider.ContactsContract
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.core.utils.copyMutate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -36,13 +35,11 @@ class StartConversationViewModel(
         viewModelScope.launch(Dispatchers.IO) {
 
             combine(
-                contactsRepository.fetchLatestContacts(
-                    extraSelection = "${ContactsContract.Contacts.HAS_PHONE_NUMBER} > ?",
-                    extraSelectionArgs = arrayOf("0")
-                ),
+                contactsRepository.fetchLatestContacts(),
                 snapshotFlow { textFieldState.text }.debounce(250.milliseconds)
             ) { contacts, searchQuery ->
                 contacts
+                    .fastFilter { it.phoneNumbers.isNotEmpty() }
                     .fastFilter {
                         if (searchQuery.isEmpty()) {
                             true

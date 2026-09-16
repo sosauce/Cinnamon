@@ -172,6 +172,7 @@
     <string name="answer">Answer</string>
     <string name="decline">Decline</string>
     <string name="mark_as_read">Mark as read</string>
+    <string name="add_contact">Add contact</string>
 
 
     <plurals name="delete_msg">

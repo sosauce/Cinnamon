@@ -76,7 +76,9 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.ImagePickerCard
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsActions
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact
+import com.sosauce.cinnamon.features.contacts.domain.ContactAddress
+import com.sosauce.cinnamon.features.contacts.domain.ContactEmail
+import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
 import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
 import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.cinnamon.core.utils.copyMutate
@@ -95,6 +97,7 @@ fun SharedTransitionScope.EditContactScreen(
 
 
     var contact by retain { mutableStateOf(state.contact) }
+    var details by retain { mutableStateOf(state.details) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val imagePicker =
@@ -142,12 +145,12 @@ fun SharedTransitionScope.EditContactScreen(
                 )
                 AnimatedFab(
                     onClick = {
-                        onHandeEditContactAction(EditContactAction.SaveEditedContact(contact))
+                        onHandeEditContactAction(EditContactAction.SaveEditedContact(contact, details))
                         //TODO: SEND EVENT WHEN SAVING IS DONE ONLY THEN NAVIGATE BACK
                         //onNavigateUp()
                     },
                     icon = R.drawable.check,
-                    enabled = contact != state.contact
+                    enabled = contact != state.contact || details != state.details
                 )
             }
         }
@@ -166,17 +169,18 @@ fun SharedTransitionScope.EditContactScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
 
+                println("Photo: ${details.photo}")
                 EditContactPfp(
                     modifier = Modifier.sharedElement(
                         sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_PFP),
                         animatedVisibilityScope = LocalNavAnimatedContentScope.current
                     ),
-                    pfp = contact.photo,
+                    pfp = details.photo,
                     onPfpSelected = { newPhoto ->
-                        contact = contact.copy(photo = newPhoto)
+                        contact = contact.copy(thumbnail = newPhoto)
                     },
                     onRemoveImage = {
-                        contact = contact.copy(photo = Uri.EMPTY)
+                        contact = contact.copy(thumbnail = null)
                     }
                 )
 
@@ -221,43 +225,35 @@ fun SharedTransitionScope.EditContactScreen(
                 Column(Modifier.padding(10.dp)) {
 
                     ContactEditTextField(
-                        value = contact.details.firstName,
+                        value = details.firstName ?: "",
                         label = R.string.first_name,
                         leadingIcon = R.drawable.contact,
                         onValueChange = {
-                            contact = contact.copy(
-                                details = contact.details.copy(firstName = it)
-                            )
+                            details = details.copy(firstName = it)
                         },
                         onClickRemove = null
                     )
 
                     ContactEditTextField(
-                        value = contact.details.lastName,
+                        value = details.lastName ?: "",
                         label = R.string.last_name,
                         leadingIcon = R.drawable.contact,
                         onValueChange = {
-                            contact = contact.copy(
-                                details = contact.details.copy(lastName = it)
-                            )
+                            details = details.copy(lastName = it)
                         },
                         onClickRemove = null
                     )
 
-                    if (contact.details.company.isNotEmpty()) {
+                    if (!details.company.isNullOrEmpty()) {
                         ContactEditTextField(
-                            value = contact.details.company,
+                            value = details.company ?: "",
                             label = R.string.company,
                             leadingIcon = R.drawable.business,
                             onValueChange = {
-                                contact = contact.copy(
-                                    details = contact.details.copy(company = it)
-                                )
+                                details = details.copy(company = it)
                             },
                             onClickRemove = {
-                                contact = contact.copy(
-                                    details = contact.details.copy(company = "")
-                                )
+                                details = details.copy(company = "")
                             }
                         )
                     }
@@ -267,7 +263,7 @@ fun SharedTransitionScope.EditContactScreen(
             Spacer(Modifier.height(15.dp))
 
             ContactDataSection(
-                items = contact.details.phoneNumbers,
+                items = contact.phoneNumbers,
                 keyboardType = KeyboardType.Phone,
                 labelRes = R.string.phone,
                 iconRes = R.drawable.phone,
@@ -275,32 +271,26 @@ fun SharedTransitionScope.EditContactScreen(
                 valueProvider = { it.number },
                 onValueChange = { index, value ->
                     contact = contact.copy(
-                        details = contact.details.copy(
-                            phoneNumbers = contact.details.phoneNumbers.copyMutate {
-                                this[index] = this[index].copy(number = value)
-                            }
-                        )
+                        phoneNumbers = contact.phoneNumbers.copyMutate {
+                            this[index] = this[index].copy(number = value)
+                        }
                     )
                 },
 
                 onRemove = { index ->
                     contact = contact.copy(
-                        details = contact.details.copy(
-                            phoneNumbers = contact.details.phoneNumbers.copyMutate {
-                                removeAt(index)
-                            }
-                        )
+                        phoneNumbers = contact.phoneNumbers.copyMutate {
+                            removeAt(index)
+                        }
                     )
                 },
 
                 onAdd = {
                     contact = contact.copy(
-                        details = contact.details.copy(
-                            phoneNumbers = contact.details.phoneNumbers + CuteContact.Phone(
-                                "",
-                                ContactsContract.CommonDataKinds.Phone.TYPE_OTHER,
-                                true
-                            )
+                        phoneNumbers = contact.phoneNumbers + ContactPhone(
+                            "",
+                            ContactsContract.CommonDataKinds.Phone.TYPE_OTHER,
+                            true
                         )
                     )
                 }
@@ -309,7 +299,7 @@ fun SharedTransitionScope.EditContactScreen(
             Spacer(Modifier.height(15.dp))
 
             ContactDataSection(
-                items = contact.details.emails,
+                items = details.emails,
                 keyboardType = KeyboardType.Email,
                 labelRes = R.string.email,
                 iconRes = R.drawable.email,
@@ -317,33 +307,27 @@ fun SharedTransitionScope.EditContactScreen(
                 valueProvider = { it.email },
 
                 onValueChange = { index, value ->
-                    contact = contact.copy(
-                        details = contact.details.copy(
-                            emails = contact.details.emails.copyMutate {
-                                this[index] = this[index].copy(email = value)
-                            }
-                        )
+                    details = details.copy(
+                        emails = details.emails.copyMutate {
+                            this[index] = this[index].copy(email = value)
+                        }
                     )
                 },
 
                 onRemove = { index ->
-                    contact = contact.copy(
-                        details = contact.details.copy(
-                            emails = contact.details.emails.copyMutate {
-                                removeAt(index)
-                            }
-                        )
+                    details = details.copy(
+                        emails = details.emails.copyMutate {
+                            removeAt(index)
+                        }
                     )
                 },
 
                 onAdd = {
-                    contact = contact.copy(
-                        details = contact.details.copy(
-                            emails = contact.details.emails + CuteContact.Email(
-                                "",
-                                ContactsContract.CommonDataKinds.Email.TYPE_OTHER,
-                                true
-                            )
+                    details = details.copy(
+                        emails = details.emails + ContactEmail(
+                            "",
+                            ContactsContract.CommonDataKinds.Email.TYPE_OTHER,
+                            true
                         )
                     )
                 }
@@ -352,7 +336,7 @@ fun SharedTransitionScope.EditContactScreen(
             Spacer(Modifier.height(15.dp))
 
             ContactDataSection(
-                items = contact.details.addresses,
+                items = details.addresses,
                 keyboardType = KeyboardType.PostalAddress,
                 labelRes = R.string.address,
                 iconRes = R.drawable.address,
@@ -360,33 +344,27 @@ fun SharedTransitionScope.EditContactScreen(
                 valueProvider = { it.address },
 
                 onValueChange = { index, value ->
-                    contact = contact.copy(
-                        details = contact.details.copy(
-                            addresses = contact.details.addresses.copyMutate {
-                                this[index] = this[index].copy(address = value)
-                            }
-                        )
+                    details = details.copy(
+                        addresses = details.addresses.copyMutate {
+                            this[index] = this[index].copy(address = value)
+                        }
                     )
                 },
 
                 onRemove = { index ->
-                    contact = contact.copy(
-                        details = contact.details.copy(
-                            addresses = contact.details.addresses.copyMutate {
-                                removeAt(index)
-                            }
-                        )
+                    details = details.copy(
+                        addresses = details.addresses.copyMutate {
+                            removeAt(index)
+                        }
                     )
                 },
 
                 onAdd = {
-                    contact = contact.copy(
-                        details = contact.details.copy(
-                            addresses = contact.details.addresses + CuteContact.Address(
-                                "",
-                                ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER,
-                                true
-                            )
+                    details = details.copy(
+                        addresses = details.addresses + ContactAddress(
+                            "",
+                            ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER,
+                            true
                         )
                     )
                 }
@@ -395,36 +373,30 @@ fun SharedTransitionScope.EditContactScreen(
             Spacer(Modifier.height(15.dp))
 
             ContactDataSection(
-                items = contact.details.websites,
+                items = details.websites,
                 labelRes = R.string.website,
                 iconRes = R.drawable.website,
                 addLabelRes = R.string.add_website,
-                valueProvider = { it.website },
+                valueProvider = { it },
                 onValueChange = { index, value ->
-                    contact = contact.copy(
-                        details = contact.details.copy(
-                            websites = contact.details.websites.copyMutate {
-                                this[index] = this[index].copy(website = value)
-                            }
-                        )
+                    details = details.copy(
+                        websites = details.websites.copyMutate {
+                            this[index] = value
+                        }
                     )
                 },
 
                 onRemove = { index ->
-                    contact = contact.copy(
-                        details = contact.details.copy(
-                            websites = contact.details.websites.copyMutate {
-                                removeAt(index)
-                            }
-                        )
+                    details = details.copy(
+                        websites = details.websites.copyMutate {
+                            removeAt(index)
+                        }
                     )
                 },
 
                 onAdd = {
-                    contact = contact.copy(
-                        details = contact.details.copy(
-                            websites = contact.details.websites + CuteContact.Website("")
-                        )
+                    details = details.copy(
+                        websites = details.websites + ""
                     )
                 }
             )
@@ -439,18 +411,14 @@ fun SharedTransitionScope.EditContactScreen(
             ) {
                 ContactEditTextField(
                     modifier = Modifier.padding(10.dp),
-                    value = contact.details.note ?: "",
+                    value = details.note ?: "",
                     label = R.string.notes,
                     leadingIcon = R.drawable.note,
                     onValueChange = {
-                        contact = contact.copy(
-                            details = contact.details.copy(note = it)
-                        )
+                        details = details.copy(note = it)
                     },
                     onClickRemove = {
-                        contact = contact.copy(
-                            details = contact.details.copy(note = "")
-                        )
+                        details = details.copy(note = "")
                     }
                 )
             }
@@ -464,18 +432,16 @@ fun SharedTransitionScope.EditContactScreen(
                 verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 AddDataButton(
-                    isVisible = contact.details.phoneNumbers.isEmpty(),
+                    isVisible = contact.phoneNumbers.isEmpty(),
                     icon = R.drawable.phone,
                     text = R.string.add_phone,
                     onClick = {
                         contact = contact.copy(
-                            details = contact.details.copy(
-                                phoneNumbers = listOf(
-                                    CuteContact.Phone(
-                                        "",
-                                        ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE,
-                                        true
-                                    )
+                            phoneNumbers = listOf(
+                                ContactPhone(
+                                    "",
+                                    ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE,
+                                    true
                                 )
                             )
                         )
@@ -483,18 +449,16 @@ fun SharedTransitionScope.EditContactScreen(
                 )
 
                 AddDataButton(
-                    isVisible = contact.details.emails.isEmpty(),
+                    isVisible = details.emails.isEmpty(),
                     icon = R.drawable.email,
                     text = R.string.add_email,
                     onClick = {
-                        contact = contact.copy(
-                            details = contact.details.copy(
-                                emails = listOf(
-                                    CuteContact.Email(
-                                        "",
-                                        ContactsContract.CommonDataKinds.Email.TYPE_OTHER,
-                                        true
-                                    )
+                        details = details.copy(
+                            emails = listOf(
+                                ContactEmail(
+                                    "",
+                                    ContactsContract.CommonDataKinds.Email.TYPE_OTHER,
+                                    true
                                 )
                             )
                         )
@@ -502,18 +466,16 @@ fun SharedTransitionScope.EditContactScreen(
                 )
 
                 AddDataButton(
-                    isVisible = contact.details.addresses.isEmpty(),
+                    isVisible = details.addresses.isEmpty(),
                     icon = R.drawable.address,
                     text = R.string.add_address,
                     onClick = {
-                        contact = contact.copy(
-                            details = contact.details.copy(
-                                addresses = listOf(
-                                    CuteContact.Address(
-                                        "",
-                                        ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER,
-                                        true
-                                    )
+                        details = details.copy(
+                            addresses = listOf(
+                                ContactAddress(
+                                    "",
+                                    ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER,
+                                    true
                                 )
                             )
                         )
@@ -521,14 +483,12 @@ fun SharedTransitionScope.EditContactScreen(
                 )
 
                 AddDataButton(
-                    isVisible = contact.details.websites.isEmpty(),
+                    isVisible = details.websites.isEmpty(),
                     icon = R.drawable.website,
                     text = R.string.add_website,
                     onClick = {
-                        contact = contact.copy(
-                            details = contact.details.copy(
-                                websites = listOf(CuteContact.Website(""))
-                            )
+                        details = details.copy(
+                            websites = listOf("")
                         )
                     }
                 )
@@ -614,7 +574,7 @@ private fun ContactEditTextField(
 @Composable
 private fun EditContactPfp(
     modifier: Modifier = Modifier,
-    pfp: Uri,
+    pfp: Uri?,
     onPfpSelected: (Uri) -> Unit,
     onRemoveImage: () -> Unit
 ) {
@@ -631,7 +591,7 @@ private fun EditContactPfp(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = 12.dp, end = 12.dp)
-                .clip(MaterialShapes.Cookie12Sided.toShape())
+                .clip(MaterialShapes.Cookie9Sided.toShape())
                 .background(MaterialTheme.colorScheme.primary)
                 .clickable {
                     imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -647,11 +607,12 @@ private fun EditContactPfp(
             AsyncImage(
                 model = pfp,
                 contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
         }
         AnimatedVisibility(
-            visible = pfp != Uri.EMPTY,
+            visible = pfp != null && pfp != Uri.EMPTY,
             enter = scaleIn(bouncySpec()),
             exit = scaleOut(bouncySpec()),
             modifier = Modifier.align(Alignment.TopEnd)

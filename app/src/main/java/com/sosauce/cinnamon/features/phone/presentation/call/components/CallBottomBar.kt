@@ -76,7 +76,6 @@ fun CallBottomBar(
             .padding(bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Expressive expanding pane — dialpad / audio switcher
         AnimatedContent(
             targetState = paneContent,
             transitionSpec = {

@@ -278,6 +278,7 @@ fun Nav(
                             state = state,
                             textFieldState = viewModel.textFieldState,
                             onNavigateUp = backStack::navigateBack,
+                            onNavigate = backStack::add,
                             onHandleCallAction = callViewModel::handleCallAction
                         )
                     }
@@ -331,7 +332,7 @@ fun Nav(
                     entry<Screen.ContactEditor> { key ->
 
                         val viewModel = koinViewModel<EditContactViewModel>(
-                            parameters = { parametersOf(key.contact) }
+                            parameters = { parametersOf(key.contact, key.details) }
                         )
                         val state by viewModel.state.collectAsStateWithLifecycle()
 

@@ -43,10 +43,6 @@ fun Dialpad(
 ) {
 
     var value by retain { mutableStateOf("") }
-    val row1 = listOf('1', '2', '3')
-    val row2 = listOf('4', '5', '6')
-    val row3 = listOf('7', '8', '9')
-    val row4 = listOf('*', '0', '#')
     val scrollState = rememberScrollState()
     LaunchedEffect(value) {
         scrollState.animateScrollTo(scrollState.maxValue)
@@ -57,7 +53,6 @@ fun Dialpad(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Expressive display - tonal pill with emphasis
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -99,64 +94,75 @@ fun Dialpad(
 
         Spacer(Modifier.height(4.dp))
 
-        // Expressive key grid — 8dp spacing system, tonal Squircle buttons
-        val all = listOf(row1, row2, row3, row4)
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            all.fastForEach { row ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    row.fastForEach { number ->
-                        Button(
-                            onClick = {
-                                value += number
-                                onSendTone(number)
-                            },
-                            shapes = ButtonDefaults.shapes(),
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHighest)
-                            ),
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(64.dp),
-                            contentPadding = ButtonDefaults.ContentPadding
+        DialpadKeys { number ->
+            value += number
+            onSendTone(number)
+        }
+    }
+}
+
+@Composable
+fun DialpadKeys(
+    onKeyPressed: (Char) -> Unit
+) {
+    val row1 = listOf('1', '2', '3')
+    val row2 = listOf('4', '5', '6')
+    val row3 = listOf('7', '8', '9')
+    val row4 = listOf('*', '0', '#')
+    val all = listOf(row1, row2, row3, row4)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        all.fastForEach { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                row.fastForEach { number ->
+                    Button(
+                        onClick = {
+                            onKeyPressed(number)
+                        },
+                        shapes = ButtonDefaults.shapes(),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHighest)
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(64.dp),
+                        contentPadding = ButtonDefaults.ContentPadding
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
+                            Text(
+                                text = number.toString(),
+                                style = MaterialTheme.typography.headlineSmallEmphasized.copy(
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            )
+                            val sub = when (number) {
+                                '2' -> "ABC"
+                                '3' -> "DEF"
+                                '4' -> "GHI"
+                                '5' -> "JKL"
+                                '6' -> "MNO"
+                                '7' -> "PQRS"
+                                '8' -> "TUV"
+                                '9' -> "WXYZ"
+                                else -> null
+                            }
+                            if (sub != null) {
                                 Text(
-                                    text = number.toString(),
-                                    style = MaterialTheme.typography.headlineSmallEmphasized.copy(
-                                        fontWeight = FontWeight.ExtraBold
+                                    text = sub,
+                                    style = MaterialTheme.typography.labelSmallEmphasized.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.SemiBold
                                     )
                                 )
-                                // Subtle T9 letters for expressive detail
-                                val sub = when (number) {
-                                    '2' -> "ABC"
-                                    '3' -> "DEF"
-                                    '4' -> "GHI"
-                                    '5' -> "JKL"
-                                    '6' -> "MNO"
-                                    '7' -> "PQRS"
-                                    '8' -> "TUV"
-                                    '9' -> "WXYZ"
-                                    else -> null
-                                }
-                                if (sub != null) {
-                                    Text(
-                                        text = sub,
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                    )
-                                }
                             }
                         }
                     }

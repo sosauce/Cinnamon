@@ -61,7 +61,6 @@ import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
-import com.sosauce.cinnamon.features.contacts.domain.CuteContact2
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
 
@@ -259,7 +258,7 @@ fun SharedTransitionScope.StartConversation(
                             ) { contact ->
 
                                 val isSelected = remember(state.selectedNumbers) {
-                                    contact.details.phoneNumbers.fastAny {
+                                    contact.phoneNumbers.fastAny {
                                         state.selectedNumbers.contains(
                                             it.number
                                         )
@@ -268,10 +267,10 @@ fun SharedTransitionScope.StartConversation(
 
                                 ContactListItem(
                                     modifier = Modifier.animateItem(),
-                                    contact = CuteContact2(),
+                                    contact = contact,
                                     isSelected = isSelected,
                                     onClick = {
-                                        val phoneNumbers = contact.details.phoneNumbers
+                                        val phoneNumbers = contact.phoneNumbers
                                         val firstNumber =
                                             phoneNumbers.firstOrNull()?.number ?: return@ContactListItem
 
@@ -315,7 +314,7 @@ fun SharedTransitionScope.StartConversation(
                                 ) { contact ->
 
                                     val isSelected = remember(state.selectedNumbers) {
-                                        contact.details.phoneNumbers.fastAny {
+                                        contact.phoneNumbers.fastAny {
                                             state.selectedNumbers.contains(
                                                 it.number
                                             )
@@ -323,10 +322,10 @@ fun SharedTransitionScope.StartConversation(
                                     }
                                     ContactListItem(
                                         modifier = Modifier.animateItem(),
-                                        contact = CuteContact2(),
+                                        contact = contact,
                                         isSelected = isSelected,
                                         onClick = {
-                                            val phoneNumbers = contact.details.phoneNumbers
+                                            val phoneNumbers = contact.phoneNumbers
                                             val firstNumber =
                                                 phoneNumbers.firstOrNull()?.number
                                                     ?: return@ContactListItem

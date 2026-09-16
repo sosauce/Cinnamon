@@ -20,3 +20,14 @@ object UriSerializer : KSerializer<Uri> {
 
     override fun deserialize(decoder: Decoder): Uri = decoder.decodeString().toUri()
 }
+
+object NullableUriSerializer : KSerializer<Uri?> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("NullableUri", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: Uri?) =
+        encoder.encodeString(value?.toString().orEmpty())
+
+    override fun deserialize(decoder: Decoder): Uri? =
+        decoder.decodeString().ifEmpty { null }?.toUri()
+}

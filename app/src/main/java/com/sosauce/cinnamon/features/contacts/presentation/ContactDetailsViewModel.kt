@@ -1,29 +1,18 @@
 package com.sosauce.cinnamon.features.contacts.presentation
 
 import android.app.Application
-import android.provider.BlockedNumberContract
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsEntity
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact
-import com.sosauce.cinnamon.core.utils.observe
-import com.sosauce.cinnamon.features.contacts.domain.CuteContact2
-import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails2
-import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetailsBuilder2
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact
+import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -39,7 +28,7 @@ class ContactDetailsViewModel(
 
     val state = combine(
         contactsRepository.fetchContact2(contactId),
-        contactsRepository.fetchLatestContactsDetails2(contactId),
+        contactsRepository.fetchLatestContactsDetails(contactId),
         contactSettingsDao.getContactSettings(contactId)
     ) { contact, details, settings ->
         ContactDetailsState(
@@ -126,8 +115,8 @@ class ContactDetailsViewModel(
 
 data class ContactDetailsState(
     val isLoading: Boolean = false,
-    val contact: CuteContact2 = CuteContact2(),
-    val details: CuteContactDetails2 = CuteContactDetails2(),
+    val contact: CuteContact = CuteContact(),
+    val details: CuteContactDetails = CuteContactDetails(),
     val settings: ContactSettingsEntity = ContactSettingsEntity(),
 )
 

@@ -6,7 +6,8 @@ import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.Contact
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsActions
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact
+import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,13 +17,14 @@ import kotlinx.coroutines.launch
 
 class EditContactViewModel(
     private val contact: CuteContact,
+    private val details: CuteContactDetails,
     private val contactSettingsDao: ContactSettingsDao,
     private val contactsRepository: ContactsRepository
 ) : ViewModel() {
 
     private val isCreateInsteadOfEdit = contact.id == 0L
     private val _state =
-        MutableStateFlow(EditContactState(contact, isCreateInsteadOfEdit = isCreateInsteadOfEdit))
+        MutableStateFlow(EditContactState(contact, details, isCreateInsteadOfEdit = isCreateInsteadOfEdit))
     val state = _state.asStateFlow()
 
 
@@ -56,7 +58,7 @@ class EditContactViewModel(
         when (action) {
             is EditContactAction.SaveEditedContact -> {
                 viewModelScope.launch {
-                    contactsRepository.createOrEditContact(action.editedContact)
+                    contactsRepository.createOrEditContact(action.editedContact, action.editedDetails)
                 }
             }
         }
@@ -67,10 +69,14 @@ class EditContactViewModel(
 
 data class EditContactState(
     val contact: CuteContact = CuteContact(),
+    val details: CuteContactDetails = CuteContactDetails(),
     val settings: ContactSettingsEntity = ContactSettingsEntity(),
     val isCreateInsteadOfEdit: Boolean
 )
 
 sealed interface EditContactAction {
-    data class SaveEditedContact(val editedContact: CuteContact) : EditContactAction
+    data class SaveEditedContact(
+        val editedContact: CuteContact,
+        val editedDetails: CuteContactDetails
+    ) : EditContactAction
 }

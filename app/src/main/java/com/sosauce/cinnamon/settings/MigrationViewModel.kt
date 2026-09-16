@@ -9,8 +9,12 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContactDetails
+import com.sosauce.cinnamon.features.contacts.domain.ContactAddress
+import com.sosauce.cinnamon.features.contacts.domain.ContactEmail
+import com.sosauce.cinnamon.features.contacts.domain.ContactEvent
+import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact
+import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails
 import ezvcard.Ezvcard
 import ezvcard.parameter.AddressType
 import ezvcard.parameter.EmailType
@@ -49,7 +53,7 @@ class MigrationViewModel(
                             val jobPosition = ezCard.titles.firstOrNull()?.value ?: ""
 
                             val phoneNumbers = ezCard.telephoneNumbers.mapIndexed { index, phone ->
-                                CuteContact.Phone(
+                                ContactPhone(
                                     number = phone.text ?: "",
                                     type = phone.types.firstOrNull()?.let { mapPhoneType(it) }
                                         ?: ContactsContract.CommonDataKinds.Phone.TYPE_OTHER,
@@ -58,7 +62,7 @@ class MigrationViewModel(
                             }
 
                             val emails = ezCard.emails.mapIndexed { index, email ->
-                                CuteContact.Email(
+                                ContactEmail(
                                     email = email.value ?: "",
                                     type = email.types.firstOrNull()?.let { mapEmailType(it) }
                                         ?: ContactsContract.CommonDataKinds.Email.TYPE_OTHER,
@@ -67,7 +71,7 @@ class MigrationViewModel(
                             }
 
                             val addresses = ezCard.addresses.mapIndexed { index, address ->
-                                CuteContact.Address(
+                                ContactAddress(
                                     address = listOfNotNull(
                                         address.streetAddress,
                                         address.locality,
@@ -81,16 +85,16 @@ class MigrationViewModel(
                                 )
                             }
 
-                            val websites = ezCard.urls.map { CuteContact.Website(it.value ?: "") }
+                            val websites = ezCard.urls.map { it.value ?: "" }
                             val notes = ezCard.notes.firstOrNull()?.value ?: ""
 
                             val events = ezCard.birthdays.map {
-                                CuteContact.Event(
+                                ContactEvent(
                                     date = it.date?.toString() ?: "",
                                     type = ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY
                                 )
                             } + ezCard.anniversaries.map {
-                                CuteContact.Event(
+                                ContactEvent(
                                     date = it.date?.toString() ?: "",
                                     type = ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY
                                 )
@@ -100,7 +104,6 @@ class MigrationViewModel(
                                 firstName = firstName,
                                 middleName = middleName,
                                 lastName = lastName,
-                                phoneNumbers = phoneNumbers,
                                 emails = emails,
                                 addresses = addresses,
                                 websites = websites,
@@ -110,11 +113,11 @@ class MigrationViewModel(
 
                             val (accountType, accountName) = action.source
                             val cuteContact = CuteContact(
-                                details = details,
+                                phoneNumbers = phoneNumbers,
                                 accountType = accountType,
                                 accountName = accountName
                             )
-                            val success = contactsRepository.createOrEditContact(cuteContact)
+                            val success = contactsRepository.createOrEditContact(cuteContact, details)
                             if (success) {
                                 withContext(Dispatchers.Main) {
                                     Toast.makeText(

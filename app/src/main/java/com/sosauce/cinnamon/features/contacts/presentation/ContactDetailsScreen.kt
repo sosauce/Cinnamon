@@ -95,11 +95,6 @@ fun SharedTransitionScope.ContactDetailsScreen(
     var playFavoriteAnimation by remember { mutableStateOf(false) }
 
     val moreOptions = listOf(
-//        MoreOptions(
-//            onClick = {},
-//            icon = R.drawable.share_outlined,
-//            text = R.string.share
-//        ),
         MoreOptions(
             onClick = { showBlockDialog = true },
             icon = R.drawable.block,
@@ -254,8 +249,14 @@ fun SharedTransitionScope.ContactDetailsScreen(
                     ) {
                         IconButton(
                             onClick = {
-                                TODO()
-                            /*onNavigate(Screen.ContactEditor(state.contact))*/
+                                val contact = state.contact
+                                val details = state.details
+                                onNavigate(
+                                    Screen.ContactEditor(
+                                        contact = contact,
+                                        details = details
+                                    )
+                                )
                             },
                             shapes = IconButtonDefaults.shapes()
                         ) {

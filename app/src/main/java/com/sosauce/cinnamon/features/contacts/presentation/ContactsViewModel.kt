@@ -11,9 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact
-import com.sosauce.cinnamon.core.utils.copyMutate
-import com.sosauce.cinnamon.features.contacts.domain.CuteContact2
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -49,7 +47,7 @@ class ContactsViewModel(
     init {
         viewModelScope.launch {
             combine(
-                contactsRepository.fetchLatestContacts2(),
+                contactsRepository.fetchLatestContacts(),
                 snapshotFlow { textFieldState.text }.debounce(250.milliseconds),
                 userPreferences.getSortContactsAscending(),
                 state.mapLatest { it.accountFilter }.distinctUntilChanged()
@@ -81,7 +79,7 @@ class ContactsViewModel(
         viewModelScope.launch {
             contactsRepository.fetchLatestContacts().collectLatest { contacts ->
                 val accountsToCount =
-                    mapOf("All" to contacts.size) + contacts.groupingBy { it.accountName ?: "IDK" }
+                    mapOf("All" to contacts.size) + contacts.groupingBy { it.accountName.ifEmpty { "Device" } }
                         .eachCount()
 
                 _state.update {
@@ -127,7 +125,7 @@ class ContactsViewModel(
 
 data class ContactsState(
     val isLoading: Boolean = false,
-    val contacts: List<CuteContact2> = emptyList(),
+    val contacts: List<CuteContact> = emptyList(),
     val accountsToCount: Map<String, Int> = emptyMap(),
     val accountFilter: String = ContactsViewModel.ACCOUNT_FILTER_DEFAULT
 )
@@ -138,5 +136,5 @@ sealed interface ContactsAction {
         val ids: List<Long>
     ) : ContactsAction
 
-    data class ToggleFavorite(val contacts: List<CuteContact2>) : ContactsAction
+    data class ToggleFavorite(val contacts: List<CuteContact>) : ContactsAction
 }

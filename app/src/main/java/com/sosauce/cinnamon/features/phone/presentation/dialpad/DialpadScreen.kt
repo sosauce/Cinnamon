@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,12 +29,14 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.contentColorFor
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -47,21 +50,28 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirst
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
+import com.skydoves.cloudy.sky
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.buttons.LongClickButton
+import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.features.contacts.presentation.ContactListItem
 import com.sosauce.cinnamon.features.contacts.presentation.components.dialogs.NumberPickerDialog
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.features.phone.presentation.call.components.DisableSoftKeyboard
 import com.sosauce.cinnamon.core.utils.LazyListKeys
 import com.sosauce.cinnamon.core.utils.backspace
+import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.utils.rememberFocusRequester
+import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.nekobites.components.NoXFound
 
 @Composable
@@ -69,6 +79,7 @@ fun SharedTransitionScope.DialpadScreen(
     state: DialpadState,
     textFieldState: TextFieldState,
     onNavigateUp: () -> Unit,
+    onNavigate: (Screen) -> Unit,
     onHandleCallAction: (CallAction) -> Unit
 ) {
     val dialpadLayout = listOf(
@@ -120,15 +131,16 @@ fun SharedTransitionScope.DialpadScreen(
                     OutlinedTextField(
                         state = textFieldState,
                         lineLimits = TextFieldLineLimits.SingleLine,
+                        shape = RoundedCornerShape(50.dp),
                         modifier = Modifier
-                            .padding(horizontal = 5.dp)
+                            .padding(10.dp)
                             .fillMaxWidth()
                             .focusRequester(focusRequester),
                         colors = TextFieldDefaults.colors(
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                         ),
                         leadingIcon = {
                             IconButton(
@@ -140,6 +152,11 @@ fun SharedTransitionScope.DialpadScreen(
                                     contentDescription = null
                                 )
                             }
+                        },
+                        placeholder = {
+                            Text(
+                                text = stringResource(R.string.enter_number)
+                            )
                         },
                         trailingIcon = {
                             IconButton(
@@ -171,7 +188,7 @@ fun SharedTransitionScope.DialpadScreen(
                                     val letters = t9Map[number] ?: ""
                                     val onLongClick = remember {
                                         if (letters == "+") {
-                                            { textFieldState.edit { insert(length, "+") } }
+                                            { textFieldState.edit { insert(selection.start, "+") } }
                                         } else null
                                     }
 
@@ -183,27 +200,26 @@ fun SharedTransitionScope.DialpadScreen(
                                         },
                                         onLongClick = onLongClick,
                                         modifier = Modifier
-                                            //.aspectRatio(18f / 9f)
-                                            .size(
-                                                IconButtonDefaults.mediumContainerSize(
-                                                    IconButtonDefaults.IconButtonWidthOption.Wide
-                                                )
-                                            )
-                                            .weight(1f),
+                                            .weight(1f)
+                                            .height(64.dp),
+                                        contentPadding = ButtonDefaults.ContentPadding,
                                         colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHighest)
                                         )
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text(
                                                 text = number,
-                                                style = MaterialTheme.typography.bodyLargeEmphasized
+                                                style = MaterialTheme.typography.headlineSmallEmphasized.copy(
+                                                    fontWeight = FontWeight.ExtraBold
+                                                )
                                             )
                                             Text(
                                                 text = letters,
                                                 style = MaterialTheme.typography.labelSmallEmphasized.copy(
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    fontWeight = FontWeight.SemiBold
                                                 )
                                             )
                                         }
@@ -243,6 +259,72 @@ fun SharedTransitionScope.DialpadScreen(
                 contentPadding = paddingValues,
                 modifier = Modifier.padding(horizontal = 10.dp)
             ) {
+                if (textFieldState.text.isNotEmpty() && state.contacts.isEmpty()) {
+                    item(LazyListKeys.ADD_CONTACT) {
+                        val number = textFieldState.text.toString()
+                        CuteListItem(
+                            modifier = Modifier.animateItem(),
+                            backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                            onClick = {
+
+                                val contact = CuteContact(
+                                    phoneNumbers = listOf(
+                                        ContactPhone(
+                                            number = number,
+                                            type = 0,
+                                            isDefault = true
+                                        )
+                                    )
+                                )
+                                onNavigate(
+                                    Screen.ContactEditor(
+                                        contact = contact
+                                    )
+                                )
+                            },
+                            leadingContent = {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(start = 10.dp)
+                                        .size(50.dp)
+                                        .background(
+                                            color = MaterialTheme.colorScheme.primary,
+                                            shape = MaterialShapes.Cookie9Sided.toShape()
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.add),
+                                        contentDescription = null,
+                                        tint = contentColorFor(MaterialTheme.colorScheme.primary)
+                                    )
+                                }
+                            }
+                        ) {
+                            Text(
+                                text = stringResource(R.string.add_contact),
+                                style = MaterialTheme.typography.bodyLargeEmphasized
+                            )
+                            Text(
+                                text = number,
+                                style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            )
+                        }
+                    }
+                }
+
+                if (state.contacts.isEmpty() && textFieldState.text.isEmpty()) {
+                    item {
+                        NoXFound(
+                            headlineText = R.string.no_contacts_found,
+                            bodyText = R.string.no_contacts_found_desc,
+                            icon = R.drawable.contacts
+                        )
+                    }
+                }
+
                 if (state.contacts.isNotEmpty()) {
 
                     val (favorites, nonFavorites) = state.contacts.partition { it.isFavorite }
@@ -328,14 +410,6 @@ fun SharedTransitionScope.DialpadScreen(
                                 )
                             }
                         }
-                } else {
-                    item {
-                        NoXFound(
-                            headlineText = R.string.no_contacts_found,
-                            bodyText = R.string.no_contacts_found_desc,
-                            icon = R.drawable.contacts
-                        )
-                    }
                 }
             }
         }

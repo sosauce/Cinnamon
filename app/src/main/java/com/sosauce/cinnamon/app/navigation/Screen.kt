@@ -1,7 +1,8 @@
 package com.sosauce.cinnamon.app.navigation
 
 import androidx.navigation3.runtime.NavKey
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact
+import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -63,7 +64,8 @@ sealed class Screen : NavKey {
 
     @Serializable
     data class ContactEditor(
-        val contact: CuteContact
+        val contact: CuteContact,
+        val details: CuteContactDetails = CuteContactDetails()
     ) : Screen()
 
     @Serializable

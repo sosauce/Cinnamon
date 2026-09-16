@@ -32,14 +32,13 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.rememberSortContactsAscending
-import com.sosauce.cinnamon.features.contacts.data.model.CuteContact
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.ContactsSelectedBar
 import com.sosauce.cinnamon.core.ui.components.menus.SortingDropdownMenu
 import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar
 import com.sosauce.cinnamon.core.utils.LazyListKeys
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
-import com.sosauce.cinnamon.features.contacts.domain.CuteContact2
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.nekobites.animations.AnimatedFab
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
@@ -55,7 +54,7 @@ fun SharedTransitionScope.ContactsScreen(
 ) {
 
     var sortContactsAscending by rememberSortContactsAscending()
-    val sweetSelectState = rememberSweetSelectState<CuteContact2>()
+    val sweetSelectState = rememberSweetSelectState<CuteContact>()
 
 
 
