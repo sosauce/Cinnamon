@@ -294,7 +294,7 @@ class ContactsRepository(
     suspend fun createOrEditContact(
         contact: CuteContact,
         details: CuteContactDetails,
-        photo: Uri? = contact.thumbnail
+        photo: Uri? = details.photo
     ): Boolean = withContext(Dispatchers.IO) {
 
         val rawId = getContactRawId(contact.id)

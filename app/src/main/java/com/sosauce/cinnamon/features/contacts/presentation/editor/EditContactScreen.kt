@@ -177,10 +177,10 @@ fun SharedTransitionScope.EditContactScreen(
                     ),
                     pfp = details.photo,
                     onPfpSelected = { newPhoto ->
-                        contact = contact.copy(thumbnail = newPhoto)
+                        details = details.copy(photoString = newPhoto.toString())
                     },
                     onRemoveImage = {
-                        contact = contact.copy(thumbnail = null)
+                        details = details.copy(photoString = null)
                     }
                 )
 
