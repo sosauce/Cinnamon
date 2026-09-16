@@ -169,7 +169,6 @@ fun SharedTransitionScope.EditContactScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
 
-                println("Photo: ${details.photo}")
                 EditContactPfp(
                     modifier = Modifier.sharedElement(
                         sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_PFP),
@@ -403,24 +402,28 @@ fun SharedTransitionScope.EditContactScreen(
 
             Spacer(Modifier.height(15.dp))
 
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                )
-            ) {
-                ContactEditTextField(
-                    modifier = Modifier.padding(10.dp),
-                    value = details.note ?: "",
-                    label = R.string.notes,
-                    leadingIcon = R.drawable.note,
-                    onValueChange = {
-                        details = details.copy(note = it)
-                    },
-                    onClickRemove = {
-                        details = details.copy(note = "")
-                    }
-                )
+
+            details.note?.let { note ->
+                Card(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
+                ) {
+                    ContactEditTextField(
+                        modifier = Modifier.padding(10.dp),
+                        value = note,
+                        label = R.string.notes,
+                        leadingIcon = R.drawable.note,
+                        onValueChange = {
+                            details = details.copy(note = it)
+                        },
+                        onClickRemove = {
+                            details = details.copy(note = null)
+                        }
+                    )
+                }
+
             }
 
 
@@ -481,7 +484,6 @@ fun SharedTransitionScope.EditContactScreen(
                         )
                     }
                 )
-
                 AddDataButton(
                     isVisible = details.websites.isEmpty(),
                     icon = R.drawable.website,
@@ -489,6 +491,16 @@ fun SharedTransitionScope.EditContactScreen(
                     onClick = {
                         details = details.copy(
                             websites = listOf("")
+                        )
+                    }
+                )
+                AddDataButton(
+                    isVisible = details.note == null,
+                    icon = R.drawable.note,
+                    text = R.string.add_note,
+                    onClick = {
+                        details = details.copy(
+                            note = ""
                         )
                     }
                 )

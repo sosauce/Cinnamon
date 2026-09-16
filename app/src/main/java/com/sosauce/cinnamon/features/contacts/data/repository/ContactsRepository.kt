@@ -670,22 +670,19 @@ class ContactsRepository(
                         )
                         .build()
                 )
-
-                if (!details.note.isNullOrBlank()) {
-                    operations.add(
-                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                            .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                            .withValue(
-                                ContactsContract.Data.MIMETYPE,
-                                ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE
-                            )
-                            .withValue(
-                                ContactsContract.CommonDataKinds.Note.NOTE,
-                                details.note
-                            )
-                            .build()
-                    )
-                }
+                operations.add(
+                    ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                        .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
+                        .withValue(
+                            ContactsContract.Data.MIMETYPE,
+                            ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE
+                        )
+                        .withValue(
+                            ContactsContract.CommonDataKinds.Note.NOTE,
+                            details.note ?: ""
+                        )
+                        .build()
+                )
 
 
             }

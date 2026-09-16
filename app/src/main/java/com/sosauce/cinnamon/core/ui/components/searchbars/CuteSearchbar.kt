@@ -211,11 +211,6 @@ fun CuteSearchbar(
 }
 
 
-object CuteSearchbarDefaults {
-
-}
-
-
 
 
 

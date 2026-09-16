@@ -35,7 +35,6 @@ import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.core.utils.formateEventDate
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsState
-import com.sosauce.nekobites.components.Spacer
 
 @Composable
 fun ContactInfos(
@@ -50,6 +49,15 @@ fun ContactInfos(
     val hasInfo = state.contact.phoneNumbers.isNotEmpty() || state.details.emails.isNotEmpty() || state.details.addresses.isNotEmpty()
     val hasAbout = state.details.websites.isNotEmpty() || state.details.note?.isNotEmpty() == true || state.details.events.isNotEmpty()
 
+    // Combined single-list indices: info flows phones -> emails -> addresses,
+    // about flows websites -> events -> note.
+    val emailOffset = state.contact.phoneNumbers.count()
+    val addressOffset = emailOffset + state.details.emails.count()
+    val infoItemCount = addressOffset + state.details.addresses.count()
+    val eventOffset = state.details.websites.count()
+    val noteOffset = eventOffset + state.details.events.count()
+    val aboutItemCount = noteOffset + if (state.details.note?.isNotEmpty() == true) 1 else 0
+
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (hasInfo) {
             Column {
@@ -57,7 +65,7 @@ fun ContactInfos(
                 state.contact.phoneNumbers.forEachIndexed { index, number ->
                     CuteListItem(
                         onClick = { onHandleCallAction(CallAction.LaunchCall(number.number)) },
-                        shape = CuteListItemDefaults.getItemShape(index, state.contact.phoneNumbers.count()),
+                        shape = CuteListItemDefaults.getItemShape(index, infoItemCount),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                         leadingContent = {
                             Icon(
@@ -109,9 +117,6 @@ fun ContactInfos(
                         )
                     }
                 }
-                if (state.contact.phoneNumbers.isNotEmpty() && (state.details.emails.isNotEmpty() || state.details.addresses.isNotEmpty())) {
-                    Spacer(16.dp)
-                }
                 state.details.emails.forEachIndexed { index, email ->
                     CuteListItem(
                         onClick = {
@@ -131,7 +136,7 @@ fun ContactInfos(
                             }
 
                         },
-                        shape = CuteListItemDefaults.getItemShape(index, state.details.emails.count()),
+                        shape = CuteListItemDefaults.getItemShape(emailOffset + index, infoItemCount),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                         leadingContent = {
                             Icon(
@@ -183,9 +188,6 @@ fun ContactInfos(
                         )
                     }
                 }
-                if (state.details.emails.isNotEmpty() && state.details.addresses.isNotEmpty()) {
-                    Spacer(16.dp)
-                }
                 state.details.addresses.forEachIndexed { index, address ->
                     CuteListItem(
                         onClick = {
@@ -209,7 +211,7 @@ fun ContactInfos(
                                 ).show()
                             }
                         },
-                        shape = CuteListItemDefaults.getItemShape(index, state.details.addresses.count()),
+                        shape = CuteListItemDefaults.getItemShape(addressOffset + index, infoItemCount),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                         leadingContent = {
                             Icon(
@@ -301,7 +303,7 @@ fun ContactInfos(
                 state.details.websites.forEachIndexed { index, website ->
                     CuteListItem(
                         onClick = { uriHandler.openUri(website) },
-                        shape = CuteListItemDefaults.getItemShape(index, state.details.websites.count()),
+                        shape = CuteListItemDefaults.getItemShape(index, aboutItemCount),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                         leadingContent = {
                             Icon(
@@ -314,13 +316,10 @@ fun ContactInfos(
                         }
                     ) { Text(website) }
                 }
-                if (state.details.websites.isNotEmpty() && (state.details.events.isNotEmpty() || state.details.note?.isNotEmpty() == true)) {
-                    Spacer(16.dp)
-                }
                 state.details.events.forEachIndexed { index, event ->
                     CuteListItem(
                         onClick = null,
-                        shape = CuteListItemDefaults.getItemShape(index, state.details.events.count()),
+                        shape = CuteListItemDefaults.getItemShape(eventOffset + index, aboutItemCount),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                         leadingContent = {
                             Icon(
@@ -345,13 +344,10 @@ fun ContactInfos(
                         )
                     }
                 }
-                if (state.details.events.isNotEmpty() && state.details.note?.isNotEmpty() == true) {
-                    Spacer(16.dp)
-                }
                 state.details.note?.let { note ->
                     CuteListItem(
                         onClick = null,
-                        shape = RoundedCornerShape(24.dp),
+                        shape = CuteListItemDefaults.getItemShape(noteOffset, aboutItemCount),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                         leadingContent = {
                             Icon(

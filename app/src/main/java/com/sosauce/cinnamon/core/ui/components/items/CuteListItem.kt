@@ -82,7 +82,7 @@ object CuteListItemDefaults {
                 bottomEnd = 24.dp
             )
 
-            else -> RoundedCornerShape(24.dp)
+            else -> RoundedCornerShape(2.dp)
         }
     }
 }

@@ -41,6 +41,7 @@ import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.contentColorFor
@@ -240,73 +241,79 @@ fun SharedTransitionScope.ContactDetailsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     CuteNavigationButtonSurface(onNavigateUp = onNavigateBack)
-                    Row(
-                        modifier = Modifier
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceContainer,
-                                shape = RoundedCornerShape(14.dp)
-                            )
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        shadowElevation = 5.dp,
+                        color = MaterialTheme.colorScheme.surfaceContainer
                     ) {
-                        IconButton(
-                            onClick = {
-                                val contact = state.contact
-                                val details = state.details
-                                onNavigate(
-                                    Screen.ContactEditor(
-                                        contact = contact,
-                                        details = details
-                                    )
+                        Row(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainer,
+                                    shape = RoundedCornerShape(14.dp)
                                 )
-                            },
-                            shapes = IconButtonDefaults.shapes()
                         ) {
-                            Icon(
-                                painter = painterResource(R.drawable.edit_filled),
-                                contentDescription = null
-                            )
-                        }
-                        IconButton(
-                            onClick = { showMoreOptions = true },
-                            shapes = IconButtonDefaults.shapes()
-                        ) {
-                            AnimatedDrawable(
-                                atEnd = showMoreOptions,
-                                drawable = AnimatedDrawableFile.MORE_VERT
-                            )
-                        }
-                        DropdownMenuPopup(
-                            expanded = showMoreOptions,
-                            onDismissRequest = { showMoreOptions = false }
-                        ) {
-                            DropdownMenuGroup(
-                                shapes = MenuDefaults.groupShapes()
-                            ) {
-                                moreOptions.fastForEachIndexed { index, option ->
-                                    DropdownMenuItem(
-                                        onClick = {
-                                            option.onClick()
-                                            showMoreOptions = false
-                                        },
-                                        shape = MenuDefaults.getItemShape(
-                                            index,
-                                            moreOptions.lastIndex
-                                        ),
-                                        leadingIcon = {
-                                            Icon(
-                                                painter = painterResource(option.icon),
-                                                contentDescription = null,
-                                                tint = option.tint
-                                                    ?: LocalContentColor.current
-                                            )
-                                        },
-                                        text = {
-                                            Text(
-                                                text = stringResource(option.text),
-                                                color = option.tint
-                                                    ?: LocalContentColor.current
-                                            )
-                                        }
+                            IconButton(
+                                onClick = {
+                                    val contact = state.contact
+                                    val details = state.details
+                                    onNavigate(
+                                        Screen.ContactEditor(
+                                            contact = contact,
+                                            details = details
+                                        )
                                     )
+                                },
+                                shapes = IconButtonDefaults.shapes()
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.edit_filled),
+                                    contentDescription = null
+                                )
+                            }
+                            IconButton(
+                                onClick = { showMoreOptions = true },
+                                shapes = IconButtonDefaults.shapes()
+                            ) {
+                                AnimatedDrawable(
+                                    atEnd = showMoreOptions,
+                                    drawable = AnimatedDrawableFile.MORE_VERT
+                                )
+                            }
+                            DropdownMenuPopup(
+                                expanded = showMoreOptions,
+                                onDismissRequest = { showMoreOptions = false }
+                            ) {
+                                DropdownMenuGroup(
+                                    shapes = MenuDefaults.groupShapes()
+                                ) {
+                                    moreOptions.fastForEachIndexed { index, option ->
+                                        DropdownMenuItem(
+                                            onClick = {
+                                                option.onClick()
+                                                showMoreOptions = false
+                                            },
+                                            shape = MenuDefaults.getItemShape(
+                                                index,
+                                                moreOptions.lastIndex
+                                            ),
+                                            leadingIcon = {
+                                                Icon(
+                                                    painter = painterResource(option.icon),
+                                                    contentDescription = null,
+                                                    tint = option.tint
+                                                        ?: LocalContentColor.current
+                                                )
+                                            },
+                                            text = {
+                                                Text(
+                                                    text = stringResource(option.text),
+                                                    color = option.tint
+                                                        ?: LocalContentColor.current
+                                                )
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
