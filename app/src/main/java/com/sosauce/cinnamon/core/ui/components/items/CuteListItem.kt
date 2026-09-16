@@ -59,3 +59,28 @@ fun CuteListItem(
         }
     }
 }
+
+object CuteListItemDefaults {
+    @Composable
+    fun getItemShape(
+        index: Int,
+        lastIndex: Int
+    ): Shape {
+
+        return when (index) {
+            0 -> RoundedCornerShape(
+                topStart = 24.dp,
+                topEnd = 24.dp,
+                bottomStart = 2.dp,
+                bottomEnd = 2.dp
+            )
+            lastIndex -> RoundedCornerShape(
+                topStart = 2.dp,
+                topEnd = 2.dp,
+                bottomStart = 24.dp,
+                bottomEnd = 24.dp
+            )
+            else -> RoundedCornerShape(24.dp)
+        }
+    }
+}
