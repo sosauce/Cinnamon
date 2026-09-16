@@ -15,8 +15,8 @@ import org.koin.core.component.inject
 class MessageReplyReceiver : BroadcastReceiver(), KoinComponent {
     override fun onReceive(context: Context, intent: Intent) {
         val messagesNotificationManager by inject<MessageNotificationManager>()
-        val threadId = intent.getLongExtra(THREAD_ID, -1L)
-        if (threadId == -1L) return
+        val threadId = intent.getLongExtra(THREAD_ID, Long.MIN_VALUE)
+        if (threadId == Long.MIN_VALUE) return
 
         val remoteInput = RemoteInput.getResultsFromIntent(intent)
         val input = remoteInput?.getCharSequence(RESULT_KEY).toString()

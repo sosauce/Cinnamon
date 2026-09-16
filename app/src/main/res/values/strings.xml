@@ -171,6 +171,7 @@
     <string name="enter_number">Enter number</string>
     <string name="answer">Answer</string>
     <string name="decline">Decline</string>
+    <string name="mark_as_read">Mark as read</string>
 
 
     <plurals name="delete_msg">

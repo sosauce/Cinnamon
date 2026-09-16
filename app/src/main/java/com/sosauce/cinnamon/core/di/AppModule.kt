@@ -1,6 +1,8 @@
 package com.sosauce.cinnamon.core.di
 
+import android.app.NotificationManager
 import android.content.Context
+import android.content.Context.NOTIFICATION_SERVICE
 import android.telecom.TelecomManager
 import android.telephony.TelephonyManager
 import androidx.room.Room
@@ -86,6 +88,10 @@ val appModule = module {
     }
     single<TelephonyManager> {
         androidContext().getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+    }
+
+    single<NotificationManager> {
+        androidContext().getSystemService(NOTIFICATION_SERVICE) as NotificationManager
     }
 
     single {

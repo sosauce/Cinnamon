@@ -161,6 +161,7 @@
         </service>
 
         <receiver android:name=".core.system.receivers.MessageReplyReceiver" />
+        <receiver android:name=".core.system.receivers.MarkAsReadReceiver" />
 
         <activity
             android:name=".features.phone.presentation.call.CallActivity"

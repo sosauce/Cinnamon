@@ -2,6 +2,7 @@ package com.sosauce.cinnamon.core.telephony.phone
 
 import android.annotation.SuppressLint
 import android.app.Notification
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -26,9 +27,8 @@ import com.sosauce.cinnamon.core.utils.getContactNameOrNothing
 
 class CallNotificationManager(
     private val context: Context,
+    private val notificationManager: NotificationManager
 ) {
-
-    val notificationManager = NotificationManagerCompat.from(context)
 
     val intent = Intent(context, CallActivity::class.java).apply {
         action = Intent.ACTION_MAIN

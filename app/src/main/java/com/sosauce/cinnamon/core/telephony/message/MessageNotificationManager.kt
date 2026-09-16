@@ -20,6 +20,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.providers.RecipientPhone
 import com.sosauce.cinnamon.core.system.receivers.MessageReplyReceiver
 import com.sosauce.cinnamon.app.MainActivity
+import com.sosauce.cinnamon.core.system.receivers.MarkAsReadReceiver
 import com.sosauce.cinnamon.core.utils.CuteIntents
 import com.sosauce.cinnamon.core.utils.RESULT_KEY
 import com.sosauce.cinnamon.core.utils.THREAD_ID
@@ -31,11 +32,10 @@ import kotlinx.coroutines.launch
 class MessageNotificationManager(
     private val context: Context,
     private val cuteTelephonyManager: CuteTelephonyManager,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val notificationManager: NotificationManager
 ) {
 
-    private val notificationManager =
-        context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
     private val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         PendingIntent.FLAG_MUTABLE
     } else 0
@@ -165,6 +165,7 @@ class MessageNotificationManager(
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setStyle(notificationStyle)
                 .addAction(replyAction(threadId))
+                .addAction(markAsReadAction(threadId))
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
                 .build()
@@ -188,6 +189,21 @@ class MessageNotificationManager(
             context.getString(R.string.reply),
             replyPendingIntent
         ).addRemoteInput(remoteInput).build()
+    }
+
+    private fun markAsReadAction(
+        threadId: Long
+    ): NotificationCompat.Action {
+        val readIntent = Intent(context, MarkAsReadReceiver::class.java).apply {
+            putExtra(THREAD_ID, threadId)
+        }
+        val readPendingIntent = PendingIntent.getBroadcast(context, 1, readIntent, flag)
+
+        return NotificationCompat.Action.Builder(
+            0,
+            context.getString(R.string.mark_as_read),
+            readPendingIntent
+        ).build()
     }
 
     fun clearThreadNotifications(threadId: Long) = notificationManager.cancel(threadId.toInt())
