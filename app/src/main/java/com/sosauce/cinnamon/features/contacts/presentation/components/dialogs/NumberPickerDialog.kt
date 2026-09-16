@@ -53,7 +53,7 @@ fun NumberPickerDialog(
                 phoneNumbers.fastForEachIndexed { index, number ->
                     CuteListItem(
                         onClick = { onPickNumber(number) },
-                        shape = CuteListItemDefaults.getItemShape(index, phoneNumbers.lastIndex),
+                        shape = CuteListItemDefaults.getItemShape(index, phoneNumbers.count()),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                         leadingContent = {
                             Text(

@@ -207,7 +207,7 @@ class ContactsRepository(
 
 
                 if (cursor.isFirst) {
-                    val photo = cursor.getString(photoColumn).ifEmpty { null }
+                    val photo = cursor.getString(photoColumn)?.ifEmpty { null }
                     builder.setPhoto(photo)
                 }
 

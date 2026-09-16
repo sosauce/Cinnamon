@@ -64,22 +64,24 @@ object CuteListItemDefaults {
     @Composable
     fun getItemShape(
         index: Int,
-        lastIndex: Int
+        count: Int
     ): Shape {
 
-        return when (index) {
-            0 -> RoundedCornerShape(
+        return when {
+            count == 1 -> RoundedCornerShape(24.dp)
+            index == 0 -> RoundedCornerShape(
                 topStart = 24.dp,
                 topEnd = 24.dp,
                 bottomStart = 2.dp,
                 bottomEnd = 2.dp
             )
-            lastIndex -> RoundedCornerShape(
+            index == count - 1 -> RoundedCornerShape(
                 topStart = 2.dp,
                 topEnd = 2.dp,
                 bottomStart = 24.dp,
                 bottomEnd = 24.dp
             )
+
             else -> RoundedCornerShape(24.dp)
         }
     }

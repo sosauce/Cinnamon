@@ -8,18 +8,14 @@ import android.provider.ContactsContract
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -33,10 +29,13 @@ import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
+import com.sosauce.cinnamon.core.ui.components.items.CuteListItemDefaults
 import com.sosauce.cinnamon.core.ui.components.text.HeaderText
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.core.utils.formateEventDate
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsState
+import com.sosauce.nekobites.components.Spacer
 
 @Composable
 fun ContactInfos(
@@ -51,105 +50,98 @@ fun ContactInfos(
     val hasInfo = state.contact.phoneNumbers.isNotEmpty() || state.details.emails.isNotEmpty() || state.details.addresses.isNotEmpty()
     val hasAbout = state.details.websites.isNotEmpty() || state.details.note?.isNotEmpty() == true || state.details.events.isNotEmpty()
 
-    Column {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (hasInfo) {
-            HeaderText(stringResource(R.string.contact_info))
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                ),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(vertical = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    state.contact.phoneNumbers.forEachIndexed { index, number ->
-
-                        CuteListItem(
-                            onClick = { onHandleCallAction(CallAction.LaunchCall(number.number)) },
-                            leadingContent = {
-                                Icon(
-                                    painter = painterResource(R.drawable.phone),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .padding(start = 10.dp)
-                                        .alpha(if (index == 0) 1f else 0f)
-                                )
-                            },
-                            trailingContent = {
-                                if (number.isBlocked) {
-                                    IconButton(
-                                        onClick = {
-                                            Toast.makeText(
-                                                context,
-                                                "You blocked this number",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        },
-                                        shapes = IconButtonDefaults.shapes()
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.block),
-                                            contentDescription = null
-                                        )
-                                    }
+            Column {
+                HeaderText(stringResource(R.string.contact_info))
+                state.contact.phoneNumbers.forEachIndexed { index, number ->
+                    CuteListItem(
+                        onClick = { onHandleCallAction(CallAction.LaunchCall(number.number)) },
+                        shape = CuteListItemDefaults.getItemShape(index, state.contact.phoneNumbers.count()),
+                        backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                        leadingContent = {
+                            Icon(
+                                painter = painterResource(R.drawable.phone),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .padding(start = 10.dp)
+                                    .alpha(if (index == 0) 1f else 0f)
+                            )
+                        },
+                        trailingContent = {
+                            if (number.isBlocked) {
+                                IconButton(
+                                    onClick = {
+                                        Toast.makeText(
+                                            context,
+                                            "You blocked this number",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    },
+                                    shapes = IconButtonDefaults.shapes()
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.block),
+                                        contentDescription = null
+                                    )
                                 }
                             }
-                        ) {
-                            Text(number.number)
-                            Text(
-                                text = buildString {
-                                    append(
-                                        ContactsContract.CommonDataKinds.Phone.getTypeLabel(
-                                            resources,
-                                            number.type,
-                                            "Custom"
-                                        )
-                                    )
-                                    if (number.isDefault) {
-                                        append(" · ")
-                                        append(stringResource(R.string.string_default))
-                                    }
-                                },
-                                style = MaterialTheme.typography.bodyMediumEmphasized.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            )
                         }
-                    }
-
-
-                    state.details.emails.forEachIndexed { index, email ->
-                        CuteListItem(
-                            onClick = {
-                                try {
-                                    val intent = Intent(Intent.ACTION_SENDTO, "mailto:".toUri())
-                                        .apply {
-                                            putExtra(Intent.EXTRA_EMAIL, email.email)
-                                        }
-                                    context.startActivity(intent)
-
-                                } catch (_: ActivityNotFoundException) {
-                                    Toast.makeText(
-                                        context,
-                                        "No email app found!",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-
-                            },
-                            leadingContent = {
-                                Icon(
-                                    painter = painterResource(R.drawable.email),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .padding(start = 10.dp)
-                                        .alpha(if (index == 0) 1f else 0f)
+                    ) {
+                        Text(number.number)
+                        Text(
+                            text = buildString {
+                                append(
+                                    ContactsContract.CommonDataKinds.Phone.getTypeLabel(
+                                        resources,
+                                        number.type,
+                                        "Custom"
+                                    )
                                 )
+                                if (number.isDefault) {
+                                    append(" · ")
+                                    append(stringResource(R.string.string_default))
+                                }
                             },
+                            style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
+                    }
+                }
+                if (state.contact.phoneNumbers.isNotEmpty() && (state.details.emails.isNotEmpty() || state.details.addresses.isNotEmpty())) {
+                    Spacer(16.dp)
+                }
+                state.details.emails.forEachIndexed { index, email ->
+                    CuteListItem(
+                        onClick = {
+                            try {
+                                val intent = Intent(Intent.ACTION_SENDTO, "mailto:".toUri())
+                                    .apply {
+                                        putExtra(Intent.EXTRA_EMAIL, email.email)
+                                    }
+                                context.startActivity(intent)
+
+                            } catch (_: ActivityNotFoundException) {
+                                Toast.makeText(
+                                    context,
+                                    "No email app found!",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
+                        },
+                        shape = CuteListItemDefaults.getItemShape(index, state.details.emails.count()),
+                        backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                        leadingContent = {
+                            Icon(
+                                painter = painterResource(R.drawable.email),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .padding(start = 10.dp)
+                                    .alpha(if (index == 0) 1f else 0f)
+                            )
+                        },
 //                            trailingContent = {
 //                                if (email.isBlocked) {
 //                                    IconButton(
@@ -169,198 +161,206 @@ fun ContactInfos(
 //                                    }
 //                                }
 //                            }
-                        ) {
-                            Text(email.email)
-                            Text(
-                                text = buildString {
-                                    append(
-                                        ContactsContract.CommonDataKinds.Email.getTypeLabel(
-                                            resources,
-                                            email.type,
-                                            "Custom"
-                                        )
+                    ) {
+                        Text(email.email)
+                        Text(
+                            text = buildString {
+                                append(
+                                    ContactsContract.CommonDataKinds.Email.getTypeLabel(
+                                        resources,
+                                        email.type,
+                                        "Custom"
                                     )
-                                    if (email.isDefault) {
-                                        append(" · ")
-                                        append(stringResource(R.string.string_default))
-                                    }
-                                },
-                                style = MaterialTheme.typography.bodyMediumEmphasized.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                            )
-                        }
-                    }
-
-                    state.details.addresses.forEachIndexed { index, address ->
-                        CuteListItem(
-                            onClick = {
-                                try {
-                                    val intent = Intent(
-                                        Intent.ACTION_VIEW,
-                                        "geo:0,0?q=${address.address}".toUri()
-                                    )
-                                        .apply {
-                                            setClassName(
-                                                "com.google.android.apps.maps",
-                                                "com.google.android.maps.MapsActivity"
-                                            )
-                                        }
-                                    context.startActivity(intent)
-                                } catch (_: ActivityNotFoundException) {
-                                    Toast.makeText(
-                                        context,
-                                        "Google Maps not found!",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                if (email.isDefault) {
+                                    append(" · ")
+                                    append(stringResource(R.string.string_default))
                                 }
                             },
-                            leadingContent = {
-                                Icon(
-                                    painter = painterResource(R.drawable.address),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .padding(start = 10.dp)
-                                        .alpha(if (index == 0) 1f else 0f)
+                            style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
+                    }
+                }
+                if (state.details.emails.isNotEmpty() && state.details.addresses.isNotEmpty()) {
+                    Spacer(16.dp)
+                }
+                state.details.addresses.forEachIndexed { index, address ->
+                    CuteListItem(
+                        onClick = {
+                            try {
+                                val intent = Intent(
+                                    Intent.ACTION_VIEW,
+                                    "geo:0,0?q=${address.address}".toUri()
                                 )
-                            }
-                        ) {
-                            Text(address.address)
-                            Text(
-                                text = buildString {
-                                    append(
-                                        ContactsContract.CommonDataKinds.StructuredPostal.getTypeLabel(
-                                            resources,
-                                            address.type,
-                                            "Custom"
+                                    .apply {
+                                        setClassName(
+                                            "com.google.android.apps.maps",
+                                            "com.google.android.maps.MapsActivity"
                                         )
-                                    )
-                                    if (address.isDefault) {
-                                        append(" · ")
-                                        append(stringResource(R.string.string_default))
                                     }
-                                },
-                                style = MaterialTheme.typography.bodyMediumEmphasized.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                context.startActivity(intent)
+                            } catch (_: ActivityNotFoundException) {
+                                Toast.makeText(
+                                    context,
+                                    "Google Maps not found!",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        },
+                        shape = CuteListItemDefaults.getItemShape(index, state.details.addresses.count()),
+                        backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                        leadingContent = {
+                            Icon(
+                                painter = painterResource(R.drawable.address),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .padding(start = 10.dp)
+                                    .alpha(if (index == 0) 1f else 0f)
                             )
                         }
+                    ) {
+                        Text(address.address)
+                        Text(
+                            text = buildString {
+                                append(
+                                    ContactsContract.CommonDataKinds.StructuredPostal.getTypeLabel(
+                                        resources,
+                                        address.type,
+                                        "Custom"
+                                    )
+                                )
+                                if (address.isDefault) {
+                                    append(" · ")
+                                    append(stringResource(R.string.string_default))
+                                }
+                            },
+                            style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
                     }
-
                 }
             }
         } else {
-            CuteListItem(
-                onClick = {
-                    TODO()
-                    //onNavigate(Screen.ContactEditor(contact))
-                          },
-                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-                shape = RoundedCornerShape(
-                    topStart = 24.dp,
-                    topEnd = 24.dp,
-                    bottomStart = 4.dp,
-                    bottomEnd = 4.dp
-                ),
-                leadingContent = {
-                    Icon(
-                        painter = painterResource(R.drawable.phone),
-                        contentDescription = null,
-                        modifier = Modifier.padding(start = 10.dp)
-                    )
-                }
-            ) { Text(stringResource(R.string.add_phone)) }
-            CuteListItem(
-                onClick = {
-                    TODO()
-                    //onNavigate(Screen.ContactEditor(contact))
-                          },
-                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-                shape = RoundedCornerShape(
-                    topStart = 4.dp,
-                    topEnd = 4.dp,
-                    bottomStart = 24.dp,
-                    bottomEnd = 24.dp
-                ),
-                leadingContent = {
-                    Icon(
-                        painter = painterResource(R.drawable.email),
-                        contentDescription = null,
-                        modifier = Modifier.padding(start = 10.dp)
-                    )
-                }
-            ) { Text(stringResource(R.string.add_email)) }
+            Column {
+                CuteListItem(
+                    onClick = {
+                        onNavigate(
+                            Screen.ContactEditor(
+                                contact = CuteContact()
+                            )
+                        )
+                    },
+                    backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                    shape = RoundedCornerShape(
+                        topStart = 24.dp,
+                        topEnd = 24.dp,
+                        bottomStart = 2.dp,
+                        bottomEnd = 2.dp
+                    ),
+                    leadingContent = {
+                        Icon(
+                            painter = painterResource(R.drawable.phone),
+                            contentDescription = null,
+                            modifier = Modifier.padding(start = 10.dp)
+                        )
+                    }
+                ) { Text(stringResource(R.string.add_phone)) }
+                CuteListItem(
+                    onClick = {
+                        onNavigate(
+                            Screen.ContactEditor(
+                                contact = CuteContact()
+                            )
+                        )
+                    },
+                    backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                    shape = RoundedCornerShape(
+                        topStart = 2.dp,
+                        topEnd = 2.dp,
+                        bottomStart = 24.dp,
+                        bottomEnd = 24.dp
+                    ),
+                    leadingContent = {
+                        Icon(
+                            painter = painterResource(R.drawable.email),
+                            contentDescription = null,
+                            modifier = Modifier.padding(start = 10.dp)
+                        )
+                    }
+                ) { Text(stringResource(R.string.add_email)) }
+            }
         }
 
 
         if (hasAbout) {
-            HeaderText(stringResource(R.string.about) + " ${state.contact.displayName}")
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                ),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(vertical = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    state.details.websites.forEachIndexed { index, website ->
-                        CuteListItem(
-                            onClick = { uriHandler.openUri(website) },
-                            leadingContent = {
-                                Icon(
-                                    painter = painterResource(R.drawable.website),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .padding(start = 10.dp)
-                                        .alpha(if (index == 0) 1f else 0f)
-                                )
-                            }
-                        ) { Text(website) }
-                    }
-
-                    state.details.events.forEachIndexed { index, event ->
-                        CuteListItem(
-                            onClick = null,
-                            leadingContent = {
-                                Icon(
-                                    painter = painterResource(R.drawable.event),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .padding(start = 10.dp)
-                                        .alpha(if (index == 0) 1f else 0f)
-                                )
-                            }
-                        ) {
-                            Text(event.date.formateEventDate())
-                            Text(
-                                text = ContactsContract.CommonDataKinds.Event.getTypeLabel(
-                                    resources,
-                                    event.type,
-                                    "Custom"
-                                ).toString(),
-                                style = MaterialTheme.typography.bodyMediumEmphasized.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+            Column {
+                HeaderText(stringResource(R.string.about) + " ${state.contact.displayName}")
+                state.details.websites.forEachIndexed { index, website ->
+                    CuteListItem(
+                        onClick = { uriHandler.openUri(website) },
+                        shape = CuteListItemDefaults.getItemShape(index, state.details.websites.count()),
+                        backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                        leadingContent = {
+                            Icon(
+                                painter = painterResource(R.drawable.website),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .padding(start = 10.dp)
+                                    .alpha(if (index == 0) 1f else 0f)
                             )
                         }
+                    ) { Text(website) }
+                }
+                if (state.details.websites.isNotEmpty() && (state.details.events.isNotEmpty() || state.details.note?.isNotEmpty() == true)) {
+                    Spacer(16.dp)
+                }
+                state.details.events.forEachIndexed { index, event ->
+                    CuteListItem(
+                        onClick = null,
+                        shape = CuteListItemDefaults.getItemShape(index, state.details.events.count()),
+                        backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                        leadingContent = {
+                            Icon(
+                                painter = painterResource(R.drawable.event),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .padding(start = 10.dp)
+                                    .alpha(if (index == 0) 1f else 0f)
+                            )
+                        }
+                    ) {
+                        Text(event.date.formateEventDate())
+                        Text(
+                            text = ContactsContract.CommonDataKinds.Event.getTypeLabel(
+                                resources,
+                                event.type,
+                                "Custom"
+                            ).toString(),
+                            style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
                     }
-
-                    state.details.note?.let { note ->
-                        CuteListItem(
-                            onClick = null,
-                            leadingContent = {
-                                Icon(
-                                    painter = painterResource(R.drawable.note),
-                                    contentDescription = null,
-                                    modifier = Modifier.padding(start = 10.dp)
-                                )
-                            }
-                        ) { Text(note) }
-                    }
+                }
+                if (state.details.events.isNotEmpty() && state.details.note?.isNotEmpty() == true) {
+                    Spacer(16.dp)
+                }
+                state.details.note?.let { note ->
+                    CuteListItem(
+                        onClick = null,
+                        shape = RoundedCornerShape(24.dp),
+                        backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                        leadingContent = {
+                            Icon(
+                                painter = painterResource(R.drawable.note),
+                                contentDescription = null,
+                                modifier = Modifier.padding(start = 10.dp)
+                            )
+                        }
+                    ) { Text(note) }
                 }
             }
         }

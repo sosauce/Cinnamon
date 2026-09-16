@@ -82,8 +82,7 @@ class ContactDetailsViewModel(
         when (action) {
             is ContactDetailsAction.ToggleFavorite -> {
                 viewModelScope.launch {
-                    TODO()
-                    //contactsRepository.toggleFavorite(listOf(state.value.contact))
+                    contactsRepository.toggleFavorite(listOf(state.value.contact))
                 }
             }
 
