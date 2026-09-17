@@ -1,0 +1,41 @@
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="messages"
+        android:enabled="true"
+        android:icon="@drawable/message_rounded"
+        android:shortcutShortLabel="@string/messages">
+        <intent
+            android:action="messages"
+            android:targetPackage="com.sosauce.cinnamon.debug"
+            android:targetClass="com.sosauce.cinnamon.app.MainActivity" />
+        <categories android:name="android.shortcut.conversation" />
+        <capability-binding android:key="message" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="contacts"
+        android:enabled="true"
+        android:icon="@drawable/contacts"
+        android:shortcutShortLabel="@string/contacts">
+        <intent
+            android:action="contacts"
+            android:targetPackage="com.sosauce.cinnamon.debug"
+            android:targetClass="com.sosauce.cinnamon.app.MainActivity" />
+        <categories android:name="android.shortcut.conversation" />
+        <capability-binding android:key="contacts" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="dialpad"
+        android:enabled="true"
+        android:icon="@drawable/dialpad"
+        android:shortcutShortLabel="@string/dialpad">
+        <intent
+            android:action="dialpad"
+            android:targetPackage="com.sosauce.cinnamon.debug"
+            android:targetClass="com.sosauce.cinnamon.app.MainActivity" />
+        <categories android:name="android.shortcut.conversation" />
+        <capability-binding android:key="dialpad" />
+    </shortcut>
+    <!-- Specify more shortcuts here. -->
+</shortcuts>

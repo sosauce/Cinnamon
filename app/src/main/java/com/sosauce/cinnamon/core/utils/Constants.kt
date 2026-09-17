@@ -51,6 +51,9 @@ object MmsSize {
 
 object CuteIntents {
     const val NOTIFICATION_NAVIGATE_TO_THREAD = "notification thread"
+    const val SHORTCUT_MESSAGES = "messages"
+    const val SHORTCUT_CONTACTS = "contacts"
+    const val SHORTCUT_DIALPAD = "dialpad"
 }
 
 object DefaultTabOption {

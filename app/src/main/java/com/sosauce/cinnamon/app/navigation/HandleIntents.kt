@@ -19,6 +19,10 @@ fun NavBackStack<NavKey>.handleIntent(
             add(Screen.ConversationDetails(threadId))
         }
 
+        CuteIntents.SHORTCUT_MESSAGES -> add(Screen.Conversations)
+        CuteIntents.SHORTCUT_CONTACTS -> add(Screen.Contacts)
+        CuteIntents.SHORTCUT_DIALPAD -> add(Screen.Dialpad())
+
         Intent.ACTION_DIAL -> {
             val number = (intent.data?.toString() ?: "").removePrefix("tel:").replace('%', ' ')
             add(Screen.Dialpad(number))
