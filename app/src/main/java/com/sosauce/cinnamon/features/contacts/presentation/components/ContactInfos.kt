@@ -302,7 +302,16 @@ fun ContactInfos(
                 HeaderText(stringResource(R.string.about) + " ${state.contact.displayName}")
                 state.details.websites.forEachIndexed { index, website ->
                     CuteListItem(
-                        onClick = { uriHandler.openUri(website) },
+                        onClick = {
+                            try {
+                                val formattedWebsite = if (!website.startsWith("https://")) {
+                                    "https://$website"
+                                } else website
+                                uriHandler.openUri(formattedWebsite)
+                            } catch (_: IllegalArgumentException) {
+                                Toast.makeText(context, "Couldn't open website", Toast.LENGTH_SHORT).show()
+                            }
+                        },
                         shape = CuteListItemDefaults.getItemShape(index, aboutItemCount),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                         leadingContent = {
