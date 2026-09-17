@@ -72,8 +72,12 @@ class CallNotificationManager(
     @SuppressLint("MissingPermission")
     suspend fun createIncomingNotification(
         callDetails: Call.Details,
-        useFullScreen: Boolean = true
-    ): Notification {
+        useFullScreen: Boolean = true,
+        // Re-checked after the suspending photo load below: a stale RINGING coroutine
+        // (e.g. answered/rejected/ended while the photo was loading) must not re-post
+        // a sounding notification over the silent ongoing one, or the ringtone restarts.
+        isStillRinging: () -> Boolean = { true }
+    ): Notification? {
 
         val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart
             ?: callDetails.handle.schemeSpecificPart
@@ -85,6 +89,8 @@ class CallNotificationManager(
         val result = context.imageLoader.execute(request)
         val bitmap = result.image?.toBitmap()
         val personIcon = bitmap?.let { IconCompat.createWithBitmap(it) }
+
+        if (!isStillRinging()) return null
 
 
         val builder = NotificationCompat.Builder(context, CALLS_CHANNEL_ID)

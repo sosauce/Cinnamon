@@ -67,7 +67,9 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
                 when (state) {
                     Call.STATE_RINGING -> {
                         callManager.updateCallState(CallState.RINGING)
-                        callNotificationManager.createIncomingNotification(call.details)
+                        callNotificationManager.createIncomingNotification(call.details) {
+                            call.state == Call.STATE_RINGING
+                        }
                     }
 
                     Call.STATE_DIALING, Call.STATE_CONNECTING -> {
@@ -201,7 +203,9 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
                         call.details?.handle?.schemeSpecificPart ?: getString(R.string.unknown)
                     )
                     // For incoming, ensure foreground before fullScreenIntent
-                    val notif = callNotificationManager.createIncomingNotification(call.details, useFullScreen)
+                    val notif = callNotificationManager.createIncomingNotification(call.details, useFullScreen) {
+                        call.state == Call.STATE_RINGING
+                    }
                     // Only launch full-screen CallActivity if setting enabled
                     // Otherwise, bubble overlay (CallOverlayManager) will show as popup over other apps
                     if (useFullScreen) {

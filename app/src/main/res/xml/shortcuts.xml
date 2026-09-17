@@ -6,7 +6,7 @@
         android:shortcutShortLabel="@string/messages">
         <intent
             android:action="messages"
-            android:targetPackage="com.sosauce.cinnamon.debug"
+            android:targetPackage="com.sosauce.cinnamon"
             android:targetClass="com.sosauce.cinnamon.app.MainActivity" />
         <categories android:name="android.shortcut.conversation" />
         <capability-binding android:key="message" />
@@ -19,7 +19,7 @@
         android:shortcutShortLabel="@string/contacts">
         <intent
             android:action="contacts"
-            android:targetPackage="com.sosauce.cinnamon.debug"
+            android:targetPackage="com.sosauce.cinnamon"
             android:targetClass="com.sosauce.cinnamon.app.MainActivity" />
         <categories android:name="android.shortcut.conversation" />
         <capability-binding android:key="contacts" />
@@ -32,7 +32,7 @@
         android:shortcutShortLabel="@string/dialpad">
         <intent
             android:action="dialpad"
-            android:targetPackage="com.sosauce.cinnamon.debug"
+            android:targetPackage="com.sosauce.cinnamon"
             android:targetClass="com.sosauce.cinnamon.app.MainActivity" />
         <categories android:name="android.shortcut.conversation" />
         <capability-binding android:key="dialpad" />
