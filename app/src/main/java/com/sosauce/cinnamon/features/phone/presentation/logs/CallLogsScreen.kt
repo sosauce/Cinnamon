@@ -2,22 +2,19 @@
 
 package com.sosauce.cinnamon.features.phone.presentation.logs
 
-import android.provider.CallLog
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
-import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -30,24 +27,23 @@ import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.core.datastore.rememberSortLogsAscending
 import com.sosauce.cinnamon.app.navigation.Screen
+import com.sosauce.cinnamon.core.datastore.rememberSortLogsAscending
 import com.sosauce.cinnamon.core.ui.components.NoResult
 import com.sosauce.cinnamon.core.ui.components.SelectedBarSurface
 import com.sosauce.cinnamon.core.ui.components.menus.SortingDropdownMenu
 import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.core.utils.LazyListKeys
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.phone.domain.CallPresentation
 import com.sosauce.cinnamon.features.phone.domain.CuteCallLog2
+import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.nekobites.animations.AnimatedFab
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
@@ -56,6 +52,7 @@ import com.sosauce.sweetselect.rememberSweetSelectState
 @Composable
 fun CallLogsScreen(
     state: CallLogsState,
+    textFieldState: TextFieldState,
     onNavigate: (Screen) -> Unit,
     onHandleCallActions: (CallAction) -> Unit,
     onHandleDialerActions: (DialerAction) -> Unit
@@ -115,7 +112,7 @@ fun CallLogsScreen(
                 } else {
                     CuteSearchbar(
                         modifier = Modifier.selfAlignHorizontally(),
-                        textFieldState = state.textFieldState,
+                        textFieldState = textFieldState,
                         sortingMenu = {
                             SortingDropdownMenu(
                                 isSortedAscending = sortLogsAscending,

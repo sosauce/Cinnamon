@@ -1,17 +1,16 @@
 package com.sosauce.cinnamon.core.telephony.phone
 
-import android.content.Context
 import android.os.Bundle
 import android.telecom.TelecomManager
 import androidx.core.net.toUri
+import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.core.telephony.PhoneNumberNormalizer
+import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.features.phone.domain.AudioRoute
 import com.sosauce.cinnamon.features.phone.domain.CuteSimCard
 import com.sosauce.cinnamon.features.phone.presentation.call.CallState
 import com.sosauce.cinnamon.features.phone.presentation.call.CallingState
-import com.sosauce.cinnamon.core.utils.beautifyNumber
-import com.sosauce.cinnamon.core.utils.getContactNameOrNothing
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -24,10 +23,10 @@ import kotlinx.coroutines.runBlocking
  * A bridge between an InCallService (CallService) and the ViewModel.
  */
 class CallManager(
-    private val context: Context,
     private val telecomManager: TelecomManager,
     private val userPreferences: UserPreferences,
-    private val phoneNumberNormalizer: PhoneNumberNormalizer
+    private val phoneNumberNormalizer: PhoneNumberNormalizer,
+    private val numberLookup: NumberLookup
 ) {
 
     private var callServiceCallback: CallServiceCallback? = null
@@ -35,7 +34,6 @@ class CallManager(
 
 
     val _callingState = MutableStateFlow(CallingState())
-    val callingState = _callingState.asStateFlow()
 
 
     fun registerCallServiceCallback(cb: CallServiceCallback) {
@@ -165,7 +163,7 @@ class CallManager(
         _callingState.update {
             it.copy(
                 number = number.beautifyNumber(),
-                displayName = number.getContactNameOrNothing(context).beautifyNumber()
+                displayName = numberLookup.fetchContactDisplayName(number) ?: number.beautifyNumber()
             )
         }
     }

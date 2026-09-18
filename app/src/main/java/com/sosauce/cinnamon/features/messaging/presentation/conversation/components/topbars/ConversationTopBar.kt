@@ -5,7 +5,6 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation.components.topbars
 
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,14 +39,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
-import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
 import com.sosauce.cinnamon.core.ui.components.DefaultGroupChatIcon
 import com.sosauce.cinnamon.core.ui.components.toolbars.ToolbarSkeleton
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.core.utils.getItemShape
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationDetailsState
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.ConversationIcon
+import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.nekobites.animations.AnimatedDrawable
 import com.sosauce.nekobites.animations.AnimatedDrawableFile
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi

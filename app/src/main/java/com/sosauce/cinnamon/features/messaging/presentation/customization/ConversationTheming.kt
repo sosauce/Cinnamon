@@ -36,12 +36,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toFile
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.CategoryCard
@@ -49,8 +47,8 @@ import com.sosauce.cinnamon.core.ui.components.ImagePickerCard
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButton
 import com.sosauce.cinnamon.core.ui.components.buttons.WavySlider
 import com.sosauce.cinnamon.core.ui.components.text.HeaderText
-import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingActions
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
+import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingActions
 import com.sosauce.nekobites.components.ColorPickerDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -60,12 +58,10 @@ import kotlin.math.roundToInt
 @Composable
 fun ConversationTheming(
     state: ThemingState,
-    threadId: Long,
     onHandleConversationSettingsActions: (ConversationSettingActions) -> Unit,
     onNavigateBack: () -> Unit
 ) {
 
-    println("entity received: ${state.settings}")
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showColorPicker by remember { mutableStateOf(false) }
@@ -75,15 +71,13 @@ fun ConversationTheming(
             if (uri == null) return@rememberLauncherForActivityResult
 
             scope.launch(Dispatchers.IO) {
-
-
                 state.settings.wallpaper?.path?.let {
                     File(it).delete()
                 }
 
                 val file = File(
                     context.filesDir,
-                    "wallpaper_${threadId}_${System.currentTimeMillis()}.jpg"
+                    "wallpaper_${state.settings.threadId}_${System.currentTimeMillis()}.jpg"
                 )
 
                 context.contentResolver.openInputStream(uri)?.use { input ->
@@ -135,10 +129,6 @@ fun ConversationTheming(
             }
         )
     }
-
-    println("theming wallpaper: ${state.settings.wallpaper}")
-
-
     Scaffold(
         bottomBar = {
             CuteNavigationButton(
@@ -154,7 +144,9 @@ fun ConversationTheming(
                 .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
         ) {
-            HeaderText("Wallpaper")
+            HeaderText(
+                text = stringResource(R.string.wallpaper)
+            )
 
             ImagePickerCard(
                 onClick = { imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },

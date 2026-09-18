@@ -15,16 +15,15 @@ import android.telecom.CallAudioState
 import android.telecom.InCallService
 import android.telecom.VideoProfile
 import android.telephony.SubscriptionManager
-import android.widget.Chronometer
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.dataStore
-import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
 import com.sosauce.cinnamon.core.telephony.phone.AndroidCallCallback
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
 import com.sosauce.cinnamon.core.telephony.phone.CallNotificationManager
 import com.sosauce.cinnamon.core.telephony.phone.CallServiceCallback
 import com.sosauce.cinnamon.features.phone.domain.AudioRoute
 import com.sosauce.cinnamon.features.phone.domain.CuteSimCard
+import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
 import com.sosauce.cinnamon.features.phone.presentation.call.CallState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Runnable

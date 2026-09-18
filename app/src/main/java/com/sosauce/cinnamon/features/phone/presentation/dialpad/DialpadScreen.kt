@@ -57,21 +57,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirst
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
-import com.skydoves.cloudy.sky
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.buttons.LongClickButton
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
+import com.sosauce.cinnamon.core.utils.LazyListKeys
+import com.sosauce.cinnamon.core.utils.backspace
+import com.sosauce.cinnamon.core.utils.rememberFocusRequester
+import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.presentation.ContactListItem
 import com.sosauce.cinnamon.features.contacts.presentation.components.dialogs.NumberPickerDialog
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.features.phone.presentation.call.components.DisableSoftKeyboard
-import com.sosauce.cinnamon.core.utils.LazyListKeys
-import com.sosauce.cinnamon.core.utils.backspace
-import com.sosauce.cinnamon.core.utils.beautifyNumber
-import com.sosauce.cinnamon.core.utils.rememberFocusRequester
-import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
-import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.nekobites.components.NoXFound
 
 @Composable

@@ -31,8 +31,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.core.datastore.rememberSortContactsAscending
 import com.sosauce.cinnamon.app.navigation.Screen
+import com.sosauce.cinnamon.core.datastore.rememberSortContactsAscending
 import com.sosauce.cinnamon.core.ui.components.ContactsSelectedBar
 import com.sosauce.cinnamon.core.ui.components.menus.SortingDropdownMenu
 import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar

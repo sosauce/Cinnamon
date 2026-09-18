@@ -53,8 +53,10 @@ fun AboutCard() {
                     text = stringResource(id = R.string.app_name)
                 )
                 Text(
-                    text = "${stringResource(id = R.string.version)} ${context.appVersion}",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "v${context.appVersion}",
+                    style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
             }
             Spacer(Modifier.weight(1f))

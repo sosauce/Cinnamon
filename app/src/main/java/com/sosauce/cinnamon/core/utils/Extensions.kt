@@ -5,15 +5,12 @@ package com.sosauce.cinnamon.core.utils
 import android.app.Activity
 import android.app.WallpaperManager
 import android.app.role.RoleManager
-import android.content.ContentProviderOperation
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.database.ContentObserver
 import android.net.Uri
 import android.os.Build
-import android.provider.BlockedNumberContract
-import android.provider.BlockedNumberContract.BlockedNumbers
 import android.provider.ContactsContract.PhoneLookup
 import android.provider.OpenableColumns
 import android.provider.Telephony
@@ -24,9 +21,6 @@ import android.telephony.PhoneNumberUtils
 import android.text.format.DateFormat
 import android.text.format.DateUtils
 import android.util.Patterns
-import android.widget.Toast
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
@@ -58,22 +52,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
 import androidx.core.net.toUri
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.materialkolor.PaletteStyle
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.core.datastore.rememberIsLandscape
 import com.sosauce.cinnamon.app.navigation.Screen
+import com.sosauce.cinnamon.core.datastore.rememberIsLandscape
 import dev.chrisbanes.haze.HazeEffectScope
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeEffect
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -86,8 +77,6 @@ import java.time.Year
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
 
 val Context.appVersion
@@ -131,29 +120,6 @@ fun Long.toTime(): String {
     val formatter = DateTimeFormatter.ofPattern(pattern, locale)
 
     return dateTime.format(formatter)
-}
-
-
-/**
- * Returns the contact name if available, if not, returns the number as is
- */
-fun String.getContactNameOrNothing(context: Context): String {
-
-    if (this.isEmpty()) return this
-    val uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(this))
-
-    context.contentResolver.query(
-        uri,
-        arrayOf(PhoneLookup.DISPLAY_NAME),
-        null,
-        null
-    )?.use { cursor ->
-        if (cursor.moveToFirst()) {
-            return cursor.getString(cursor.getColumnIndexOrThrow(PhoneLookup.DISPLAY_NAME))
-        }
-    }
-
-    return this
 }
 
 //fun Int.getAddressFromThreadId(context: Context): String? {

@@ -3,7 +3,6 @@
 package com.sosauce.cinnamon.features.phone.presentation.logs
 
 import android.content.ClipData
-import android.provider.CallLog
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -51,19 +50,17 @@ import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.core.utils.getItemShape
 import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
-import com.sosauce.cinnamon.core.utils.toTime
 import com.sosauce.cinnamon.features.phone.domain.CallPresentation
 import com.sosauce.cinnamon.features.phone.domain.CallType
 import com.sosauce.cinnamon.features.phone.domain.CuteCallLog2
+import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.nekobites.animations.AnimatedDrawable
 import com.sosauce.nekobites.animations.AnimatedDrawableFile
 import com.sosauce.nekobites.components.AnimatedSelectedIcon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlin.text.buildString
 
 
 @Composable

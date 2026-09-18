@@ -16,10 +16,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.calculateZoom
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,7 +34,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -49,18 +44,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.retain.RetainedEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -71,21 +61,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
-import com.skydoves.cloudy.sky
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingActions
-import com.sosauce.cinnamon.core.telephony.message.ActiveThreadId
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.datastore.rememberChatZoomScale
-import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bubble.TextBubble
-import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.topbars.ConversationTopBar
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
-import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
-import com.sosauce.nekobites.animations.bouncySpec
+import com.sosauce.cinnamon.core.telephony.message.ActiveThreadId
 import com.sosauce.cinnamon.core.utils.isEmoji
+import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingActions
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import com.sosauce.cinnamon.features.messaging.domain.MessageType
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.TextingUnavailableBar
@@ -94,14 +77,15 @@ import com.sosauce.cinnamon.features.messaging.presentation.conversation.compone
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bubble.MessageLayout
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bubble.MmsBubble
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bubble.SandwichPosition
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bubble.TextBubble
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.topbars.ConversationTopBar
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.topbars.SelectedTopBar
-import com.sosauce.nekobites.animations.unclippedContentTransform
+import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
+import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.sweetselect.rememberSweetSelectState
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import net.engawapg.lib.zoomable.ExperimentalZoomableApi
-import net.engawapg.lib.zoomable.rememberZoomState
-import net.engawapg.lib.zoomable.zoomableWithScroll
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

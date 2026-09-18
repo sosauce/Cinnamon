@@ -8,26 +8,26 @@ import android.content.Context
 import android.content.Intent
 import android.telecom.Call
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
 import androidx.core.graphics.drawable.IconCompat
+import androidx.core.net.toUri
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.transformations
 import coil3.toBitmap
 import coil3.transform.CircleCropTransformation
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
-import com.sosauce.cinnamon.app.providers.RecipientPhone
+import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.system.receivers.CallReceiver
 import com.sosauce.cinnamon.core.utils.ACCEPT_INCOMING_CALL
 import com.sosauce.cinnamon.core.utils.DECLINE_INCOMING_CALL
 import com.sosauce.cinnamon.core.utils.HANGUP_ONGOING_CALL
-import com.sosauce.cinnamon.core.utils.getContactNameOrNothing
+import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
 
 class CallNotificationManager(
     private val context: Context,
-    private val notificationManager: NotificationManager
+    private val notificationManager: NotificationManager,
+    private val numberLookup: NumberLookup
 ) {
 
     val intent = Intent(context, CallActivity::class.java).apply {
@@ -83,7 +83,7 @@ class CallNotificationManager(
             ?: callDetails.handle.schemeSpecificPart
 
         val request = ImageRequest.Builder(context)
-            .data(RecipientPhone(number ?: ""))
+            .data(numberLookup.fetchPhoto(number, false)?.toUri())
             .transformations(CircleCropTransformation())
             .build()
         val result = context.imageLoader.execute(request)
@@ -103,7 +103,7 @@ class CallNotificationManager(
                 NotificationCompat.CallStyle.forIncomingCall(
                     Person.Builder()
                         .setIcon(personIcon)
-                        .setName(number.getContactNameOrNothing(context))
+                        .setName(numberLookup.fetchContactDisplayName(number))
                         .build(),
                     declinePendingIntent,
                     acceptPendingIntent
@@ -126,7 +126,7 @@ class CallNotificationManager(
             ?: callDetails.handle.schemeSpecificPart
 
         val request = ImageRequest.Builder(context)
-            .data(RecipientPhone(number ?: ""))
+            .data(numberLookup.fetchPhoto(number, false)?.toUri())
             .transformations(CircleCropTransformation())
             .build()
         val result = context.imageLoader.execute(request)
@@ -148,7 +148,7 @@ class CallNotificationManager(
                 NotificationCompat.CallStyle.forOngoingCall(
                     Person.Builder()
                         .setIcon(personIcon)
-                        .setName(number.getContactNameOrNothing(context))
+                        .setName(numberLookup.fetchContactDisplayName(number))
                         .build(),
                     hangupPendingIntent
 
@@ -171,7 +171,7 @@ class CallNotificationManager(
             ?: callDetails.handle.schemeSpecificPart
 
         val request = ImageRequest.Builder(context)
-            .data(RecipientPhone(number ?: ""))
+            .data(numberLookup.fetchPhoto(number, false)?.toUri())
             .transformations(CircleCropTransformation())
             .build()
         val result = context.imageLoader.execute(request)
@@ -191,7 +191,7 @@ class CallNotificationManager(
                 NotificationCompat.CallStyle.forOngoingCall(
                     Person.Builder()
                         .setIcon(personIcon)
-                        .setName(number.getContactNameOrNothing(context))
+                        .setName(numberLookup.fetchContactDisplayName(number))
                         .build(),
                     hangupPendingIntent
 

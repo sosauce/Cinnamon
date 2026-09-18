@@ -2,7 +2,6 @@
 
 package com.sosauce.cinnamon.core.ui.components.menus
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

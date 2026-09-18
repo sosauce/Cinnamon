@@ -6,7 +6,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -48,19 +47,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastMap
-import com.skydoves.cloudy.sky
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar
-import com.sosauce.cinnamon.features.contacts.presentation.ContactListItem
-import com.sosauce.cinnamon.features.contacts.presentation.components.dialogs.NumberPickerDialog
 import com.sosauce.cinnamon.core.utils.LazyListKeys
 import com.sosauce.cinnamon.core.utils.beautifyNumber
-import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
+import com.sosauce.cinnamon.features.contacts.presentation.ContactListItem
+import com.sosauce.cinnamon.features.contacts.presentation.components.dialogs.NumberPickerDialog
+import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
 

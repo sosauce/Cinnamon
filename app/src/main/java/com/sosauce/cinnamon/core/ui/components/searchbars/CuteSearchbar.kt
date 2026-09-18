@@ -6,12 +6,9 @@
 package com.sosauce.cinnamon.core.ui.components.searchbars
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -42,22 +39,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.ScreenSelection
-import com.sosauce.cinnamon.core.ui.nunitoFontFamily
 import com.sosauce.cinnamon.core.utils.LocalScreen
 import com.sosauce.cinnamon.core.utils.rememberSearchbarMaxFloatValue
 import com.sosauce.cinnamon.core.utils.rememberSearchbarRightPadding
-import com.sosauce.cinnamon.core.utils.thenIf
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 
 @Composable
@@ -122,7 +114,7 @@ fun CuteSearchbar(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = TextFieldDefaults.colors(
                                     focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent
                                 ),
                                 placeholder = {
                                     Text(

@@ -28,59 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.app.providers.PhotoQuality
-import com.sosauce.cinnamon.app.providers.RecipientPhone
 
-
-@Composable
-fun DefaultContactIcon(
-    modifier: Modifier = Modifier,
-    firstLetter: Char?,
-    size: Dp = 50.dp,
-    color: Color = MaterialTheme.colorScheme.primary,
-    contactPhoneNumber: String?,
-    quality: PhotoQuality = PhotoQuality.THUMBNAIL,
-    shape: Shape = MaterialShapes.Circle.toShape(),
-    @DrawableRes icon: Int = R.drawable.person_filled
-) {
-
-
-    Box(
-        modifier = modifier
-            .size(size)
-            .clip(shape)
-            .background(
-                color = color,
-                shape = shape
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        if (firstLetter?.isLetter() == true) {
-            Text(
-                text = firstLetter.uppercase(),
-                style = MaterialTheme.typography.titleLargeEmphasized.copy(
-                    color = contentColorFor(color),
-                    fontSize = (size / 2).value.sp
-                )
-            )
-        } else {
-            Icon(
-                painter = painterResource(icon),
-                contentDescription = null,
-                tint = contentColorFor(color),
-                modifier = Modifier.size(size / 2)
-            )
-        }
-        AsyncImage(
-            model = RecipientPhone(contactPhoneNumber ?: "", quality),
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(shape),
-            contentScale = ContentScale.Crop
-        )
-    }
-}
 
 @Composable
 fun DefaultContactIcon(

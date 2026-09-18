@@ -4,7 +4,6 @@ import android.content.Context
 import android.provider.CallLog
 import android.text.format.DateUtils
 import androidx.core.net.toUri
-import coil3.toUri
 import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.utils.toTime
 import com.sosauce.cinnamon.features.phone.domain.CallPresentation

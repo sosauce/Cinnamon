@@ -12,13 +12,9 @@ import com.sosauce.cinnamon.features.messaging.data.model.toEntity
 import com.sosauce.cinnamon.features.messaging.domain.ConversationSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 
@@ -43,10 +39,7 @@ class ThemingViewModel(
         when (action) {
             is ConversationSettingActions.UpsertConversationSettings -> {
                 viewModelScope.launch(Dispatchers.IO) {
-
                     val entity = action.conversationSettings.toEntity()
-
-
                     conversationSettingsDao.upsertConversation(entity)
                 }
             }

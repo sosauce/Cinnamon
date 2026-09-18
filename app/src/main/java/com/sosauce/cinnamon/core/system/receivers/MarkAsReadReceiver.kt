@@ -7,7 +7,6 @@ import android.content.Intent
 import com.sosauce.cinnamon.core.utils.THREAD_ID
 import com.sosauce.cinnamon.features.messaging.data.repository.ConversationsRepository
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject

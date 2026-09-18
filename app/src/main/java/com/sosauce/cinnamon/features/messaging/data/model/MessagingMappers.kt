@@ -14,7 +14,6 @@ import com.sosauce.cinnamon.features.messaging.domain.ConversationSettings
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import com.sosauce.cinnamon.features.messaging.domain.MessageType
-import com.sosauce.nekobites.utils.ColorUtils
 
 fun CuteConversationEntity.toCuteConversation(draft: String): CuteConversation {
     return CuteConversation(

@@ -6,7 +6,6 @@ import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.telecom.Connection
 import androidx.annotation.RequiresApi
-import androidx.core.net.toUri
 
 @RequiresApi(Build.VERSION_CODES.R)
 class CuteCallScreeningService : CallScreeningService() {

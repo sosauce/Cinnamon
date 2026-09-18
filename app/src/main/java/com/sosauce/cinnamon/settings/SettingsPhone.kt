@@ -23,7 +23,6 @@ import com.sosauce.cinnamon.core.datastore.rememberGroupSubsequentCalls
 import com.sosauce.cinnamon.settings.components.PhoneAccountHandleSelector
 import com.sosauce.cinnamon.settings.components.SettingsWithTitle
 import com.sosauce.cinnamon.settings.components.SwitchSettingsCard
-import com.sosauce.nekobites.components.LazyRowWithScrollButton
 import org.koin.androidx.compose.koinViewModel
 
 @Composable

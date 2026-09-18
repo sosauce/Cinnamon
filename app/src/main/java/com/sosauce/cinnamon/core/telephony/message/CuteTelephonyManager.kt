@@ -10,7 +10,6 @@ import android.provider.BlockedNumberContract
 import android.provider.BlockedNumberContract.BlockedNumbers
 import android.provider.Telephony
 import android.telephony.SmsManager
-import android.widget.Toast
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastMap

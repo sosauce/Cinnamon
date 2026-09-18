@@ -20,8 +20,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.cinnamon.core.utils.thenIf
+import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.nekobites.components.AnimatedSelectedIcon
 
 @Composable

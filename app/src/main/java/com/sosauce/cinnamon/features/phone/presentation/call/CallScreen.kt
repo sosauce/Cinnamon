@@ -5,14 +5,10 @@ import android.text.format.DateUtils
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -42,7 +38,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
-import androidx.compose.material3.toPath
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,8 +45,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -74,10 +67,8 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.app.providers.PhotoQuality
 import com.sosauce.cinnamon.core.ui.CinnamonTheme
 import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
-import com.sosauce.cinnamon.core.utils.thenIf
 import com.sosauce.cinnamon.features.phone.domain.AudioRoute
 import com.sosauce.cinnamon.features.phone.presentation.call.components.CallBottomBar
 import com.sosauce.cinnamon.features.phone.presentation.call.components.IncomingBottomBar
@@ -223,8 +214,7 @@ fun CallScreen(
                             size = 184.dp,
                             color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             shape = MaterialShapes.Cookie9Sided.toShape(),
-                            contactPhoneNumber = callUiState.number,
-                            quality = PhotoQuality.FULL_QUALITY,
+                            contactPfp = callUiState.photo,
                             modifier = Modifier
                                 .drawWithCache {
                                     val path = cookie9Sided.createOutline(size, layoutDirection, this)

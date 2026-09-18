@@ -13,13 +13,13 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
 import com.sosauce.cinnamon.core.ui.CinnamonTheme
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
 import com.sosauce.cinnamon.features.phone.presentation.call.CallState
 import com.sosauce.cinnamon.features.phone.presentation.call.components.CallBubble
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import androidx.core.net.toUri
 
 /**
  * Manages system overlay bubble shown over other apps during a call.
@@ -39,7 +39,7 @@ class CallOverlayManager(
         if (!canDrawOverlays()) {
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                android.net.Uri.parse("package:${context.packageName}")
+                "package:${context.packageName}".toUri()
             ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
             context.startActivity(intent)
         }
@@ -48,7 +48,7 @@ class CallOverlayManager(
     fun observe(scope: CoroutineScope, onToggleMute: () -> Unit = {}, onEndCall: () -> Unit = {}) {
         // Combine call state + CallActivity visibility so bubble reacts to both
         kotlinx.coroutines.flow.combine(
-            callManager.callingState,
+            callManager._callingState,
             com.sosauce.cinnamon.app.CinnamonApplication.isCallActivityVisibleFlow
         ) { state, isCallUiVisible -> state to isCallUiVisible }
             .onEach { (state, isCallUiVisible) ->
@@ -125,7 +125,7 @@ class CallOverlayManager(
         onToggleMute: () -> Unit,
         onEndCall: () -> Unit
     ) {
-        val state by callManager.callingState.collectAsStateWithLifecycle()
+        val state by callManager._callingState.collectAsStateWithLifecycle()
         CallBubble(
             state = state,
             onExpand = {

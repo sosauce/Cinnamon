@@ -1,31 +1,39 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package com.sosauce.cinnamon.features.phone.presentation.call
 
 import android.app.Application
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.telecom.TelecomManager
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
+import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
+import com.sosauce.cinnamon.core.utils.getContactId
+import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.phone.domain.AudioRoute
 import com.sosauce.cinnamon.features.phone.domain.CuteSimCard
-import com.sosauce.cinnamon.core.utils.getContactId
-import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class CallingViewModel(
     private val application: Application,
     private val callManager: CallManager,
-    private val contactSettingsDao: ContactSettingsDao
+    private val contactSettingsDao: ContactSettingsDao,
+    private val numberLookup: NumberLookup
 ) : AndroidViewModel(application) {
 
 
-    val state = callManager.callingState
+    private val _state = callManager._callingState
+    val state = _state.asStateFlow()
 
 
     init {
@@ -38,8 +46,16 @@ class CallingViewModel(
                     poster = poster?.toUri()
                 )
             }
+        }
 
-
+        viewModelScope.launch(Dispatchers.IO) {
+            state.mapLatest { it.number }.distinctUntilChanged().collectLatest { number ->
+                _state.update {
+                    it.copy(
+                        photo = numberLookup.fetchPhoto(number, true)?.toUri()
+                    )
+                }
+            }
         }
     }
 
@@ -94,6 +110,7 @@ data class CallingState(
     val timeSpentInCall: Long = 0,
     val availableAudioRoutes: List<AudioRoute> = emptyList(),
     val currentAudioRoute: AudioRoute = AudioRoute(),
+    val photo: Uri? = null,
     val poster: Uri? = null, // contact that may or may nor be associated with the caller
     val activeSim: CuteSimCard = CuteSimCard()
 

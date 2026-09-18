@@ -3,7 +3,6 @@ package com.sosauce.cinnamon.core.telephony.message
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
-import android.content.Context.NOTIFICATION_SERVICE
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -11,21 +10,21 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
 import androidx.core.graphics.drawable.IconCompat
+import androidx.core.net.toUri
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.transformations
 import coil3.toBitmap
 import coil3.transform.CircleCropTransformation
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.app.providers.RecipientPhone
-import com.sosauce.cinnamon.core.system.receivers.MessageReplyReceiver
 import com.sosauce.cinnamon.app.MainActivity
+import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.system.receivers.MarkAsReadReceiver
+import com.sosauce.cinnamon.core.system.receivers.MessageReplyReceiver
 import com.sosauce.cinnamon.core.utils.CuteIntents
 import com.sosauce.cinnamon.core.utils.RESULT_KEY
 import com.sosauce.cinnamon.core.utils.THREAD_ID
 import com.sosauce.cinnamon.core.utils.getAddressFromThreadId
-import com.sosauce.cinnamon.core.utils.getContactNameOrNothing
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -33,7 +32,8 @@ class MessageNotificationManager(
     private val context: Context,
     private val cuteTelephonyManager: CuteTelephonyManager,
     private val scope: CoroutineScope,
-    private val notificationManager: NotificationManager
+    private val notificationManager: NotificationManager,
+    private val numberLookup: NumberLookup
 ) {
 
     private val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -98,7 +98,7 @@ class MessageNotificationManager(
         if (ActiveThreadId.threadId == threadId) return
 
         val request = ImageRequest.Builder(context)
-            .data(RecipientPhone(number ?: ""))
+            .data(numberLookup.fetchPhoto(number ?: "", false)?.toUri())
             .transformations(CircleCropTransformation())
             .build()
         val result = context.imageLoader.execute(request)
@@ -109,7 +109,9 @@ class MessageNotificationManager(
         val person = Person.Builder()
             .setIcon(personIcon)
             .setName(
-                number?.getContactNameOrNothing(context) ?: context.getString(R.string.unknown)
+                number?.let {
+                    numberLookup.fetchContactDisplayName(it)
+                } ?: context.getString(R.string.unknown)
             )
             .build()
         val receivedMessage =

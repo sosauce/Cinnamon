@@ -31,10 +31,10 @@ import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItemDefaults
 import com.sosauce.cinnamon.core.ui.components.text.HeaderText
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.core.utils.formateEventDate
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsState
+import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 
 @Composable
 fun ContactInfos(
@@ -48,9 +48,6 @@ fun ContactInfos(
     val uriHandler = LocalUriHandler.current
     val hasInfo = state.contact.phoneNumbers.isNotEmpty() || state.details.emails.isNotEmpty() || state.details.addresses.isNotEmpty()
     val hasAbout = state.details.websites.isNotEmpty() || state.details.note?.isNotEmpty() == true || state.details.events.isNotEmpty()
-
-    // Combined single-list indices: info flows phones -> emails -> addresses,
-    // about flows websites -> events -> note.
     val emailOffset = state.contact.phoneNumbers.count()
     val addressOffset = emailOffset + state.details.emails.count()
     val infoItemCount = addressOffset + state.details.addresses.count()

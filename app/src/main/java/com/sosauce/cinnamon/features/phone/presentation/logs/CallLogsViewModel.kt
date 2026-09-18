@@ -9,8 +9,8 @@ import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.core.datastore.UserPreferences
-import com.sosauce.cinnamon.features.phone.data.repository.CallLogsRepository
 import com.sosauce.cinnamon.core.utils.groupSubsequentlyBy
+import com.sosauce.cinnamon.features.phone.data.repository.CallLogsRepository
 import com.sosauce.cinnamon.features.phone.domain.CallType
 import com.sosauce.cinnamon.features.phone.domain.CuteCallLog2
 import kotlinx.coroutines.Dispatchers
@@ -33,11 +33,10 @@ class CallLogsViewModel(
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
-    private val textFieldState = TextFieldState()
+    val textFieldState = TextFieldState()
     private val _state = MutableStateFlow(
         CallLogsState(
-            isLoading = true,
-            textFieldState = textFieldState
+            isLoading = true
         )
     )
 
@@ -112,7 +111,6 @@ data class CallLogsState(
     val isLoading: Boolean = false,
     val callLogs: Map<String, GroupedCalls> = emptyMap(),
     val filter: CallLogsFilter = CallLogsFilter.ALL,
-    val textFieldState: TextFieldState = TextFieldState(),
     val isSearching: Boolean = false
 )
 

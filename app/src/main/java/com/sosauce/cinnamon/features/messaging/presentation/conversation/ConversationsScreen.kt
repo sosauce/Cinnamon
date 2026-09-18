@@ -22,7 +22,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,14 +35,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.core.datastore.rememberSortConversationsAscending
-import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
-import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.Conversation
 import com.sosauce.cinnamon.app.navigation.Screen
+import com.sosauce.cinnamon.core.datastore.rememberSortConversationsAscending
 import com.sosauce.cinnamon.core.ui.components.ConversationsSelectedBar
 import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar
 import com.sosauce.cinnamon.core.utils.LazyListKeys
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
+import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.Conversation
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.PinnedConversation
 import com.sosauce.nekobites.animations.AnimatedFab
 import com.sosauce.nekobites.components.NoXFound

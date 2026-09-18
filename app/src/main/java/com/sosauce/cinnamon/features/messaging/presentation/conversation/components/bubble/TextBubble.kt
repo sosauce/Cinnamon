@@ -15,11 +15,11 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bottombar.dashedBorder
 import com.sosauce.cinnamon.core.utils.isEmoji
 import com.sosauce.cinnamon.core.utils.isLink
 import com.sosauce.cinnamon.core.utils.thenIf
 import com.sosauce.cinnamon.features.messaging.domain.MessageType
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bottombar.dashedBorder
 
 @Composable
 fun TextBubble(

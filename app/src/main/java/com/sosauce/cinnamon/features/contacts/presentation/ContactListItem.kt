@@ -26,14 +26,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
-import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.nekobites.components.AnimatedSelectedIcon
 

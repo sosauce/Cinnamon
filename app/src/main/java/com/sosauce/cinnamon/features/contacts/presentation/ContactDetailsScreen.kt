@@ -13,24 +13,31 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.DropdownMenuPopup
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -55,6 +62,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.innerShadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -68,18 +82,22 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.skydoves.cloudy.cloudy
+import com.skydoves.cloudy.liquidGlass
+import com.skydoves.cloudy.rememberSky
+import com.skydoves.cloudy.sky
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.features.contacts.presentation.components.ContactActionsRow
-import com.sosauce.cinnamon.features.contacts.presentation.components.ContactInfos
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.core.utils.getItemShape
+import com.sosauce.cinnamon.features.contacts.presentation.components.ContactActionsRow
+import com.sosauce.cinnamon.features.contacts.presentation.components.ContactInfos
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bottombar.MoreOptions
+import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.nekobites.animations.AnimatedDrawable
 import com.sosauce.nekobites.animations.AnimatedDrawableFile
+import com.sosauce.nekobites.components.LoadingBox
 
 @Composable
 fun SharedTransitionScope.ContactDetailsScreen(
@@ -94,6 +112,7 @@ fun SharedTransitionScope.ContactDetailsScreen(
     var showBlockDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     var playFavoriteAnimation by remember { mutableStateOf(false) }
+    val cookie9Sided = MaterialShapes.Cookie9Sided.toShape()
 
     val moreOptions = listOf(
         MoreOptions(
@@ -186,50 +205,42 @@ fun SharedTransitionScope.ContactDetailsScreen(
             }
         )
     }
+    AnimatedVisibility(
+        visible = playFavoriteAnimation,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = Modifier.zIndex(999f)
+    ) {
+        val raw = if (state.contact.isFavorite) R.raw.heart else R.raw.broken_heart
 
+        val composition by rememberLottieComposition(
+            LottieCompositionSpec.RawRes(raw)
+        )
+        val progress by animateLottieCompositionAsState(
+            composition = composition
+        )
 
-    if (state.isLoading) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            ContainedLoadingIndicator()
-        }
-    } else {
-
-        AnimatedVisibility(
-            visible = playFavoriteAnimation,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.zIndex(999f)
-        ) {
-            val raw = if (state.contact.isFavorite) R.raw.heart else R.raw.broken_heart
-
-            val composition by rememberLottieComposition(
-                LottieCompositionSpec.RawRes(raw)
+            LottieAnimation(
+                composition = composition,
+                progress = { progress },
+                modifier = Modifier.size(120.dp)
             )
-            val progress by animateLottieCompositionAsState(
-                composition = composition
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                LottieAnimation(
-                    composition = composition,
-                    progress = { progress },
-                    modifier = Modifier.size(120.dp)
-                )
-            }
-
-            LaunchedEffect(progress) {
-                if (progress == 1f) playFavoriteAnimation = false
-            }
         }
 
+        LaunchedEffect(progress) {
+            if (progress == 1f) playFavoriteAnimation = false
+        }
+    }
 
+
+    LoadingBox(
+        isLoading = state.isLoading
+    ) {
         Scaffold(
             bottomBar = {
                 Row(
@@ -240,19 +251,18 @@ fun SharedTransitionScope.ContactDetailsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CuteNavigationButtonSurface(onNavigateUp = onNavigateBack)
+                    Surface(
+                        shadowElevation = 5.dp,
+                        shape = MaterialShapes.Cookie9Sided.toShape()
+                    ) {
+                        CuteNavigationButtonSurface(onNavigateUp = onNavigateBack)
+                    }
                     Surface(
                         shape = RoundedCornerShape(14.dp),
                         shadowElevation = 5.dp,
-                        color = MaterialTheme.colorScheme.surfaceContainer
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceContainer,
-                                    shape = RoundedCornerShape(14.dp)
-                                )
-                        ) {
+                        Row {
                             IconButton(
                                 onClick = {
                                     val contact = state.contact
@@ -321,24 +331,32 @@ fun SharedTransitionScope.ContactDetailsScreen(
                 }
             }
         ) { pv ->
+            // Header metrics: poster bleeds under the status bar, the contact icon
+            // sits centered on the poster/card seam (clear of the status bar), and
+            // the content card overlaps the poster's bottom edge.
+            val posterHeight = 280.dp
+            val iconSize = 170.dp
+            val cardOverlap = 25.dp
+            val seamY = posterHeight - cardOverlap
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .verticalScroll(scrollState)
-                    .padding(pv)
-                    .padding(horizontal = 10.dp)
+                    .padding(PaddingValues(bottom = pv.calculateBottomPadding()))
             ) {
                 Box(
+                    modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
                     Box(
                         modifier = Modifier
-                            .height(200.dp)
+                            .fillMaxWidth()
+                            .height(posterHeight + 20.dp) // keep the 20.dp pls
+                            .align(Alignment.TopCenter)
                             .sharedElement(
                                 sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_POSTER),
                                 animatedVisibilityScope = LocalNavAnimatedContentScope.current
                             )
-                            .clip(RoundedCornerShape(24.dp))
                     ) {
                         Box(
                             modifier = Modifier
@@ -348,62 +366,105 @@ fun SharedTransitionScope.ContactDetailsScreen(
                         AsyncImage(
                             model = state.settings.poster,
                             contentDescription = null,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .cloudy(30),
+                            modifier = Modifier.fillMaxSize().cloudy(5),
                             contentScale = ContentScale.Crop
                         )
                     }
+                    Surface(
+                        shape = RoundedCornerShape(50.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.TopCenter)
+                            .padding(top = seamY)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .padding(top = iconSize / 2 + 12.dp)
+                                .padding(horizontal = 10.dp)
+                        ) {
+                            Text(
+                                text = state.contact.displayName,
+                                modifier = Modifier
+                                    .sharedBounds(
+                                        sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_NAME + state.contact.id),
+                                        animatedVisibilityScope = LocalNavAnimatedContentScope.current
+                                    )
+                                    .basicMarquee(),
+                                style = MaterialTheme.typography.headlineLargeEmphasized
+                            )
+                            state.details.company?.let { company ->
+                                Text(
+                                    text = company,
+                                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                )
+                            }
+                            Spacer(Modifier.height(15.dp))
+                            ContactActionsRow(
+                                state = state,
+                                onNavigate = onNavigate,
+                                onHandleCallAction = onHandleCallAction,
+                                onHandleContactDetailsAction = onHandleContactDetailsAction,
+                                onPlayFavoriteAnimation = { playFavoriteAnimation = true }
+                            )
+                            Spacer(Modifier.height(25.dp))
+                            ContactInfos(
+                                state = state,
+                                onHandleCallAction = onHandleCallAction,
+                                onNavigate = onNavigate
+                            )
+                        }
+                    }
+                    val surfaceContainerHighest = MaterialTheme.colorScheme.surfaceContainer
                     DefaultContactIcon(
                         firstLetter = state.contact.displayName.firstOrNull(),
                         modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = seamY - iconSize / 2)
                             .sharedElement(
                                 sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_PFP),
                                 animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                            ),
-                        size = 170.dp,
+                            )
+                            .drawWithCache {
+                                val path = cookie9Sided.createOutline(size, layoutDirection, this)
+                                    .let { outline ->
+                                        Path().apply {
+                                            when (outline) {
+                                                is Outline.Generic -> addPath(outline.path)
+                                                is Outline.Rounded -> addRoundRect(outline.roundRect)
+                                                is Outline.Rectangle -> addRect(outline.rect)
+                                            }
+                                        }
+                                    }
+                                onDrawBehind {
+                                    withTransform(
+                                        {
+                                            scale(
+                                                scaleX = 1.08f,
+                                                scaleY = 1.08f,
+                                                pivot = center
+                                            )
+                                        }
+                                    ) {
+                                        drawPath(
+                                            path = path,
+                                            color = surfaceContainerHighest
+                                        )
+                                    }
+                                }
+                            },
+                        size = iconSize,
                         contactPfp = state.details.photo,
                         shape = MaterialShapes.Cookie9Sided.toShape()
                     )
 
                 }
-                Spacer(Modifier.height(15.dp))
-                Text(
-                    text = state.contact.displayName,
-                    modifier = Modifier
-                        .sharedBounds(
-                            sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_NAME + state.contact.id),
-                            animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                        )
-                        .basicMarquee(),
-                    style = MaterialTheme.typography.headlineLargeEmphasized
-                )
-                state.details.company?.let { company ->
-                    Text(
-                        text = company,
-                        style = MaterialTheme.typography.bodyLargeEmphasized.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                }
-                Spacer(Modifier.height(15.dp))
-                ContactActionsRow(
-                    state = state,
-                    onNavigate = onNavigate,
-                    onHandleCallAction = onHandleCallAction,
-                    onHandleContactDetailsAction = onHandleContactDetailsAction,
-                    onPlayFavoriteAnimation = { playFavoriteAnimation = true }
-                )
-                Spacer(Modifier.height(25.dp))
-                ContactInfos(
-                    state = state,
-                    onHandleCallAction = onHandleCallAction,
-                    onNavigate = onNavigate
-                )
 
             }
         }
-
     }
 
 

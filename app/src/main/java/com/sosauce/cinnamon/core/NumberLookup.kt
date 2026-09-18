@@ -3,6 +3,8 @@ package com.sosauce.cinnamon.core
 import android.content.Context
 import android.net.Uri
 import android.provider.ContactsContract
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * A class that allows to lookup for various data for a given phone number
@@ -15,10 +17,13 @@ class NumberLookup(
      * @param fullQuality If false, will provide a thumbnail
      * @return The image [android.net.Uri] as a [String] or null if not found.
      */
-    fun fetchPhoto(
+    suspend fun fetchPhoto(
         number: String,
         fullQuality: Boolean
-    ): String? {
+    ): String? = withContext(Dispatchers.IO) {
+
+        if (number.isEmpty()) return@withContext null
+
         val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number))
 
         val photoQuality = if (fullQuality) ContactsContract.PhoneLookup.PHOTO_URI else ContactsContract.PhoneLookup.PHOTO_THUMBNAIL_URI
@@ -34,11 +39,11 @@ class NumberLookup(
             val photoColumn = cursor.getColumnIndexOrThrow(photoQuality)
 
             if (cursor.moveToFirst()) {
-                return cursor.getString(photoColumn)
+                return@withContext cursor.getString(photoColumn)
             }
 
         }
-        return null
+        return@withContext null
     }
 
     /**

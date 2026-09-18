@@ -4,8 +4,8 @@ import android.app.Application
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsEntity
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
+import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsEntity
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails

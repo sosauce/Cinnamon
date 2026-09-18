@@ -4,9 +4,7 @@ package com.sosauce.cinnamon.features.phone.data.repository
 
 import android.content.ContentProviderOperation
 import android.content.Context
-import android.net.Uri
 import android.provider.CallLog
-import android.provider.ContactsContract
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import com.sosauce.cinnamon.R
@@ -35,7 +33,7 @@ class CallLogsRepository(
     }
 
 
-    fun fetchCallLogs(): List<CuteCallLogEntity> {
+    suspend fun fetchCallLogs(): List<CuteCallLogEntity> {
 
         val logs = mutableListOf<CuteCallLogEntity>()
 

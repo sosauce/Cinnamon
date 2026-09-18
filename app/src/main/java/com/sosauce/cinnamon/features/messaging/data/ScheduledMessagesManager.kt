@@ -12,7 +12,6 @@ import com.sosauce.cinnamon.features.messaging.data.local.scheduledMessages.Sche
 import com.sosauce.cinnamon.features.messaging.data.model.toCuteMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 

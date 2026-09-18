@@ -47,7 +47,6 @@ import com.sosauce.cinnamon.features.messaging.presentation.conversation.Convers
 import com.sosauce.sweetselect.SweetSelectState
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 @Composable

@@ -37,19 +37,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.features.phone.domain.CuteVoicemail
 import com.sosauce.cinnamon.app.navigation.Screen
-import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.utils.getItemShape
 import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
-import com.sosauce.cinnamon.core.utils.toDate
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bottombar.MoreOptions
+import com.sosauce.cinnamon.features.phone.domain.CuteVoicemail
 import com.sosauce.nekobites.animations.AnimatedDrawable
 import com.sosauce.nekobites.animations.AnimatedDrawableFile
 import com.sosauce.nekobites.components.AnimatedSelectedIcon
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
 @Composable
 fun VoicemailItem(

@@ -18,11 +18,11 @@ import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.ConversationsSelectedBar
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
 import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar
+import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationsAction
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.dialogs.DeleteConversationsDialog
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.threadsList
-import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.nekobites.components.NoXFound
 import com.sosauce.sweetselect.rememberSweetSelectState
 

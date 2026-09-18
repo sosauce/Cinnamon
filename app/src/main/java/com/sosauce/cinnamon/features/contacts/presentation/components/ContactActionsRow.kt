@@ -21,12 +21,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.util.fastMap
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsAction
-import com.sosauce.cinnamon.features.contacts.presentation.components.dialogs.NumberPickerDialog
 import com.sosauce.cinnamon.app.navigation.Screen
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
+import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsAction
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsState
+import com.sosauce.cinnamon.features.contacts.presentation.components.dialogs.NumberPickerDialog
+import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 

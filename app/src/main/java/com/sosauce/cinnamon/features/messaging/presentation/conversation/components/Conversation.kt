@@ -4,7 +4,6 @@ package com.sosauce.cinnamon.features.messaging.presentation.conversation.compon
 
 import android.provider.BlockedNumberContract
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding

@@ -5,9 +5,7 @@ package com.sosauce.cinnamon.features.messaging.data.repository
 import android.content.ContentProviderOperation
 import android.content.ContentUris
 import android.content.Context
-import android.net.Uri
 import android.os.Build
-import android.provider.Telephony
 import android.provider.Telephony.Mms
 import android.provider.Telephony.MmsSms
 import android.provider.Telephony.Sms
@@ -17,11 +15,11 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.features.messaging.data.model.AttachmentType
-import com.sosauce.cinnamon.features.messaging.data.model.CuteAttachment
 import com.sosauce.cinnamon.core.utils.PermissionUtils
 import com.sosauce.cinnamon.core.utils.getMMSSize
 import com.sosauce.cinnamon.core.utils.observe
+import com.sosauce.cinnamon.features.messaging.data.model.AttachmentType
+import com.sosauce.cinnamon.features.messaging.data.model.CuteAttachment
 import com.sosauce.cinnamon.features.messaging.data.model.CuteMessageEntity
 import com.sosauce.cinnamon.features.messaging.data.model.toCuteMessage
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage

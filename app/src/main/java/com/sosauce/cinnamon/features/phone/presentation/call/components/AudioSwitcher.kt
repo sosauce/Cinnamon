@@ -22,12 +22,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
+import com.sosauce.cinnamon.core.utils.getItemShape
 import com.sosauce.cinnamon.features.phone.domain.AudioRoute
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
-import com.sosauce.cinnamon.core.utils.getItemShape
 
 @Composable
 fun AudioSwitcher(

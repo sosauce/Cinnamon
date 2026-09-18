@@ -29,10 +29,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
-import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import com.sosauce.cinnamon.features.messaging.domain.MessageType
-import sv.lib.squircleshape.GentleSquircleShape
 
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable

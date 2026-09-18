@@ -4,32 +4,25 @@ package com.sosauce.cinnamon.core.ui
 
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import com.materialkolor.DynamicMaterialExpressiveTheme
 import com.materialkolor.dynamiccolor.ColorSpec
-import com.materialkolor.rememberDynamicColorScheme
 import com.materialkolor.rememberDynamicMaterialThemeState
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.rememberAppTheme
 import com.sosauce.cinnamon.core.datastore.rememberPaletteStyle
 import com.sosauce.cinnamon.core.datastore.rememberUseSystemFont
 import com.sosauce.cinnamon.core.utils.CuteTheme
-import com.sosauce.cinnamon.core.utils.getAdaptivePrimaryColor
 import com.sosauce.cinnamon.core.utils.toPaletteStyle
 
 @Composable

@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalGridApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,8 +38,6 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -76,15 +73,14 @@ import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.ImagePickerCard
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
-import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
+import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
+import com.sosauce.cinnamon.core.utils.copyMutate
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsActions
 import com.sosauce.cinnamon.features.contacts.domain.ContactAddress
 import com.sosauce.cinnamon.features.contacts.domain.ContactEmail
 import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
-import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
-import com.sosauce.nekobites.animations.bouncySpec
-import com.sosauce.cinnamon.core.utils.copyMutate
 import com.sosauce.nekobites.animations.AnimatedFab
+import com.sosauce.nekobites.animations.bouncySpec
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File

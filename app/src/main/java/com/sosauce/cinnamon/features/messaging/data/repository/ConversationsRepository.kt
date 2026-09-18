@@ -2,7 +2,6 @@
 
 package com.sosauce.cinnamon.features.messaging.data.repository
 
-import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
 import android.os.Build
@@ -15,20 +14,16 @@ import androidx.compose.ui.util.fastMap
 import androidx.core.content.contentValuesOf
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.features.messaging.data.model.CuteConversationEntity
-import com.sosauce.cinnamon.features.messaging.domain.Participant
 import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.utils.observe
+import com.sosauce.cinnamon.features.messaging.data.model.CuteConversationEntity
+import com.sosauce.cinnamon.features.messaging.domain.Participant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.withContext
-import kotlin.text.isEmpty
 
 
 class ConversationsRepository(private val context: Context) {

@@ -14,11 +14,9 @@ import coil3.SingletonImageLoader
 import coil3.request.crossfade
 import coil3.video.VideoFrameDecoder
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.app.providers.RecipientPhoneKeyer
-import com.sosauce.cinnamon.app.providers.RecipientPhotoFetcher
+import com.sosauce.cinnamon.core.di.appModule
 import com.sosauce.cinnamon.core.telephony.message.MessageNotificationManager
 import com.sosauce.cinnamon.core.telephony.phone.CallNotificationManager
-import com.sosauce.cinnamon.core.di.appModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.androix.startup.KoinStartup
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -114,11 +112,7 @@ class CinnamonApplication : Application(), KoinStartup, SingletonImageLoader.Fac
 
     override fun newImageLoader(context: PlatformContext): ImageLoader {
         return ImageLoader.Builder(context)
-            .components {
-                add(RecipientPhoneKeyer())
-                add(RecipientPhotoFetcher.Factory())
-                add(VideoFrameDecoder.Factory())
-            }
+            .components { add(VideoFrameDecoder.Factory()) }
             .crossfade(true)
             .build()
     }

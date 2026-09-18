@@ -2,9 +2,7 @@
 
 package com.sosauce.cinnamon.features.phone.presentation.dialpad
 
-import android.provider.ContactsContract
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.insert
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFilter
@@ -13,18 +11,11 @@ import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 class DialpadViewModel(

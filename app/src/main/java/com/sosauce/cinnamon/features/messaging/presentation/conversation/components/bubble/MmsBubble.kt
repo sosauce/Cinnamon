@@ -33,10 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
-import com.sosauce.cinnamon.features.messaging.data.model.AttachmentType
-import com.sosauce.cinnamon.features.messaging.data.model.CuteAttachment
 import com.sosauce.cinnamon.core.utils.getVcfName
 import com.sosauce.cinnamon.core.utils.isVcard
+import com.sosauce.cinnamon.features.messaging.data.model.AttachmentType
+import com.sosauce.cinnamon.features.messaging.data.model.CuteAttachment
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import com.sosauce.cinnamon.features.messaging.domain.MessageType
 

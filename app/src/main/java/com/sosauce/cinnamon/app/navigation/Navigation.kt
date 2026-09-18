@@ -30,30 +30,19 @@ import androidx.navigation3.ui.NavDisplay
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.rememberInitialScreenBlocking
 import com.sosauce.cinnamon.core.ui.ChatColor
-import com.sosauce.cinnamon.features.messaging.presentation.archived.ArchivedConversationsScreen
-import com.sosauce.cinnamon.features.messaging.presentation.archived.ArchivedConversationsViewModel
+import com.sosauce.cinnamon.core.utils.LocalHazeState
+import com.sosauce.cinnamon.core.utils.LocalScreen
+import com.sosauce.cinnamon.core.utils.navigateBack
+import com.sosauce.cinnamon.core.utils.rememberHazeState
+import com.sosauce.cinnamon.core.utils.tabToScreen
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsScreen
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsViewModel
 import com.sosauce.cinnamon.features.contacts.presentation.ContactsScreen
 import com.sosauce.cinnamon.features.contacts.presentation.ContactsViewModel
 import com.sosauce.cinnamon.features.contacts.presentation.editor.EditContactScreen
 import com.sosauce.cinnamon.features.contacts.presentation.editor.EditContactViewModel
-import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsScreen
-import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsViewModel
-import com.sosauce.cinnamon.features.phone.presentation.dialpad.DialpadScreen
-import com.sosauce.cinnamon.features.phone.presentation.dialpad.DialpadViewModel
-import com.sosauce.cinnamon.features.phone.presentation.call.CallingViewModel
-import com.sosauce.cinnamon.features.messaging.presentation.starter.StartConversation
-import com.sosauce.cinnamon.features.messaging.presentation.starter.StartConversationViewModel
-import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailScreen
-import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailViewModel
-import com.sosauce.cinnamon.features.messaging.presentation.customization.ConversationTheming
-import com.sosauce.cinnamon.features.messaging.presentation.customization.ThemingViewModel
-import com.sosauce.cinnamon.core.utils.LocalHazeState
-import com.sosauce.cinnamon.core.utils.LocalScreen
-import com.sosauce.cinnamon.core.utils.navigateBack
-import com.sosauce.cinnamon.core.utils.rememberHazeState
-import com.sosauce.cinnamon.core.utils.tabToScreen
+import com.sosauce.cinnamon.features.messaging.presentation.archived.ArchivedConversationsScreen
+import com.sosauce.cinnamon.features.messaging.presentation.archived.ArchivedConversationsViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationDetailsEvents
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationDetailsScreen
@@ -61,6 +50,17 @@ import com.sosauce.cinnamon.features.messaging.presentation.conversation.Convers
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationsScreen
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationsViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.about.AboutConversationScreen
+import com.sosauce.cinnamon.features.messaging.presentation.customization.ConversationTheming
+import com.sosauce.cinnamon.features.messaging.presentation.customization.ThemingViewModel
+import com.sosauce.cinnamon.features.messaging.presentation.starter.StartConversation
+import com.sosauce.cinnamon.features.messaging.presentation.starter.StartConversationViewModel
+import com.sosauce.cinnamon.features.phone.presentation.call.CallingViewModel
+import com.sosauce.cinnamon.features.phone.presentation.dialpad.DialpadScreen
+import com.sosauce.cinnamon.features.phone.presentation.dialpad.DialpadViewModel
+import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsScreen
+import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsViewModel
+import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailScreen
+import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailViewModel
 import com.sosauce.cinnamon.settings.SettingsScreen
 import com.sosauce.nekobites.helpers.ObserveAsEvents
 import org.koin.androidx.compose.koinViewModel
@@ -147,6 +147,7 @@ fun Nav(
 
                         CallLogsScreen(
                             state = state,
+                            textFieldState = viewModel.textFieldState,
                             onNavigate = backStack::add,
                             onHandleCallActions = callViewModel::handleCallAction,
                             onHandleDialerActions = viewModel::handleDialerAction
@@ -261,7 +262,6 @@ fun Nav(
 
                         ConversationTheming(
                             state = state,
-                            threadId = key.threadId,
                             onHandleConversationSettingsActions = viewModel::handleConversationSettingsActions,
                             onNavigateBack = backStack::navigateBack
                         )
