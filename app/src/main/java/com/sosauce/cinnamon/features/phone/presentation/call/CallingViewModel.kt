@@ -62,12 +62,9 @@ class CallingViewModel(
     fun handleCallAction(action: CallAction) {
         when (action) {
             is CallAction.LaunchCall -> {
-                if (callManager.isInCall()) return
-                val success = try {
-                    callManager.startCall(action.number)
-                } catch (_: Exception) { false }
+                callManager.startCall(action.number)
                 // Optimistically update state and launch UI even if placeCall
-                // threw — ensures call button always opens Cinnamon's CallScreen
+                // threw, ensures call button always opens Cinnamon's CallScreen
                 // (incoming UI is handled separately via CallService fullScreenIntent).
                 callManager._callingState.update {
                     it.copy(
@@ -76,13 +73,6 @@ class CallingViewModel(
                         callState = CallState.DIALING
                     )
                 }
-                try {
-                    val intent = Intent(application, CallActivity::class.java).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                    }
-                    application.startActivity(intent)
-                } catch (_: Exception) {}
-                // `success` is kept for future retry logic if needed, but UI always opens.
             }
 
             is CallAction.AnswerCall -> callManager.answerCall()

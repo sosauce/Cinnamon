@@ -66,6 +66,7 @@ import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.datastore.rememberChatZoomScale
+import com.sosauce.cinnamon.core.datastore.rememberEnablePinchToZoom
 import com.sosauce.cinnamon.core.telephony.message.ActiveThreadId
 import com.sosauce.cinnamon.core.utils.isEmoji
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingActions
@@ -92,7 +93,6 @@ import net.engawapg.lib.zoomable.ExperimentalZoomableApi
 fun SharedTransitionScope.ConversationDetailsScreen(
     state: ConversationDetailsState,
     prefilledMessage: String,
-    onHandleCallAction: (CallAction) -> Unit,
     onDeleteConversation: () -> Unit,
     onHandleConversationSettingsActions: (ConversationSettingActions) -> Unit,
     onHandleConversationActions: (ConversationActions) -> Unit,
@@ -104,6 +104,7 @@ fun SharedTransitionScope.ConversationDetailsScreen(
     val sweetSelectState = rememberSweetSelectState<CuteMessage>()
     val lifecycleOwner = LocalLifecycleOwner.current
     var chatFontScale by rememberChatZoomScale()
+    val pinchToZoom by rememberEnablePinchToZoom()
     val transformState = rememberTransformableState { _, zoomChange, _, _ ->
         chatFontScale = (chatFontScale * zoomChange).coerceIn(0.9f, 2.2f)
     }
@@ -151,13 +152,13 @@ fun SharedTransitionScope.ConversationDetailsScreen(
                             sweetSelectState = sweetSelectState,
                             onSelectAll = { sweetSelectState.toggleAll(state.messages.values.flatten()) },
                             onUnselectAll = sweetSelectState::clearSelected,
+                            onNavigate = onNavigate,
                             onHandleConversationActions = onHandleConversationActions
                         )
                     } else {
                         ConversationTopBar(
                             state = state,
                             onNavigateUp = onNavigateUp,
-                            onHandleCallAction = onHandleCallAction,
                             onNavigate = onNavigate,
                             onDeleteConversation = onDeleteConversation,
                             onHandleConversationActions = onHandleConversationActions
@@ -214,7 +215,10 @@ fun SharedTransitionScope.ConversationDetailsScreen(
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
-                            .transformable(transformState),
+                            .transformable(
+                                state = transformState,
+                                enabled = pinchToZoom
+                            ),
                         state = listState,
                         contentPadding = paddingValues,
                         reverseLayout = true

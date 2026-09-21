@@ -3,15 +3,10 @@ package com.sosauce.cinnamon.features.contacts.domain
 import android.net.Uri
 import androidx.compose.ui.util.fastForEach
 import androidx.core.net.toUri
-import com.sosauce.cinnamon.core.NullableUriSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 
-@Serializable
 data class CuteContact(
     val id: Long = 0,
     val displayName: String = "",
-    @Serializable(with = NullableUriSerializer::class)
     val thumbnail: Uri? = null,
     val isFavorite: Boolean = false,
     val accountName: String = "",
@@ -27,7 +22,11 @@ data class CuteContact(
     }
 }
 
-@Serializable
+data class CuteRawContact(
+    val id: Long,
+    val accountName: String
+)
+
 data class CuteContactDetails(
     val photoString: String? = null,
     val emails: List<ContactEmail> = emptyList(),
@@ -40,11 +39,9 @@ data class CuteContactDetails(
     val lastName: String? = null,
     val note: String? = null
 ) {
-    @Transient
     val photo = photoString?.toUri()
 }
 
-@Serializable
 data class ContactPhone(
     val number: String,
     val type: Int,
@@ -52,21 +49,18 @@ data class ContactPhone(
     val isBlocked: Boolean = false
 )
 
-@Serializable
 data class ContactEmail(
     val email: String,
     val type: Int,
     val isDefault: Boolean
 )
 
-@Serializable
 data class ContactAddress(
     val address: String,
     val type: Int,
     val isDefault: Boolean
 )
 
-@Serializable
 data class ContactEvent(
     val date: String,
     val type: Int

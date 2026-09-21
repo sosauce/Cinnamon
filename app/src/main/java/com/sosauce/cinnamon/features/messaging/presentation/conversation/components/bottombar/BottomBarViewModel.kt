@@ -35,7 +35,7 @@ class BottomBarViewModel(
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            // draft should not replace/be appended to a prefilled message coming from an intent
+            // draft should not replace/be appended to a prefilled message
             if (prefilledMessage.isEmpty()) {
                 val draft = conversationSettingsDao.getDraftForThread(threadId).first().orEmpty()
                 textFieldState.edit {

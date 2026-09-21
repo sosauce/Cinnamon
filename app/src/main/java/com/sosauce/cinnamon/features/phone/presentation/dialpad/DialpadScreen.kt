@@ -264,19 +264,10 @@ fun SharedTransitionScope.DialpadScreen(
                             modifier = Modifier.animateItem(),
                             backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                             onClick = {
-
-                                val contact = CuteContact(
-                                    phoneNumbers = listOf(
-                                        ContactPhone(
-                                            number = number,
-                                            type = 0,
-                                            isDefault = true
-                                        )
-                                    )
-                                )
                                 onNavigate(
                                     Screen.ContactEditor(
-                                        contact = contact
+                                        rawContactId = null,
+                                        prefilledNumber = number
                                     )
                                 )
                             },

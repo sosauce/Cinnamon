@@ -54,7 +54,6 @@ import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 fun ConversationTopBar(
     state: ConversationDetailsState,
     onNavigateUp: () -> Unit,
-    onHandleCallAction: (CallAction) -> Unit,
     onNavigate: (Screen) -> Unit,
     onDeleteConversation: () -> Unit,
     onHandleConversationActions: (ConversationActions) -> Unit
@@ -191,7 +190,7 @@ fun ConversationTopBar(
                 IconButton(
                     onClick = {
                         val number = state.conversation.participants.first().rawNumber
-                        onHandleCallAction(CallAction.LaunchCall(number))
+                        onHandleConversationActions(ConversationActions.CallNumber(number))
                     },
                     shapes = IconButtonDefaults.shapes()
                 ) {

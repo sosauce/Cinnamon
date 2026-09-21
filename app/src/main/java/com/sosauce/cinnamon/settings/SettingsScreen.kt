@@ -24,8 +24,8 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.SettingsScreens
+import com.sosauce.cinnamon.app.navigation.navigateBack
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButton
-import com.sosauce.cinnamon.core.utils.navigateBack
 import com.sosauce.cinnamon.settings.components.AboutCard
 import com.sosauce.cinnamon.settings.components.SettingsCategoryCard
 import com.sosauce.cinnamon.settings.components.SettingsNavigation
@@ -67,12 +67,13 @@ fun SettingsScreen(
             description = stringResource(R.string.messages_settings_desc),
             onNavigate = { backStack.add(SettingsScreens.Messages) }
         ),
-        Item(
-            icon = R.drawable.contacts,
-            name = stringResource(R.string.contacts),
-            description = stringResource(R.string.contacts_settings_desc),
-            onNavigate = { backStack.add(SettingsScreens.Contacts) }
-        ),
+        // TODO: re-implement contact import/export
+//        Item(
+//            icon = R.drawable.contacts,
+//            name = stringResource(R.string.contacts),
+//            description = stringResource(R.string.contacts_settings_desc),
+//            onNavigate = { backStack.add(SettingsScreens.Contacts) }
+//        ),
         Item(
             icon = R.drawable.phone,
             name = stringResource(R.string.phone),

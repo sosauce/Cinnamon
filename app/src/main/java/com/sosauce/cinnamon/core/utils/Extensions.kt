@@ -694,14 +694,6 @@ fun Int.tabToScreen(): Screen {
 }
 
 
-fun NavBackStack<NavKey>.navigateBack() {
-    if (size == 1) {
-        add(Screen.Conversations)
-    } else {
-        removeLastOrNull()
-    }
-}
-
 fun TextFieldState.backspace() {
     if (selection.collapsed) {
         edit {

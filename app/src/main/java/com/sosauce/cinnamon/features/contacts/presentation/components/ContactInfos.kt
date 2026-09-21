@@ -33,13 +33,15 @@ import com.sosauce.cinnamon.core.ui.components.items.CuteListItemDefaults
 import com.sosauce.cinnamon.core.ui.components.text.HeaderText
 import com.sosauce.cinnamon.core.utils.formateEventDate
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
+import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsAction
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsState
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
+import com.sosauce.nekobites.components.NoXFound
 
 @Composable
 fun ContactInfos(
     state: ContactDetailsState,
-    onHandleCallAction: (CallAction) -> Unit,
+    onHandleContactDetailsAction: (ContactDetailsAction) -> Unit,
     onNavigate: (Screen) -> Unit
 ) {
 
@@ -61,7 +63,7 @@ fun ContactInfos(
                 HeaderText(stringResource(R.string.contact_info))
                 state.contact.phoneNumbers.forEachIndexed { index, number ->
                     CuteListItem(
-                        onClick = { onHandleCallAction(CallAction.LaunchCall(number.number)) },
+                        onClick = { onHandleContactDetailsAction(ContactDetailsAction.CallNumber(number.number)) },
                         shape = CuteListItemDefaults.getItemShape(index, infoItemCount),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                         leadingContent = {
@@ -243,54 +245,11 @@ fun ContactInfos(
                 }
             }
         } else {
-            Column {
-                CuteListItem(
-                    onClick = {
-                        onNavigate(
-                            Screen.ContactEditor(
-                                contact = CuteContact()
-                            )
-                        )
-                    },
-                    backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = RoundedCornerShape(
-                        topStart = 24.dp,
-                        topEnd = 24.dp,
-                        bottomStart = 2.dp,
-                        bottomEnd = 2.dp
-                    ),
-                    leadingContent = {
-                        Icon(
-                            painter = painterResource(R.drawable.phone),
-                            contentDescription = null,
-                            modifier = Modifier.padding(start = 10.dp)
-                        )
-                    }
-                ) { Text(stringResource(R.string.add_phone)) }
-                CuteListItem(
-                    onClick = {
-                        onNavigate(
-                            Screen.ContactEditor(
-                                contact = CuteContact()
-                            )
-                        )
-                    },
-                    backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = RoundedCornerShape(
-                        topStart = 2.dp,
-                        topEnd = 2.dp,
-                        bottomStart = 24.dp,
-                        bottomEnd = 24.dp
-                    ),
-                    leadingContent = {
-                        Icon(
-                            painter = painterResource(R.drawable.email),
-                            contentDescription = null,
-                            modifier = Modifier.padding(start = 10.dp)
-                        )
-                    }
-                ) { Text(stringResource(R.string.add_email)) }
-            }
+            NoXFound(
+                headlineText = R.string.no_contact_info,
+                bodyText = R.string.no_contact_info_desc,
+                icon = R.drawable.search
+            )
         }
 
 

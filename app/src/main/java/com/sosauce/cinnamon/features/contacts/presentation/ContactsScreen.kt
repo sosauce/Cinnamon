@@ -127,7 +127,7 @@ fun SharedTransitionScope.ContactsScreen(
                             },
                             fab = {
                                 AnimatedFab(
-                                    onClick = { onNavigate(Screen.ContactEditor(CuteContact())) },
+                                    onClick = { onNavigate(Screen.ContactEditor(null)) },
                                     icon = R.drawable.add
                                 )
                             },

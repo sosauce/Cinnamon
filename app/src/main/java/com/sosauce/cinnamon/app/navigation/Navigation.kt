@@ -32,13 +32,14 @@ import com.sosauce.cinnamon.core.datastore.rememberInitialScreenBlocking
 import com.sosauce.cinnamon.core.ui.ChatColor
 import com.sosauce.cinnamon.core.utils.LocalHazeState
 import com.sosauce.cinnamon.core.utils.LocalScreen
-import com.sosauce.cinnamon.core.utils.navigateBack
 import com.sosauce.cinnamon.core.utils.rememberHazeState
 import com.sosauce.cinnamon.core.utils.tabToScreen
+import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsEvent
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsScreen
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsViewModel
 import com.sosauce.cinnamon.features.contacts.presentation.ContactsScreen
 import com.sosauce.cinnamon.features.contacts.presentation.ContactsViewModel
+import com.sosauce.cinnamon.features.contacts.presentation.editor.EditContactEvent
 import com.sosauce.cinnamon.features.contacts.presentation.editor.EditContactScreen
 import com.sosauce.cinnamon.features.contacts.presentation.editor.EditContactViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.archived.ArchivedConversationsScreen
@@ -50,6 +51,8 @@ import com.sosauce.cinnamon.features.messaging.presentation.conversation.Convers
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationsScreen
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationsViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.about.AboutConversationScreen
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.forwarding.ForwardingScreen
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.forwarding.ForwardingViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.customization.ConversationTheming
 import com.sosauce.cinnamon.features.messaging.presentation.customization.ThemingViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.starter.StartConversation
@@ -119,7 +122,7 @@ fun Nav(
                         ContactsScreen(
                             state = state,
                             textFieldState = viewModel.textFieldState,
-                            onNavigate = backStack::add,
+                            onNavigate = backStack::navigate,
                             onHandleContactsAction = viewModel::handleContactsAction
                         )
                     }
@@ -129,14 +132,26 @@ fun Nav(
                         val viewModel = koinViewModel<ContactDetailsViewModel>(
                             parameters = { parametersOf(key.contactId) }
                         )
-                        val callViewModel = koinViewModel<CallingViewModel>()
                         val state by viewModel.state.collectAsStateWithLifecycle()
+
+
+                        ObserveAsEvents(viewModel.events) { event ->
+                            when(event) {
+                                is ContactDetailsEvent.Error -> {
+                                    Toast.makeText(
+                                        context,
+                                        resources.getString(R.string.delete_contact_error),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                                is ContactDetailsEvent.Success -> backStack.navigateBack()
+                            }
+                        }
 
                         ContactDetailsScreen(
                             state = state,
                             onNavigateBack = backStack::navigateBack,
-                            onNavigate = backStack::add,
-                            onHandleCallAction = callViewModel::handleCallAction,
+                            onNavigate = backStack::navigate,
                             onHandleContactDetailsAction = viewModel::handleContactDetailsAction
                         )
                     }
@@ -148,7 +163,7 @@ fun Nav(
                         CallLogsScreen(
                             state = state,
                             textFieldState = viewModel.textFieldState,
-                            onNavigate = backStack::add,
+                            onNavigate = backStack::navigate,
                             onHandleCallActions = callViewModel::handleCallAction,
                             onHandleDialerActions = viewModel::handleDialerAction
                         )
@@ -162,7 +177,7 @@ fun Nav(
                             state = state,
                             textFieldState = viewModel.textFieldState,
                             onNavigateUp = backStack::navigateBack,
-                            onNavigate = backStack::add,
+                            onNavigate = backStack::navigate,
                             onDeleteVoicemails = viewModel::deleteVoicemails
                         )
                     }
@@ -175,7 +190,7 @@ fun Nav(
                         ConversationsScreen(
                             state = state,
                             textFieldState = viewModel.textFieldState,
-                            onNavigate = backStack::add,
+                            onNavigate = backStack::navigate,
                             onHandleConversationsAction = viewModel::handleThreadsAction
                         )
                     }
@@ -184,7 +199,6 @@ fun Nav(
                         val viewModel = koinViewModel<ConversationDetailsViewModel>(
                             parameters = { parametersOf(key.threadId) }
                         )
-                        val callViewModel = koinViewModel<CallingViewModel>()
                         val state by viewModel.state.collectAsStateWithLifecycle()
 
                         ObserveAsEvents(viewModel.events) { event ->
@@ -230,9 +244,8 @@ fun Nav(
                             }
                         }
 
-
-
-                        LaunchedEffect(Unit) {
+                        // when new messages, block notifs for thread and remark it as read
+                        LaunchedEffect(state.messages) {
                             viewModel.handleConversationActions(ConversationActions.MarkAsRead)
                             viewModel.handleConversationActions(ConversationActions.ClearThreadNotifications)
                         }
@@ -245,8 +258,7 @@ fun Nav(
                             state = state,
                             prefilledMessage = key.prefilledMessage,
                             onNavigateUp = backStack::navigateBack,
-                            onHandleCallAction = callViewModel::handleCallAction,
-                            onNavigate = backStack::add,
+                            onNavigate = backStack::navigate,
                             onDeleteConversation = viewModel::deleteConversation,
                             onHandleConversationSettingsActions = viewModel::handleConversationSettingsActions,
                             onHandleConversationActions = viewModel::handleConversationActions
@@ -278,7 +290,7 @@ fun Nav(
                             state = state,
                             textFieldState = viewModel.textFieldState,
                             onNavigateUp = backStack::navigateBack,
-                            onNavigate = backStack::add,
+                            onNavigate = backStack::navigate,
                             onHandleCallAction = callViewModel::handleCallAction
                         )
                     }
@@ -292,7 +304,7 @@ fun Nav(
                             state = state,
                             textFieldState = viewModel.textFieldState,
                             onNavigateUp = backStack::navigateBack,
-                            onNavigate = backStack::add,
+                            onNavigate = backStack::navigate,
                             onToggleGroupChatMode = viewModel::toggleGroupChatMode,
                             onAddNumberToGroup = viewModel::addNumberToGroup
                         )
@@ -310,6 +322,22 @@ fun Nav(
                         )
                     }
 
+                    entry<Screen.Forwarding> { key ->
+                        val viewModel = koinViewModel<ForwardingViewModel>(
+                            parameters = { parametersOf(key.messageToForward) }
+                        )
+                        val state by viewModel.state.collectAsStateWithLifecycle()
+
+                        ForwardingScreen(
+                            state = state,
+                            onNavigateBack = backStack::navigateBack,
+                            onNavigate = { screen ->
+                                backStack.navigate(screen)
+                                backStack.removeAll { it is Screen.Forwarding }
+                            }
+                        )
+                    }
+
                     entry<Screen.ArchivedThreads> {
 
                         val viewModel = koinViewModel<ArchivedConversationsViewModel>()
@@ -318,7 +346,7 @@ fun Nav(
                         ArchivedConversationsScreen(
                             state = state,
                             onNavigateUp = backStack::navigateBack,
-                            onNavigate = backStack::add,
+                            onNavigate = backStack::navigate,
                             onHandleThreadsAction = viewModel::handleThreadsAction
                         )
                     }
@@ -332,10 +360,21 @@ fun Nav(
                     entry<Screen.ContactEditor> { key ->
 
                         val viewModel = koinViewModel<EditContactViewModel>(
-                            parameters = { parametersOf(key.contact, key.details) }
+                            parameters = {
+                                val id = key.rawContactId ?: Long.MAX_VALUE
+                                parametersOf(id, key.prefilledNumber)
+                            }
                         )
                         val state by viewModel.state.collectAsStateWithLifecycle()
 
+                        ObserveAsEvents(viewModel.events) { event ->
+                            when (event) {
+                                is EditContactEvent.Error -> {
+                                    // error toast brrr
+                                }
+                                is EditContactEvent.Success -> backStack.navigateBack()
+                            }
+                        }
 
                         EditContactScreen(
                             state = state,

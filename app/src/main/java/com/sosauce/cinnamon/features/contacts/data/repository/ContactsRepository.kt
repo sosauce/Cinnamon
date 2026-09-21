@@ -2,6 +2,7 @@
 
 package com.sosauce.cinnamon.features.contacts.data.repository
 
+import android.accounts.AccountManager
 import android.content.ContentProviderOperation
 import android.content.Context
 import android.net.Uri
@@ -11,6 +12,8 @@ import android.provider.ContactsContract
 import android.widget.Toast
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
+import androidx.core.content.contentValuesOf
+import androidx.core.net.toUri
 import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.utils.observe
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContactEntity
@@ -22,6 +25,8 @@ import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails
 import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetailsBuilder
+import com.sosauce.cinnamon.features.contacts.domain.CuteRawContact
+import com.sosauce.cinnamon.features.contacts.domain.RawContactEdit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOn
@@ -38,7 +43,7 @@ class ContactsRepository(
         context.contentResolver
             .observe(ContactsContract.Contacts.CONTENT_URI)
             .mapLatest {
-                fetchContacts2().fastMap { it.toDomain() }
+                fetchContacts().fastMap { it.toDomain() }
             }
             .flowOn(Dispatchers.IO)
 
@@ -46,28 +51,28 @@ class ContactsRepository(
         context.contentResolver
             .observe(ContactsContract.Data.CONTENT_URI)
             .mapLatest {
-                fetchContactDetails2(contactId)
+                fetchContactDetails(contactId)
             }
             .flowOn(Dispatchers.IO)
 
     fun fetchDialpadContacts(): List<CuteContact> =
-        fetchContacts2(
+        fetchContacts(
             extraSelection = "${ContactsContract.Contacts.HAS_PHONE_NUMBER} = ?",
             extraSelectionArgs = arrayOf("1")
         ).fastMap { it.toDomain() }
 
-    fun fetchContact2(contactId: Long) =
+    fun fetchContact(contactId: Long) =
         context.contentResolver
             .observe(ContactsContract.Contacts.CONTENT_URI)
             .mapLatest {
-                fetchContacts2(
+                fetchContacts(
                     extraSelection = "${ContactsContract.Contacts._ID} = ?",
                     extraSelectionArgs = arrayOf(contactId.toString())
                 ).firstOrNull()?.toDomain() ?: CuteContact()
             }
             .flowOn(Dispatchers.IO)
 
-    private fun fetchContacts2(
+    private fun fetchContacts(
         extraSelection: String? = null,
         extraSelectionArgs: Array<String> = emptyArray(),
     ): List<CuteContactEntity> {
@@ -80,7 +85,7 @@ class ContactsRepository(
             ContactsContract.Contacts.STARRED
         )
 
-        val allPhones = fetchAllPhoneNumbers2()
+        val allPhones = fetchAllPhoneNumbers()
         val accountNames = fetchAccountNames()
 
         context.contentResolver.query(
@@ -119,8 +124,9 @@ class ContactsRepository(
         return contacts
     }
 
-    private fun fetchAllPhoneNumbers2(): Map<Long, List<ContactPhone>> {
+    private fun fetchAllPhoneNumbers(): Map<Long, List<ContactPhone>> {
         val map = mutableMapOf<Long, MutableList<ContactPhone>>()
+
 
         context.contentResolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
@@ -153,6 +159,7 @@ class ContactsRepository(
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val number = cursor.getString(numColumn)
+
                 val phone = ContactPhone(
                     number = number.beautifyNumber(),
                     type = cursor.getInt(typeColumn),
@@ -167,7 +174,7 @@ class ContactsRepository(
         return map
     }
 
-    private fun fetchContactDetails2(contactId: Long): CuteContactDetails {
+    private fun fetchContactDetails(contactId: Long): CuteContactDetails {
         val builder = CuteContactDetailsBuilder()
 
         context.contentResolver.query(
@@ -245,6 +252,181 @@ class ContactsRepository(
         return builder.build()
     }
 
+    suspend fun fetchContactRawContacts(contactId: Long): List<CuteRawContact> = withContext(Dispatchers.IO) {
+
+        val rawContacts = mutableListOf<CuteRawContact>()
+
+        val uri = ContactsContract.RawContacts.CONTENT_URI
+        val projection = arrayOf(
+            ContactsContract.RawContacts._ID,
+            ContactsContract.RawContacts.ACCOUNT_NAME,
+        )
+        val selection = "${ContactsContract.RawContacts.CONTACT_ID} = ? AND ${ContactsContract.RawContacts.RAW_CONTACT_IS_READ_ONLY} = ?"
+        val selectionArgs = arrayOf(
+            contactId.toString(),
+            "0"
+        )
+
+        context.contentResolver.query(
+            uri,
+            projection,
+            selection,
+            selectionArgs,
+            null
+        )?.use { cursor ->
+            val rawIdColumn = cursor.getColumnIndexOrThrow(ContactsContract.RawContacts._ID)
+            val accountNameColumn = cursor.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_NAME)
+
+            while (cursor.moveToNext()) {
+                val rawId = cursor.getLong(rawIdColumn)
+                val accountName = cursor.getString(accountNameColumn)
+                val rawContact = CuteRawContact(
+                    id = rawId,
+                    accountName = accountName
+                )
+                rawContacts.add(rawContact)
+            }
+        }
+        return@withContext rawContacts
+    }
+
+
+    suspend fun fetchRawContactEdit(rawContactId: Long): RawContactEdit =
+        withContext(Dispatchers.IO) {
+            var contactId = 0L
+            var displayName = ""
+            var isFavorite = false
+
+            var firstName: String? = null
+            var middleName: String? = null
+            var lastName: String? = null
+            var company: String? = null
+            var note: String? = null
+            var photo: String? = null
+
+            val phoneNumbers = mutableListOf<ContactPhone>()
+            val emails = mutableListOf<ContactEmail>()
+            val addresses = mutableListOf<ContactAddress>()
+            val events = mutableListOf<ContactEvent>()
+            val websites = mutableListOf<String>()
+
+            val projection = arrayOf(
+                ContactsContract.Data.CONTACT_ID,
+                ContactsContract.Data.DISPLAY_NAME_PRIMARY,
+                ContactsContract.Data.STARRED,
+                ContactsContract.Data.MIMETYPE,
+                ContactsContract.Data.DATA1,
+                ContactsContract.Data.DATA2,
+                ContactsContract.Data.DATA3,
+                ContactsContract.Data.DATA5,
+                ContactsContract.Data.IS_PRIMARY,
+                ContactsContract.Data.PHOTO_URI
+            )
+
+            context.contentResolver.query(
+                ContactsContract.Data.CONTENT_URI,
+                projection,
+                "${ContactsContract.Data.RAW_CONTACT_ID} = ?",
+                arrayOf(rawContactId.toString()),
+                null
+            )?.use { cursor ->
+                val contactIdCol = cursor.getColumnIndexOrThrow(ContactsContract.Data.CONTACT_ID)
+                val displayNameCol = cursor.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME_PRIMARY)
+                val starredCol = cursor.getColumnIndexOrThrow(ContactsContract.Data.STARRED)
+                val mimeCol = cursor.getColumnIndexOrThrow(ContactsContract.Data.MIMETYPE)
+                val data1Col = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA1)
+                val data2Col = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA2)
+                val data3Col = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA3)
+                val data5Col = cursor.getColumnIndexOrThrow(ContactsContract.Data.DATA5)
+                val isPrimaryCol = cursor.getColumnIndexOrThrow(ContactsContract.Data.IS_PRIMARY)
+                val photoCol = cursor.getColumnIndexOrThrow(ContactsContract.Data.PHOTO_URI)
+
+                while (cursor.moveToNext()) {
+
+                    if (cursor.isFirst) {
+                        contactId = cursor.getLong(contactIdCol)
+                        displayName = cursor.getString(displayNameCol) ?: ""
+                        isFavorite = cursor.getInt(starredCol) == 1
+                        photo = cursor.getString(photoCol)?.ifEmpty { null }
+                    }
+
+                    val mime = cursor.getString(mimeCol) ?: continue
+                    val isDefault = cursor.getInt(isPrimaryCol) != 0
+
+                    when (mime) {
+                        ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE -> {
+                            val number = cursor.getString(data1Col) ?: continue
+                            phoneNumbers.add(
+                                ContactPhone(
+                                    number = number,
+                                    type = cursor.getInt(data2Col),
+                                    isDefault = isDefault,
+                                    isBlocked = BlockedNumberContract.isBlocked(context, number)
+                                )
+                            )
+                        }
+                        ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE -> {
+                            val email = cursor.getString(data1Col) ?: continue
+                            emails.add(
+                                ContactEmail(
+                                    email = email,
+                                    type = cursor.getInt(data2Col),
+                                    isDefault = isDefault
+                                )
+                            )
+                        }
+                        ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE -> {
+                            firstName = cursor.getString(data2Col)
+                            middleName = cursor.getString(data5Col)
+                            lastName = cursor.getString(data3Col)
+                        }
+                        ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE -> {
+                            company = cursor.getString(data1Col)
+                        }
+                        ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE -> {
+                            note = cursor.getString(data1Col)?.ifEmpty { null }
+                        }
+                        ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE -> {
+                            val date = cursor.getString(data1Col) ?: continue
+                            events.add(ContactEvent(date, cursor.getInt(data2Col)))
+                        }
+                        ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE -> {
+                            val website = cursor.getString(data1Col) ?: continue
+                            websites.add(website)
+                        }
+                        ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE -> {
+                            val address = cursor.getString(data1Col) ?: continue
+                            addresses.add(
+                                ContactAddress(
+                                    address = address,
+                                    type = cursor.getInt(data2Col),
+                                    isDefault = isDefault
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            return@withContext RawContactEdit(
+                rawContactId = rawContactId,
+                contactId = contactId,
+                displayName = displayName,
+                firstName = firstName,
+                middleName = middleName,
+                lastName = lastName,
+                company = company,
+                note = note,
+                photoString = photo,
+                isFavorite = isFavorite,
+                phoneNumbers = phoneNumbers.toList(),
+                emails = emails.toList(),
+                addresses = addresses.toList(),
+                events = events.toList(),
+                websites = websites.toList()
+            )
+        }
+
 
 
     private fun fetchAccountNames(): Map<Long, String> {
@@ -269,430 +451,255 @@ class ContactsRepository(
         return map
     }
 
-    /**
-     * Gets the RAW_CONTACT_ID that is required to edit a contact, 0 if contact doesn't exist (so we're creating one)
-     */
-    private suspend fun getContactRawId(contactId: Long): Long = withContext(Dispatchers.IO) {
-        context.contentResolver.query(
-            ContactsContract.RawContacts.CONTENT_URI,
-            arrayOf(ContactsContract.RawContacts._ID),
-            "${ContactsContract.RawContacts.CONTACT_ID} = ? AND ${ContactsContract.RawContacts.RAW_CONTACT_IS_READ_ONLY} = ?", // https://developer.android.com/reference/android/provider/ContactsContract.RawContactsColumns.html?utm_source=android-studio-app&utm_medium=app#RAW_CONTACT_IS_READ_ONLY
-            arrayOf(contactId.toString(), "0"),
-            null
-        )?.use { cursor ->
-
-            val rawIdColumn = cursor.getColumnIndexOrThrow(ContactsContract.RawContacts._ID)
-
-            if (cursor.moveToFirst()) {
-                return@withContext cursor.getLong(rawIdColumn)
-            }
-        }
-
-        return@withContext 0
-    }
-
     suspend fun createOrEditContact(
-        contact: CuteContact,
-        details: CuteContactDetails,
-        photo: Uri? = details.photo
+        rawContact: RawContactEdit,
     ): Boolean = withContext(Dispatchers.IO) {
 
-        val rawId = getContactRawId(contact.id)
-
+        val rawId = rawContact.rawContactId
 
         return@withContext try {
             val operations = arrayListOf<ContentProviderOperation>()
-
-            val pfpByteArray = uriToByteArray(photo)
-
-            if (rawId == 0L) {
-                operations.add(
-                    ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
-                        .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, contact.accountType)
-                        .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, contact.accountName)
-                        .withYieldAllowed(true)
-                        .build()
-                )
+            val pfpByteArray = rawContact.photoString?.toUri()?.let { uriToByteArray(it) }
 
 
-                operations.add(
-                    ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                        .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                        .withValue(
-                            ContactsContract.Data.MIMETYPE,
-                            ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
-                        )
-                        .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, pfpByteArray)
-                        .withYieldAllowed(true)
-                        .build()
-                )
-                operations.add(
-                    ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                        .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                        .withValue(
-                            ContactsContract.Data.MIMETYPE,
-                            ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE
-                        )
-                        .withValue(
-                            ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME,
-                            details.firstName
-                        )
-                        .withValue(
-                            ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME,
-                            details.middleName
-                        )
-                        .withValue(
-                            ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME,
-                            details.lastName
-                        )
-                        .withYieldAllowed(true) // from what I understand, this allows the content resolver to not take too long/freeze thread for each operation
-                        .build()
-                )
+            if (rawId == null) {
+                // create new contact
 
-                contact.phoneNumbers.fastForEach { phone ->
+                val rawContactBuilder = ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
+                    .withValues(contentValuesOf())
+
+                operations.add(rawContactBuilder.build())
+
+                val backRefIndex = 0
+
+                if (pfpByteArray != null) {
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                            .withValue(
-                                ContactsContract.Data.MIMETYPE,
-                                ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
-                            )
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, backRefIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, pfpByteArray)
+                            .build()
+                    )
+                }
+
+                if (!rawContact.firstName.isNullOrBlank() || !rawContact.lastName.isNullOrBlank() || !rawContact.middleName.isNullOrBlank()) {
+                    operations.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, backRefIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, rawContact.firstName)
+                            .withValue(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, rawContact.middleName)
+                            .withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, rawContact.lastName)
+                            .build()
+                    )
+                }
+
+                rawContact.phoneNumbers.forEach { phone ->
+                    operations.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, backRefIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
                             .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone.number)
                             .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, phone.type)
-                            .withValue(
-                                ContactsContract.CommonDataKinds.Phone.IS_PRIMARY,
-                                if (phone.isDefault) 1 else 0
-                            )
-                            .withYieldAllowed(true)
+                            .withValue(ContactsContract.CommonDataKinds.Phone.IS_PRIMARY, if (phone.isDefault) 1 else 0)
                             .build()
                     )
                 }
 
-                details.emails.fastForEach { email ->
+                rawContact.emails.forEach { email ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                            .withValue(
-                                ContactsContract.Data.MIMETYPE,
-                                ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE
-                            )
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, backRefIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
                             .withValue(ContactsContract.CommonDataKinds.Email.ADDRESS, email.email)
                             .withValue(ContactsContract.CommonDataKinds.Email.TYPE, email.type)
-                            .withValue(
-                                ContactsContract.CommonDataKinds.Email.IS_PRIMARY,
-                                if (email.isDefault) 1 else 0
-                            )
-                            .withYieldAllowed(true)
+                            .withValue(ContactsContract.CommonDataKinds.Email.IS_PRIMARY, if (email.isDefault) 1 else 0)
                             .build()
                     )
                 }
 
-                details.addresses.fastForEach { address ->
+                rawContact.addresses.forEach { address ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                            .withValue(
-                                ContactsContract.Data.MIMETYPE,
-                                ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE
-                            )
-                            .withValue(
-                                ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS,
-                                address.address
-                            )
-                            .withValue(
-                                ContactsContract.CommonDataKinds.StructuredPostal.TYPE,
-                                address.type
-                            )
-                            .withYieldAllowed(true)
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, backRefIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS, address.address)
+                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.TYPE, address.type)
                             .build()
                     )
                 }
 
-                details.websites.fastForEach { website ->
+                rawContact.websites.forEach { website ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                            .withValue(
-                                ContactsContract.Data.MIMETYPE,
-                                ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE
-                            )
-                            .withValue(
-                                ContactsContract.CommonDataKinds.Website.URL,
-                                website
-                            )
-                            .withYieldAllowed(true)
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, backRefIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Website.URL, website)
                             .build()
                     )
                 }
 
-                operations.add(
-                    ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                        .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                        .withValue(
-                            ContactsContract.Data.MIMETYPE,
-                            ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE
-                        )
-                        .withValue(ContactsContract.CommonDataKinds.Note.NOTE, details.note)
-                        .withYieldAllowed(true)
-                        .build()
-                )
-
-                details.events.fastForEach { event ->
+                if (!rawContact.note.isNullOrBlank()) {
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                            .withValue(
-                                ContactsContract.Data.MIMETYPE,
-                                ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE
-                            )
-                            .withValue(
-                                ContactsContract.CommonDataKinds.Event.START_DATE,
-                                event.date
-                            )
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, backRefIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Note.NOTE, rawContact.note)
+                            .build()
+                    )
+                }
+
+                rawContact.events.forEach { event ->
+                    operations.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, backRefIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Event.START_DATE, event.date)
                             .withValue(ContactsContract.CommonDataKinds.Event.TYPE, event.type)
-                            .withYieldAllowed(true)
                             .build()
                     )
                 }
 
             } else {
+                // edit existing raw contact
 
-
-                operations.add(
-                    ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI)
-                        .withSelection(
-                            "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
-                            arrayOf(
-                                rawId.toString(),
-                                ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE
-                            )
-                        )
-                        .withValue(
-                            ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME,
-                            details.firstName
-                        )
-                        .withValue(
-                            ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME,
-                            details.middleName
-                        )
-                        .withValue(
-                            ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME,
-                            details.lastName
-                        )
-                        .withYieldAllowed(true) // from what I understand, this allows the content resolver to not take too long/freeze thread for each operation
-                        .build()
-
-                )
-
+                val rawContactSelection = "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?"
 
                 operations.add(
                     ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
-                        .withSelection(
-                            "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
-                            arrayOf(
-                                rawId.toString(),
-                                ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
-                            )
-                        )
+                        .withSelection(rawContactSelection, arrayOf(rawId.toString(), ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE))
                         .build()
                 )
-
-                contact.phoneNumbers.fastForEach { phone ->
+                if (!rawContact.firstName.isNullOrBlank() || !rawContact.lastName.isNullOrBlank() || !rawContact.middleName.isNullOrBlank()) {
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                            .withValue(
-                                ContactsContract.Data.MIMETYPE,
-                                ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
-                            )
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, rawContact.firstName)
+                            .withValue(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, rawContact.middleName)
+                            .withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, rawContact.lastName)
+                            .build()
+                    )
+                }
+
+                if (pfpByteArray != null) {
+                    operations.add(
+                        ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
+                            .withSelection(rawContactSelection, arrayOf(rawId.toString(), ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE))
+                            .build()
+                    )
+                    operations.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, pfpByteArray)
+                            .build()
+                    )
+                }
+
+                operations.add(
+                    ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
+                        .withSelection(rawContactSelection, arrayOf(rawId.toString(), ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE))
+                        .build()
+                )
+                rawContact.phoneNumbers.forEach { phone ->
+                    operations.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
                             .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone.number)
                             .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, phone.type)
-                            .withValue(
-                                ContactsContract.CommonDataKinds.Phone.IS_PRIMARY,
-                                if (phone.isDefault) 1 else 0
-                            )
+                            .withValue(ContactsContract.CommonDataKinds.Phone.IS_PRIMARY, if (phone.isDefault) 1 else 0)
                             .build()
                     )
                 }
 
                 operations.add(
                     ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
-                        .withSelection(
-                            "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
-                            arrayOf(
-                                rawId.toString(),
-                                ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE
-                            )
-                        )
+                        .withSelection(rawContactSelection, arrayOf(rawId.toString(), ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE))
                         .build()
                 )
-
-
-                operations.add(
-                    ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
-                        .withSelection(
-                            "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
-                            arrayOf(
-                                rawId.toString(),
-                                ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
-                            )
-                        )
-                        .withYieldAllowed(true)
-                        .build()
-                )
-
-                operations.add(
-                    ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                        .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                        .withValue(
-                            ContactsContract.Data.MIMETYPE,
-                            ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
-                        )
-                        .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, pfpByteArray)
-                        .withYieldAllowed(true)
-                        .build()
-                )
-
-                details.emails.fastForEach { email ->
+                rawContact.emails.forEach { email ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                            .withValue(
-                                ContactsContract.Data.MIMETYPE,
-                                ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE
-                            )
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
                             .withValue(ContactsContract.CommonDataKinds.Email.ADDRESS, email.email)
                             .withValue(ContactsContract.CommonDataKinds.Email.TYPE, email.type)
-                            .withValue(
-                                ContactsContract.CommonDataKinds.Email.IS_PRIMARY,
-                                if (email.isDefault) 1 else 0
-                            )
+                            .withValue(ContactsContract.CommonDataKinds.Email.IS_PRIMARY, if (email.isDefault) 1 else 0)
                             .build()
                     )
                 }
 
                 operations.add(
                     ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
-                        .withSelection(
-                            "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
-                            arrayOf(
-                                rawId.toString(),
-                                ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE
-                            )
-                        )
+                        .withSelection(rawContactSelection, arrayOf(rawId.toString(), ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE))
                         .build()
                 )
-
-                details.addresses.fastForEach { address ->
+                rawContact.addresses.forEach { address ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                            .withValue(
-                                ContactsContract.Data.MIMETYPE,
-                                ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE
-                            )
-                            .withValue(
-                                ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS,
-                                address.address
-                            )
-                            .withValue(
-                                ContactsContract.CommonDataKinds.StructuredPostal.TYPE,
-                                address.type
-                            )
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS, address.address)
+                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.TYPE, address.type)
                             .build()
                     )
                 }
 
                 operations.add(
                     ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
-                        .withSelection(
-                            "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
-                            arrayOf(
-                                rawId.toString(),
-                                ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE
-                            )
-                        )
+                        .withSelection(rawContactSelection, arrayOf(rawId.toString(), ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE))
                         .build()
                 )
-
-                details.websites.fastForEach { website ->
+                rawContact.websites.forEach { website ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                            .withValue(
-                                ContactsContract.Data.MIMETYPE,
-                                ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE
-                            )
-                            .withValue(
-                                ContactsContract.CommonDataKinds.Website.URL,
-                                website
-                            )
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Website.URL, website)
                             .build()
                     )
                 }
 
                 operations.add(
                     ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
-                        .withSelection(
-                            "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
-                            arrayOf(
-                                rawId.toString(),
-                                ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE
-                            )
-                        )
+                        .withSelection(rawContactSelection, arrayOf(rawId.toString(), ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE))
                         .build()
                 )
-
-                details.events.fastForEach { event ->
+                rawContact.events.forEach { event ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                            .withValue(
-                                ContactsContract.Data.MIMETYPE,
-                                ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE
-                            )
-                            .withValue(
-                                ContactsContract.CommonDataKinds.Event.START_DATE,
-                                event.date
-                            )
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Event.START_DATE, event.date)
                             .withValue(ContactsContract.CommonDataKinds.Event.TYPE, event.type)
                             .build()
                     )
                 }
+
                 operations.add(
                     ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
-                        .withSelection(
-                            "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
-                            arrayOf(
-                                rawId.toString(),
-                                ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE
-                            )
-                        )
+                        .withSelection(rawContactSelection, arrayOf(rawId.toString(), ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE))
                         .build()
                 )
-                operations.add(
-                    ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                        .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                        .withValue(
-                            ContactsContract.Data.MIMETYPE,
-                            ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE
-                        )
-                        .withValue(
-                            ContactsContract.CommonDataKinds.Note.NOTE,
-                            details.note ?: ""
-                        )
-                        .build()
-                )
-
-
+                if (!rawContact.note.isNullOrBlank()) {
+                    operations.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Note.NOTE, rawContact.note)
+                            .build()
+                    )
+                }
             }
+
             context.contentResolver.applyBatch(ContactsContract.AUTHORITY, operations)
             true
-
         } catch (e: Exception) {
             e.printStackTrace()
             withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Error while saving contact", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Error saving contact: ${e.message ?: "Unknown error"}", Toast.LENGTH_SHORT).show()
             }
             false
         }
@@ -716,9 +723,9 @@ class ContactsRepository(
             contactIds.fastForEach { id ->
                 ops.add(
                     ContentProviderOperation
-                        .newDelete(ContactsContract.RawContacts.CONTENT_URI)
+                        .newDelete(ContactsContract.Contacts.CONTENT_URI)
                         .withSelection(
-                            "${ContactsContract.RawContacts._ID} = ?",
+                            "${ContactsContract.Contacts._ID} = ?",
                             arrayOf(id.toString())
                         )
                         .build()
@@ -770,7 +777,4 @@ class ContactsRepository(
         }
 
     }
-
-
-//    fun fetchAccounts(): List<Account> = AccountManager.get(context).accounts.toList()
 }

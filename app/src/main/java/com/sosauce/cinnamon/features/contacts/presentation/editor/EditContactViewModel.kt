@@ -6,39 +6,81 @@ import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.Contact
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsEntity
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
+import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails
+import com.sosauce.cinnamon.features.contacts.domain.RawContactEdit
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class EditContactViewModel(
-    private val contact: CuteContact,
-    private val details: CuteContactDetails,
+    private val rawContactId: Long,
+    private val prefilledNumber: String,
     private val contactSettingsDao: ContactSettingsDao,
     private val contactsRepository: ContactsRepository
 ) : ViewModel() {
 
-    private val isCreateInsteadOfEdit = contact.id == 0L
+
+    val isCreateInsteadOfEdit = rawContactId == Long.MAX_VALUE
+    private val _events = Channel<EditContactEvent>()
+    val events = _events.receiveAsFlow()
     private val _state =
-        MutableStateFlow(EditContactState(contact, details, isCreateInsteadOfEdit = isCreateInsteadOfEdit))
+        MutableStateFlow(
+            EditContactState(
+                isCreateInsteadOfEdit = isCreateInsteadOfEdit,
+                isLoading = true
+            )
+        )
     val state = _state.asStateFlow()
 
 
     init {
-        // Can't fetch settings for a contact that doesn't exist yet
         if (!isCreateInsteadOfEdit) {
             viewModelScope.launch(Dispatchers.IO) {
-                contactSettingsDao.getContactSettings(contact.id).collectLatest { settings ->
+
+                val rawContact = contactsRepository.fetchRawContactEdit(rawContactId)
+
+                _state.update {
+                    it.copy(
+                        rawContact = rawContact,
+                        isLoading = false
+                    )
+                }
+                contactSettingsDao.getContactSettings(rawContact.contactId).collectLatest { settings ->
                     _state.update {
                         it.copy(
-                            settings = settings ?: ContactSettingsEntity(contactId = contact.id)
+                            settings = settings ?: ContactSettingsEntity(contactId = rawContact.contactId)
                         )
                     }
                 }
+            }
+        } else {
+            // creating
+
+            val numbers = if (prefilledNumber.isNotEmpty()) {
+                listOf(
+                    ContactPhone(
+                        number = prefilledNumber,
+                        type = 0,
+                        isDefault = true
+                    )
+                )
+            } else emptyList()
+
+            _state.update {
+                it.copy(
+                    rawContact = RawContactEdit(
+                        rawContactId = null,
+                        phoneNumbers = numbers
+                    ),
+                    isLoading = false
+                )
             }
         }
     }
@@ -58,7 +100,14 @@ class EditContactViewModel(
         when (action) {
             is EditContactAction.SaveEditedContact -> {
                 viewModelScope.launch {
-                    contactsRepository.createOrEditContact(action.editedContact, action.editedDetails)
+                    val edited = action.editedRawContact
+                    val success = contactsRepository.createOrEditContact(edited)
+
+                    if (success) {
+                        _events.send(EditContactEvent.Success)
+                    } else {
+                        _events.send(EditContactEvent.Error)
+                    }
                 }
             }
         }
@@ -68,15 +117,17 @@ class EditContactViewModel(
 
 
 data class EditContactState(
-    val contact: CuteContact = CuteContact(),
-    val details: CuteContactDetails = CuteContactDetails(),
+    val isLoading: Boolean = false,
+    val rawContact: RawContactEdit = RawContactEdit(),
     val settings: ContactSettingsEntity = ContactSettingsEntity(),
     val isCreateInsteadOfEdit: Boolean
 )
-
+sealed interface EditContactEvent {
+    data object Success: EditContactEvent
+    data object Error: EditContactEvent
+}
 sealed interface EditContactAction {
     data class SaveEditedContact(
-        val editedContact: CuteContact,
-        val editedDetails: CuteContactDetails
+        val editedRawContact: RawContactEdit
     ) : EditContactAction
 }

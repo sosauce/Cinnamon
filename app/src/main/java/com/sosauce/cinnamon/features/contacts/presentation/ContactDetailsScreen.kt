@@ -2,6 +2,7 @@
 
 package com.sosauce.cinnamon.features.contacts.presentation
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
@@ -40,6 +41,7 @@ import androidx.compose.material3.DropdownMenuPopup
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -69,11 +71,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.zIndex
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import coil3.compose.AsyncImage
@@ -89,7 +95,10 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
+import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
+import com.sosauce.cinnamon.core.ui.components.items.CuteListItemDefaults
 import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
+import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.utils.getItemShape
 import com.sosauce.cinnamon.features.contacts.presentation.components.ContactActionsRow
 import com.sosauce.cinnamon.features.contacts.presentation.components.ContactInfos
@@ -104,7 +113,6 @@ fun SharedTransitionScope.ContactDetailsScreen(
     state: ContactDetailsState,
     onNavigateBack: () -> Unit,
     onNavigate: (Screen) -> Unit,
-    onHandleCallAction: (CallAction) -> Unit,
     onHandleContactDetailsAction: (ContactDetailsAction) -> Unit
 ) {
 
@@ -113,6 +121,8 @@ fun SharedTransitionScope.ContactDetailsScreen(
     val scrollState = rememberScrollState()
     var playFavoriteAnimation by remember { mutableStateOf(false) }
     val cookie9Sided = MaterialShapes.Cookie9Sided.toShape()
+    val context = LocalContext.current
+    var showAccountPicker by remember { mutableStateOf(false) }
 
     val moreOptions = listOf(
         MoreOptions(
@@ -122,15 +132,63 @@ fun SharedTransitionScope.ContactDetailsScreen(
             tint = MaterialTheme.colorScheme.error
         ),
         MoreOptions(
-            onClick = {
-                onHandleContactDetailsAction(ContactDetailsAction.DeleteContact)
-                onNavigateBack()
-            },
+            onClick = { onHandleContactDetailsAction(ContactDetailsAction.DeleteContact) },
             icon = R.drawable.delete,
             text = R.string.delete,
             tint = MaterialTheme.colorScheme.error
         )
     )
+
+    if (showAccountPicker) {
+        AlertDialog(
+            onDismissRequest = { showAccountPicker = false },
+            icon = {
+                Icon(
+                    painter = painterResource(R.drawable.contact_filled),
+                    contentDescription = null
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.select_account_to_edit)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showAccountPicker = false },
+                    shapes = ButtonDefaults.shapes()
+                ) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+            text = {
+                Column {
+                    state.rawContacts.fastForEachIndexed { index, rawContact ->
+                        CuteListItem(
+                            onClick = {
+                                showAccountPicker = false
+                                onNavigate(
+                                    Screen.ContactEditor(
+                                        rawContactId = rawContact.id
+                                    )
+                                )
+                            },
+                            shape = CuteListItemDefaults.getItemShape(index, state.rawContacts.count()),
+                            backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            leadingContent = {
+                                Text(
+                                    text = "${index + 1}.",
+                                    modifier = Modifier.padding(start = 10.dp)
+                                )
+                            }
+                        ) {
+                            Text(rawContact.accountName)
+                        }
+                    }
+                }
+            }
+        )
+    }
 
 
     if (showBlockDialog) {
@@ -265,14 +323,15 @@ fun SharedTransitionScope.ContactDetailsScreen(
                         Row {
                             IconButton(
                                 onClick = {
-                                    val contact = state.contact
-                                    val details = state.details
-                                    onNavigate(
-                                        Screen.ContactEditor(
-                                            contact = contact,
-                                            details = details
+                                    if (state.rawContacts.size > 1) {
+                                        showAccountPicker = true
+                                    } else {
+                                        onNavigate(
+                                            Screen.ContactEditor(
+                                                rawContactId = state.rawContacts.firstOrNull()?.id
+                                            )
                                         )
-                                    )
+                                    }
                                 },
                                 shapes = IconButtonDefaults.shapes()
                             ) {
@@ -366,7 +425,9 @@ fun SharedTransitionScope.ContactDetailsScreen(
                         AsyncImage(
                             model = state.settings.poster,
                             contentDescription = null,
-                            modifier = Modifier.fillMaxSize().cloudy(5),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .cloudy(5),
                             contentScale = ContentScale.Crop
                         )
                     }
@@ -388,7 +449,9 @@ fun SharedTransitionScope.ContactDetailsScreen(
                                 text = state.contact.displayName,
                                 modifier = Modifier
                                     .sharedBounds(
-                                        sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_NAME + state.contact.id),
+                                        sharedContentState = rememberSharedContentState(
+                                            SharedTransitionKeys.CONTACT_NAME + state.contact.id
+                                        ),
                                         animatedVisibilityScope = LocalNavAnimatedContentScope.current
                                     )
                                     .basicMarquee(),
@@ -406,60 +469,87 @@ fun SharedTransitionScope.ContactDetailsScreen(
                             ContactActionsRow(
                                 state = state,
                                 onNavigate = onNavigate,
-                                onHandleCallAction = onHandleCallAction,
                                 onHandleContactDetailsAction = onHandleContactDetailsAction,
                                 onPlayFavoriteAnimation = { playFavoriteAnimation = true }
                             )
                             Spacer(Modifier.height(25.dp))
                             ContactInfos(
                                 state = state,
-                                onHandleCallAction = onHandleCallAction,
+                                onHandleContactDetailsAction = onHandleContactDetailsAction,
                                 onNavigate = onNavigate
                             )
                         }
                     }
-                    val surfaceContainerHighest = MaterialTheme.colorScheme.surfaceContainer
-                    DefaultContactIcon(
-                        firstLetter = state.contact.displayName.firstOrNull(),
+                    Box(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
                             .padding(top = seamY - iconSize / 2)
-                            .sharedElement(
-                                sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_PFP),
-                                animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                            )
-                            .drawWithCache {
-                                val path = cookie9Sided.createOutline(size, layoutDirection, this)
-                                    .let { outline ->
-                                        Path().apply {
-                                            when (outline) {
-                                                is Outline.Generic -> addPath(outline.path)
-                                                is Outline.Rounded -> addRoundRect(outline.roundRect)
-                                                is Outline.Rectangle -> addRect(outline.rect)
-                                            }
-                                        }
-                                    }
-                                onDrawBehind {
-                                    withTransform(
-                                        {
-                                            scale(
-                                                scaleX = 1.08f,
-                                                scaleY = 1.08f,
-                                                pivot = center
-                                            )
-                                        }
-                                    ) {
-                                        drawPath(
-                                            path = path,
-                                            color = surfaceContainerHighest
-                                        )
-                                    }
-                                }
+                    ) {
+                        DefaultContactIcon(
+                            firstLetter = state.contact.displayName.firstOrNull(),
+                            modifier = Modifier
+                                .sharedElement(
+                                    sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_PFP),
+                                    animatedVisibilityScope = LocalNavAnimatedContentScope.current
+                                ),
+//                            .drawWithCache {
+//                                val path = cookie9Sided.createOutline(size, layoutDirection, this)
+//                                    .let { outline ->
+//                                        Path().apply {
+//                                            when (outline) {
+//                                                is Outline.Generic -> addPath(outline.path)
+//                                                is Outline.Rounded -> addRoundRect(outline.roundRect)
+//                                                is Outline.Rectangle -> addRect(outline.rect)
+//                                            }
+//                                        }
+//                                    }
+//                                onDrawBehind {
+//                                    withTransform(
+//                                        {
+//                                            scale(
+//                                                scaleX = 1.08f,
+//                                                scaleY = 1.08f,
+//                                                pivot = center
+//                                            )
+//                                        }
+//                                    ) {
+//                                        drawPath(
+//                                            path = path,
+//                                            color = surfaceContainerHighest
+//                                        )
+//                                    }
+//                                }
+//                            },
+                            size = iconSize,
+                            contactPfp = state.details.photo,
+                            shape = MaterialShapes.Cookie9Sided.toShape()
+                        )
+
+
+                        val favoriteButtonColor by animateColorAsState(
+                            if (state.contact.isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceContainerHigh
+                        )
+
+                        FilledIconButton(
+                            onClick = {
+                                onHandleContactDetailsAction(ContactDetailsAction.ToggleFavorite)
+                                playFavoriteAnimation = true
                             },
-                        size = iconSize,
-                        contactPfp = state.details.photo,
-                        shape = MaterialShapes.Cookie9Sided.toShape()
-                    )
+                            shapes = IconButtonDefaults.shapes(),
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = favoriteButtonColor,
+                                contentColor = contentColorFor(favoriteButtonColor)
+                            ),
+                            modifier = Modifier.align(Alignment.BottomEnd)
+                        ) {
+                            val icon = if (state.contact.isFavorite) R.drawable.favorite_filled else R.drawable.favorite
+
+                            Icon(
+                                painter = painterResource(icon),
+                                contentDescription = null
+                            )
+                        }
+                    }
 
                 }
 

@@ -102,6 +102,7 @@ fun ConversationBottomBar(
     prefilledMessage: String,
     onHandleConversationActions: (ConversationActions) -> Unit
 ) {
+    println("forward - bottom bar: $prefilledMessage")
     val viewModel = koinViewModel<BottomBarViewModel>(
         parameters = { parametersOf(state.conversation.threadId, prefilledMessage) }
     )

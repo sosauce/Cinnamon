@@ -29,7 +29,7 @@ class MigrationViewModel(
 ) : AndroidViewModel(application) {
 
 
-    fun handleMigrationAction(action: com.sosauce.cinnamon.settings.MigrationAction) {
+    fun handleMigrationAction(action: MigrationAction) {
         when (action) {
             is MigrationAction.ImportContacts -> {
 
@@ -117,16 +117,17 @@ class MigrationViewModel(
                                 accountType = accountType,
                                 accountName = accountName
                             )
-                            val success = contactsRepository.createOrEditContact(cuteContact, details)
-                            if (success) {
-                                withContext(Dispatchers.Main) {
-                                    Toast.makeText(
-                                        application,
-                                        application.getString(R.string.importing_contact_success),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
+                            // TODO
+                            //val success = contactsRepository.createOrEditContact(cuteContact, details)
+//                            if (success) {
+//                                withContext(Dispatchers.Main) {
+//                                    Toast.makeText(
+//                                        application,
+//                                        application.getString(R.string.importing_contact_success),
+//                                        Toast.LENGTH_SHORT
+//                                    ).show()
+//                                }
+//                            }
                         }
                     }
                 }

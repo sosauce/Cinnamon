@@ -104,15 +104,12 @@ class MessageNotificationManager(
         val result = context.imageLoader.execute(request)
         val bitmap = result.image?.toBitmap()
         val personIcon = bitmap?.let { IconCompat.createWithBitmap(it) }
+        val name = number?.let { numberLookup.fetchContactDisplayName(it) ?: it } ?: context.getString(R.string.unknown)
 
 
         val person = Person.Builder()
             .setIcon(personIcon)
-            .setName(
-                number?.let {
-                    numberLookup.fetchContactDisplayName(it)
-                } ?: context.getString(R.string.unknown)
-            )
+            .setName(name)
             .build()
         val receivedMessage =
             NotificationCompat.MessagingStyle.Message(message, System.currentTimeMillis(), person)

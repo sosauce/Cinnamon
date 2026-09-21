@@ -54,6 +54,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
@@ -81,6 +82,7 @@ import com.sosauce.cinnamon.features.contacts.domain.ContactEmail
 import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
 import com.sosauce.nekobites.animations.AnimatedFab
 import com.sosauce.nekobites.animations.bouncySpec
+import com.sosauce.nekobites.components.LoadingBox
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
@@ -94,8 +96,7 @@ fun SharedTransitionScope.EditContactScreen(
 ) {
 
 
-    var contact by retain { mutableStateOf(state.contact) }
-    var details by retain { mutableStateOf(state.details) }
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val imagePicker =
@@ -109,7 +110,7 @@ fun SharedTransitionScope.EditContactScreen(
 
                 val file = File(
                     context.filesDir,
-                    "poster_${state.contact.id}_${System.currentTimeMillis()}.jpg"
+                    "poster_${state.rawContact.contactId}_${System.currentTimeMillis()}.jpg"
                 )
 
                 context.contentResolver.openInputStream(uri)?.use { input ->
@@ -126,366 +127,366 @@ fun SharedTransitionScope.EditContactScreen(
             }
         }
 
-    Scaffold(
-        bottomBar = {
-            Row(
-                modifier = Modifier
-                    .imePadding()
-                    .fillMaxWidth()
-                    .padding(horizontal = 15.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                CuteNavigationButtonSurface(
+    LoadingBox(
+        isLoading = state.isLoading
+    ) {
+
+        var rawContact by retain { mutableStateOf(state.rawContact) }
+
+        Scaffold(
+            bottomBar = {
+                Row(
                     modifier = Modifier
-                        .padding(horizontal = 15.dp)
-                        .navigationBarsPadding(),
-                    onNavigateUp = onNavigateUp
-                )
-                AnimatedFab(
-                    onClick = {
-                        onHandeEditContactAction(EditContactAction.SaveEditedContact(contact, details))
-                        //TODO: SEND EVENT WHEN SAVING IS DONE ONLY THEN NAVIGATE BACK
-                        //onNavigateUp()
-                    },
-                    icon = R.drawable.check,
-                    enabled = contact != state.contact || details != state.details
-                )
+                        .imePadding()
+                        .fillMaxWidth()
+                        .padding(horizontal = 15.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    CuteNavigationButtonSurface(
+                        modifier = Modifier
+                            .padding(horizontal = 15.dp)
+                            .navigationBarsPadding(),
+                        onNavigateUp = onNavigateUp
+                    )
+                    AnimatedFab(
+                        onClick = {
+                            onHandeEditContactAction(
+                                EditContactAction.SaveEditedContact(rawContact)
+                            )
+                        },
+                        icon = R.drawable.check,
+                        enabled = rawContact != state.rawContact
+                    )
+                }
             }
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(paddingValues)
-                .padding(horizontal = 15.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(paddingValues)
+                    .padding(horizontal = 15.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                EditContactPfp(
-                    modifier = Modifier.sharedElement(
-                        sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_PFP),
-                        animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                    ),
-                    pfp = details.photo,
-                    onPfpSelected = { newPhoto ->
-                        details = details.copy(photoString = newPhoto.toString())
-                    },
-                    onRemoveImage = {
-                        details = details.copy(photoString = null)
-                    }
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
 
-                if (!state.isCreateInsteadOfEdit) {
-                    ImagePickerCard(
-                        onClick = {
-                            imagePicker.launch(
-                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                            )
+                    EditContactPfp(
+                        pfp = rawContact.photo,
+                        onPfpSelected = { newPhoto ->
+                            rawContact = rawContact.copy(photoString = newPhoto.toString())
                         },
                         onRemoveImage = {
-                            scope.launch(Dispatchers.IO) {
-                                File(context.filesDir, state.settings.poster).delete()
-                                onHandleContactSettingsAction(
-                                    ContactSettingsActions.UpsertContactSettings(
-                                        state.settings.copy(poster = "")
+                            rawContact = rawContact.copy(photoString = null)
+                        }
+                    )
+
+                    if (!state.isCreateInsteadOfEdit) {
+                        ImagePickerCard(
+                            onClick = {
+                                imagePicker.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            },
+                            onRemoveImage = {
+                                scope.launch(Dispatchers.IO) {
+                                    File(context.filesDir, state.settings.poster).delete()
+                                    onHandleContactSettingsAction(
+                                        ContactSettingsActions.UpsertContactSettings(
+                                            state.settings.copy(poster = "")
+                                        )
+                                    )
+                                }
+                            },
+                            image = state.settings.poster.ifEmpty { null }?.toUri(),
+                            modifier = Modifier
+                                .height(250.dp)
+                                .width(150.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(25.dp))
+
+                ContactEditTextField(
+                    value = rawContact.firstName ?: "",
+                    label = R.string.first_name,
+                    leadingIcon = R.drawable.contact,
+                    onValueChange = {
+                        rawContact = rawContact.copy(firstName = it)
+                    },
+                    onClickRemove = null
+                )
+                ContactEditTextField(
+                    value = rawContact.lastName ?: "",
+                    label = R.string.last_name,
+                    leadingIcon = R.drawable.contact,
+                    onValueChange = {
+                        rawContact = rawContact.copy(lastName = it)
+                    },
+                    onClickRemove = null
+                )
+
+
+                if (!rawContact.company.isNullOrEmpty()) {
+                    ContactEditTextField(
+                        value = rawContact.company ?: "",
+                        label = R.string.company,
+                        leadingIcon = R.drawable.business,
+                        onValueChange = {
+                            rawContact = rawContact.copy(company = it)
+                        },
+                        onClickRemove = {
+                            rawContact = rawContact.copy(company = "")
+                        }
+                    )
+                }
+
+                Spacer(Modifier.height(25.dp))
+
+                ContactDataSection(
+                    items = rawContact.phoneNumbers,
+                    keyboardType = KeyboardType.Phone,
+                    labelRes = R.string.phone,
+                    iconRes = R.drawable.phone,
+                    addLabelRes = R.string.add_phone,
+                    valueProvider = { it.number },
+                    onValueChange = { index, value ->
+                        rawContact = rawContact.copy(
+                            phoneNumbers = rawContact.phoneNumbers.copyMutate {
+                                this[index] = this[index].copy(number = value)
+                            }
+                        )
+                    },
+
+                    onRemove = { index ->
+                        rawContact = rawContact.copy(
+                            phoneNumbers = rawContact.phoneNumbers.copyMutate {
+                                removeAt(index)
+                            }
+                        )
+                    },
+
+                    onAdd = {
+                        rawContact = rawContact.copy(
+                            phoneNumbers = rawContact.phoneNumbers + ContactPhone(
+                                "",
+                                ContactsContract.CommonDataKinds.Phone.TYPE_OTHER,
+                                true
+                            )
+                        )
+                    }
+                )
+
+
+                ContactDataSection(
+                    items = rawContact.emails,
+                    keyboardType = KeyboardType.Email,
+                    labelRes = R.string.email,
+                    iconRes = R.drawable.email,
+                    addLabelRes = R.string.add_email,
+                    valueProvider = { it.email },
+
+                    onValueChange = { index, value ->
+                        rawContact = rawContact.copy(
+                            emails = rawContact.emails.copyMutate {
+                                this[index] = this[index].copy(email = value)
+                            }
+                        )
+                    },
+
+                    onRemove = { index ->
+                        rawContact = rawContact.copy(
+                            emails = rawContact.emails.copyMutate {
+                                removeAt(index)
+                            }
+                        )
+                    },
+
+                    onAdd = {
+                        rawContact = rawContact.copy(
+                            emails = rawContact.emails + ContactEmail(
+                                "",
+                                ContactsContract.CommonDataKinds.Email.TYPE_OTHER,
+                                true
+                            )
+                        )
+                    }
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+                ContactDataSection(
+                    items = rawContact.addresses,
+                    keyboardType = KeyboardType.PostalAddress,
+                    labelRes = R.string.address,
+                    iconRes = R.drawable.address,
+                    addLabelRes = R.string.add_address,
+                    valueProvider = { it.address },
+
+                    onValueChange = { index, value ->
+                        rawContact = rawContact.copy(
+                            addresses = rawContact.addresses.copyMutate {
+                                this[index] = this[index].copy(address = value)
+                            }
+                        )
+                    },
+
+
+                    onRemove = { index ->
+                        rawContact = rawContact.copy(
+                            addresses = rawContact.addresses.copyMutate {
+                                removeAt(index)
+                            }
+                        )
+                    },
+
+                    onAdd = {
+                        rawContact = rawContact.copy(
+                            addresses = rawContact.addresses + ContactAddress(
+                                "",
+                                ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER,
+                                true
+                            )
+                        )
+                    }
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+                ContactDataSection(
+                    items = rawContact.websites,
+                    labelRes = R.string.website,
+                    iconRes = R.drawable.website,
+                    addLabelRes = R.string.add_website,
+                    valueProvider = { it },
+                    onValueChange = { index, value ->
+                        rawContact = rawContact.copy(
+                            websites = rawContact.websites.copyMutate {
+                                this[index] = value
+                            }
+                        )
+                    },
+
+                    onRemove = { index ->
+                        rawContact = rawContact.copy(
+                            websites = rawContact.websites.copyMutate {
+                                removeAt(index)
+                            }
+                        )
+                    },
+
+                    onAdd = {
+                        rawContact = rawContact.copy(
+                            websites = rawContact.websites + ""
+                        )
+                    }
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+
+                rawContact.note?.let { note ->
+                    ContactEditTextField(
+                        value = note,
+                        label = R.string.notes,
+                        leadingIcon = R.drawable.note,
+                        onValueChange = {
+                            rawContact = rawContact.copy(note = it)
+                        },
+                        onClickRemove = {
+                            rawContact = rawContact.copy(note = null)
+                        }
+                    )
+
+                }
+
+
+                Spacer(Modifier.weight(1f))
+
+                // ADD BUTTONS
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    AddDataButton(
+                        isVisible = rawContact.phoneNumbers.isEmpty(),
+                        icon = R.drawable.phone,
+                        text = R.string.add_phone,
+                        onClick = {
+                            rawContact = rawContact.copy(
+                                phoneNumbers = listOf(
+                                    ContactPhone(
+                                        "",
+                                        ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE,
+                                        true
                                     )
                                 )
-                            }
-                        },
-                        image = state.settings.poster.ifEmpty { null }?.toUri(),
-                        modifier = Modifier
-                            .height(250.dp)
-                            .width(150.dp)
-                            .sharedElement(
-                                sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_POSTER),
-                                animatedVisibilityScope = LocalNavAnimatedContentScope.current
                             )
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(25.dp))
-
-            ContactEditTextField(
-                value = details.firstName ?: "",
-                label = R.string.first_name,
-                leadingIcon = R.drawable.contact,
-                onValueChange = {
-                    details = details.copy(firstName = it)
-                },
-                onClickRemove = null
-            )
-            ContactEditTextField(
-                value = details.lastName ?: "",
-                label = R.string.last_name,
-                leadingIcon = R.drawable.contact,
-                onValueChange = {
-                    details = details.copy(lastName = it)
-                },
-                onClickRemove = null
-            )
-
-
-            if (!details.company.isNullOrEmpty()) {
-                ContactEditTextField(
-                    value = details.company ?: "",
-                    label = R.string.company,
-                    leadingIcon = R.drawable.business,
-                    onValueChange = {
-                        details = details.copy(company = it)
-                    },
-                    onClickRemove = {
-                        details = details.copy(company = "")
-                    }
-                )
-            }
-
-            Spacer(Modifier.height(25.dp))
-
-            ContactDataSection(
-                items = contact.phoneNumbers,
-                keyboardType = KeyboardType.Phone,
-                labelRes = R.string.phone,
-                iconRes = R.drawable.phone,
-                addLabelRes = R.string.add_phone,
-                valueProvider = { it.number },
-                onValueChange = { index, value ->
-                    contact = contact.copy(
-                        phoneNumbers = contact.phoneNumbers.copyMutate {
-                            this[index] = this[index].copy(number = value)
                         }
                     )
-                },
 
-                onRemove = { index ->
-                    contact = contact.copy(
-                        phoneNumbers = contact.phoneNumbers.copyMutate {
-                            removeAt(index)
-                        }
-                    )
-                },
-
-                onAdd = {
-                    contact = contact.copy(
-                        phoneNumbers = contact.phoneNumbers + ContactPhone(
-                            "",
-                            ContactsContract.CommonDataKinds.Phone.TYPE_OTHER,
-                            true
-                        )
-                    )
-                }
-            )
-
-
-            ContactDataSection(
-                items = details.emails,
-                keyboardType = KeyboardType.Email,
-                labelRes = R.string.email,
-                iconRes = R.drawable.email,
-                addLabelRes = R.string.add_email,
-                valueProvider = { it.email },
-
-                onValueChange = { index, value ->
-                    details = details.copy(
-                        emails = details.emails.copyMutate {
-                            this[index] = this[index].copy(email = value)
-                        }
-                    )
-                },
-
-                onRemove = { index ->
-                    details = details.copy(
-                        emails = details.emails.copyMutate {
-                            removeAt(index)
-                        }
-                    )
-                },
-
-                onAdd = {
-                    details = details.copy(
-                        emails = details.emails + ContactEmail(
-                            "",
-                            ContactsContract.CommonDataKinds.Email.TYPE_OTHER,
-                            true
-                        )
-                    )
-                }
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            ContactDataSection(
-                items = details.addresses,
-                keyboardType = KeyboardType.PostalAddress,
-                labelRes = R.string.address,
-                iconRes = R.drawable.address,
-                addLabelRes = R.string.add_address,
-                valueProvider = { it.address },
-
-                onValueChange = { index, value ->
-                    details = details.copy(
-                        addresses = details.addresses.copyMutate {
-                            this[index] = this[index].copy(address = value)
-                        }
-                    )
-                },
-
-
-                onRemove = { index ->
-                    details = details.copy(
-                        addresses = details.addresses.copyMutate {
-                            removeAt(index)
-                        }
-                    )
-                },
-
-                onAdd = {
-                    details = details.copy(
-                        addresses = details.addresses + ContactAddress(
-                            "",
-                            ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER,
-                            true
-                        )
-                    )
-                }
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            ContactDataSection(
-                items = details.websites,
-                labelRes = R.string.website,
-                iconRes = R.drawable.website,
-                addLabelRes = R.string.add_website,
-                valueProvider = { it },
-                onValueChange = { index, value ->
-                    details = details.copy(
-                        websites = details.websites.copyMutate {
-                            this[index] = value
-                        }
-                    )
-                },
-
-                onRemove = { index ->
-                    details = details.copy(
-                        websites = details.websites.copyMutate {
-                            removeAt(index)
-                        }
-                    )
-                },
-
-                onAdd = {
-                    details = details.copy(
-                        websites = details.websites + ""
-                    )
-                }
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-
-            details.note?.let { note ->
-                ContactEditTextField(
-                    value = note,
-                    label = R.string.notes,
-                    leadingIcon = R.drawable.note,
-                    onValueChange = {
-                        details = details.copy(note = it)
-                    },
-                    onClickRemove = {
-                        details = details.copy(note = null)
-                    }
-                )
-
-            }
-
-
-            Spacer(Modifier.weight(1f))
-
-            // ADD BUTTONS
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
-                verticalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                AddDataButton(
-                    isVisible = contact.phoneNumbers.isEmpty(),
-                    icon = R.drawable.phone,
-                    text = R.string.add_phone,
-                    onClick = {
-                        contact = contact.copy(
-                            phoneNumbers = listOf(
-                                ContactPhone(
-                                    "",
-                                    ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE,
-                                    true
+                    AddDataButton(
+                        isVisible = rawContact.emails.isEmpty(),
+                        icon = R.drawable.email,
+                        text = R.string.add_email,
+                        onClick = {
+                            rawContact = rawContact.copy(
+                                emails = listOf(
+                                    ContactEmail(
+                                        "",
+                                        ContactsContract.CommonDataKinds.Email.TYPE_OTHER,
+                                        true
+                                    )
                                 )
                             )
-                        )
-                    }
-                )
+                        }
+                    )
 
-                AddDataButton(
-                    isVisible = details.emails.isEmpty(),
-                    icon = R.drawable.email,
-                    text = R.string.add_email,
-                    onClick = {
-                        details = details.copy(
-                            emails = listOf(
-                                ContactEmail(
-                                    "",
-                                    ContactsContract.CommonDataKinds.Email.TYPE_OTHER,
-                                    true
+                    AddDataButton(
+                        isVisible = rawContact.addresses.isEmpty(),
+                        icon = R.drawable.address,
+                        text = R.string.add_address,
+                        onClick = {
+                            rawContact = rawContact.copy(
+                                addresses = listOf(
+                                    ContactAddress(
+                                        "",
+                                        ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER,
+                                        true
+                                    )
                                 )
                             )
-                        )
-                    }
-                )
-
-                AddDataButton(
-                    isVisible = details.addresses.isEmpty(),
-                    icon = R.drawable.address,
-                    text = R.string.add_address,
-                    onClick = {
-                        details = details.copy(
-                            addresses = listOf(
-                                ContactAddress(
-                                    "",
-                                    ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER,
-                                    true
-                                )
+                        }
+                    )
+                    AddDataButton(
+                        isVisible = rawContact.websites.isEmpty(),
+                        icon = R.drawable.website,
+                        text = R.string.add_website,
+                        onClick = {
+                            rawContact = rawContact.copy(
+                                websites = listOf("")
                             )
-                        )
-                    }
-                )
-                AddDataButton(
-                    isVisible = details.websites.isEmpty(),
-                    icon = R.drawable.website,
-                    text = R.string.add_website,
-                    onClick = {
-                        details = details.copy(
-                            websites = listOf("")
-                        )
-                    }
-                )
-                AddDataButton(
-                    isVisible = details.note == null,
-                    icon = R.drawable.note,
-                    text = R.string.add_note,
-                    onClick = {
-                        details = details.copy(
-                            note = ""
-                        )
-                    }
-                )
+                        }
+                    )
+                    AddDataButton(
+                        isVisible = rawContact.note == null,
+                        icon = R.drawable.note,
+                        text = R.string.add_note,
+                        onClick = {
+                            rawContact = rawContact.copy(
+                                note = ""
+                            )
+                        }
+                    )
+                }
             }
         }
     }
+
 }
 
 @Composable

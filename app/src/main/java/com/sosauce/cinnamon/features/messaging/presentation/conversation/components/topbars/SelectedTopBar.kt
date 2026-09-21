@@ -42,6 +42,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions
 import com.sosauce.sweetselect.SweetSelectState
@@ -54,6 +55,7 @@ fun SelectedTopBar(
     sweetSelectState: SweetSelectState<CuteMessage>,
     onSelectAll: () -> Unit,
     onUnselectAll: () -> Unit,
+    onNavigate: (Screen) -> Unit,
     onHandleConversationActions: (ConversationActions) -> Unit
 ) {
 
@@ -136,6 +138,22 @@ fun SelectedTopBar(
             }
             Text(sweetSelectState.selectedItems.size.toString())
             Spacer(Modifier.weight(1f))
+            AnimatedVisibility(sweetSelectState.selectedItems.size == 1) {
+                IconButton(
+                    onClick = {
+                        val message = sweetSelectState.selectedItems.firstOrNull()?.body ?: return@IconButton
+                        println("forward, selected top bar: $message")
+                        onNavigate(
+                            Screen.Forwarding(message)
+                        )
+                    }
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.forward),
+                        contentDescription = null
+                    )
+                }
+            }
             AnimatedVisibility(sweetSelectState.selectedItems.size == 1) {
                 IconButton(
                     onClick = {

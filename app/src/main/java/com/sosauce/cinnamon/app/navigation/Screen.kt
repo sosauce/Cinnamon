@@ -50,6 +50,11 @@ sealed class Screen : NavKey {
     data class AboutConversation(val threadId: Long) : Screen()
 
     @Serializable
+    data class Forwarding(
+        val messageToForward: String
+    ) : Screen()
+
+    @Serializable
     data class ConversationTheming(
         val threadId: Long
     ) : Screen()
@@ -64,8 +69,8 @@ sealed class Screen : NavKey {
 
     @Serializable
     data class ContactEditor(
-        val contact: CuteContact,
-        val details: CuteContactDetails = CuteContactDetails()
+        val rawContactId: Long?,
+        val prefilledNumber: String = ""
     ) : Screen()
 
     @Serializable

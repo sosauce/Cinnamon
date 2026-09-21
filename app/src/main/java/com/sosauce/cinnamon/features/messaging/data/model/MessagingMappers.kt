@@ -15,14 +15,14 @@ import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import com.sosauce.cinnamon.features.messaging.domain.MessageType
 
-fun CuteConversationEntity.toCuteConversation(draft: String): CuteConversation {
+fun CuteConversationEntity.toCuteConversation(draft: String? = null): CuteConversation {
     return CuteConversation(
         threadId = threadId,
         participants = participants,
         snippet = snippet,
         date = date.toDate(),
         read = read,
-        draft = draft
+        draft = draft ?: ""
     )
 }
 

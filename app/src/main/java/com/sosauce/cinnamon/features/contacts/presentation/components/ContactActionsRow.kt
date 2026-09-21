@@ -34,7 +34,6 @@ import kotlin.uuid.Uuid
 fun ContactActionsRow(
     state: ContactDetailsState,
     onNavigate: (Screen) -> Unit,
-    onHandleCallAction: (CallAction) -> Unit,
     onHandleContactDetailsAction: (ContactDetailsAction) -> Unit,
     onPlayFavoriteAnimation: () -> Unit
 ) {
@@ -54,7 +53,7 @@ fun ContactActionsRow(
                             showNumberPicker = true
                         } else {
                             val number = state.contact.phoneNumbers.first().number
-                            onHandleCallAction(CallAction.LaunchCall(number))
+                            onHandleContactDetailsAction(ContactDetailsAction.CallNumber(number))
                         }
                     }
                 )
@@ -77,16 +76,16 @@ fun ContactActionsRow(
                 )
             )
         }
-        add(
-            ContactActionsItem(
-                icon = if (state.contact.isFavorite) R.drawable.favorite_filled else R.drawable.favorite,
-                onClick = {
-                    onHandleContactDetailsAction(ContactDetailsAction.ToggleFavorite)
-                    onPlayFavoriteAnimation()
-                },
-                tint = if (state.contact.isFavorite) MaterialTheme.colorScheme.error else null
-            )
-        )
+//        add(
+//            ContactActionsItem(
+//                icon = if (state.contact.isFavorite) R.drawable.favorite_filled else R.drawable.favorite,
+//                onClick = {
+//                    onHandleContactDetailsAction(ContactDetailsAction.ToggleFavorite)
+//                    onPlayFavoriteAnimation()
+//                },
+//                tint = if (state.contact.isFavorite) MaterialTheme.colorScheme.error else null
+//            )
+//        )
 
     }
 
@@ -101,7 +100,7 @@ fun ContactActionsRow(
                         onNavigate(Screen.ConversationDetails(threadId))
                     }
 
-                    NumberPickerAction.CALL -> onHandleCallAction(CallAction.LaunchCall(number))
+                    NumberPickerAction.CALL -> onHandleContactDetailsAction(ContactDetailsAction.CallNumber(number))
                 }
             },
             phoneNumbers = state.contact.phoneNumbers.fastMap { it.number }

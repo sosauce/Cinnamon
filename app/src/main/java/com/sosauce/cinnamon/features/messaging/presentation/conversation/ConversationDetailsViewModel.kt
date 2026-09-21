@@ -13,6 +13,7 @@ import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.core.MediaManager
 import com.sosauce.cinnamon.core.telephony.message.CuteTelephonyManager
 import com.sosauce.cinnamon.core.telephony.message.MessageNotificationManager
+import com.sosauce.cinnamon.core.telephony.phone.CallManager
 import com.sosauce.cinnamon.core.utils.isShortCode
 import com.sosauce.cinnamon.features.messaging.data.ScheduledMessageManager
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingActions
@@ -45,6 +46,7 @@ class ConversationDetailsViewModel(
     private val conversationsRepository: ConversationsRepository,
     private val conversationSettingsDao: ConversationSettingsDao,
     private val cuteTelephonyManager: CuteTelephonyManager,
+    private val callManager: CallManager,
     private val scheduledMessagesDao: ScheduledMessagesDao,
     private val scheduledMessageManager: ScheduledMessageManager,
     private val messageNotificationManager: MessageNotificationManager,
@@ -185,8 +187,8 @@ class ConversationDetailsViewModel(
 
                     }
                 }
-
             }
+            is ConversationActions.CallNumber -> callManager.startCall(action.number)
         }
     }
 
@@ -220,6 +222,10 @@ sealed interface ConversationActions {
 
     data class DeleteSelectedMessages(
         val messages: List<CuteMessage>
+    ) : ConversationActions
+
+    data class CallNumber(
+        val number: String
     ) : ConversationActions
 }
 

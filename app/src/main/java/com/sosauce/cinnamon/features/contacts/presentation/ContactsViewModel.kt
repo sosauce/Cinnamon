@@ -7,6 +7,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
@@ -28,11 +29,10 @@ import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 class ContactsViewModel(
-    private val application: Application,
     private val contactsRepository: ContactsRepository,
     private val userPreferences: UserPreferences,
     private val contactSettingsDao: ContactSettingsDao
-) : AndroidViewModel(application) {
+) : ViewModel() {
 
     val textFieldState = TextFieldState()
     private val _state = MutableStateFlow(
@@ -61,7 +61,7 @@ class ContactsViewModel(
                         }
                     }
                     .fastFilter {
-                        if (accountFilter == ACCOUNT_FILTER_DEFAULT) true
+                        if (accountFilter == null) true
                         else it.accountName == accountFilter
                     }.apply {
                         if (!asc) reversed()
@@ -78,9 +78,7 @@ class ContactsViewModel(
 
         viewModelScope.launch {
             contactsRepository.fetchLatestContacts().collectLatest { contacts ->
-                val accountsToCount =
-                    mapOf("All" to contacts.size) + contacts.groupingBy { it.accountName.ifEmpty { "Device" } }
-                        .eachCount()
+                val accountsToCount = mapOf("All" to contacts.size) + contacts.groupingBy { it.accountName.ifEmpty { "Device" } }.eachCount()
 
                 _state.update {
                     it.copy(
@@ -117,17 +115,13 @@ class ContactsViewModel(
         }
     }
 
-    companion object {
-        const val ACCOUNT_FILTER_DEFAULT = "All"
-    }
-
 }
 
 data class ContactsState(
     val isLoading: Boolean = false,
     val contacts: List<CuteContact> = emptyList(),
     val accountsToCount: Map<String, Int> = emptyMap(),
-    val accountFilter: String = ContactsViewModel.ACCOUNT_FILTER_DEFAULT
+    val accountFilter: String? = null
 )
 
 sealed interface ContactsAction {

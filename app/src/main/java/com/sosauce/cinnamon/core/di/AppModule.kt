@@ -37,6 +37,7 @@ import com.sosauce.cinnamon.features.messaging.presentation.archived.ArchivedCon
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationDetailsViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationsViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bottombar.BottomBarViewModel
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.forwarding.ForwardingViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.customization.ThemingViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.starter.StartConversationViewModel
 import com.sosauce.cinnamon.features.phone.data.repository.CallLogsRepository
@@ -132,4 +133,5 @@ val appModule = module {
     viewModelOf(::StartConversationViewModel)
     viewModelOf(::EditContactViewModel)
     viewModelOf(::SimsViewModel)
+    viewModelOf(::ForwardingViewModel)
 }
