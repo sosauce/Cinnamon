@@ -96,7 +96,7 @@ class ConversationsRepository(private val context: Context) {
     }
 
 
-    private fun fetchConversations(
+    fun fetchConversations(
         extraSelection: String?,
         extraSelectionArgs: Array<String>
     ): List<CuteConversationEntity> {
@@ -189,9 +189,7 @@ class ConversationsRepository(private val context: Context) {
             PhoneLookup.PHOTO_THUMBNAIL_URI
         )
 
-        val isBlocked = if (BlockedNumberContract.canCurrentUserBlockNumbers(context)) {
-            BlockedNumberContract.isBlocked(context, number)
-        } else false
+        val isBlocked = BlockedNumberContract.canCurrentUserBlockNumbers(context) && BlockedNumberContract.isBlocked(context, number)
 
         context.contentResolver.query(
             uri,

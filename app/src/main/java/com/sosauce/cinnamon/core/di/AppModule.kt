@@ -17,6 +17,8 @@ import com.sosauce.cinnamon.core.telephony.message.CuteTelephonyManager
 import com.sosauce.cinnamon.core.telephony.message.MessageNotificationManager
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
 import com.sosauce.cinnamon.core.telephony.phone.CallNotificationManager
+import com.sosauce.cinnamon.features.contacts.data.backup.ContactsBackupRepository
+import com.sosauce.cinnamon.features.contacts.data.backup.ContactsImportRepository
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDatabase
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.MIGRATION_1_2_CONTACT_SETTINGS
@@ -25,6 +27,8 @@ import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsViewMod
 import com.sosauce.cinnamon.features.contacts.presentation.ContactsViewModel
 import com.sosauce.cinnamon.features.contacts.presentation.editor.EditContactViewModel
 import com.sosauce.cinnamon.features.messaging.data.ScheduledMessageManager
+import com.sosauce.cinnamon.features.messaging.data.backup.MessageBackupRepository
+import com.sosauce.cinnamon.features.messaging.data.backup.SmsImportRepository
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsDao
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsDatabase
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.MIGRATION_1_2_CONVERSATION_SETTINGS
@@ -116,6 +120,10 @@ val appModule = module {
     singleOf(::VoicemailsRepository)
     singleOf(::SimsRepository)
     singleOf(::MediaManager)
+    singleOf(::MessageBackupRepository)
+    singleOf(::ContactsBackupRepository)
+    singleOf(::ContactsImportRepository)
+    singleOf(::SmsImportRepository)
 
 
     viewModelOf(::ContactsViewModel)

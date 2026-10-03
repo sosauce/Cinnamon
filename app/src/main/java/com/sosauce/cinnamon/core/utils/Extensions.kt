@@ -33,7 +33,6 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.delete
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -53,16 +52,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import androidx.navigation3.runtime.NavBackStack
-import androidx.navigation3.runtime.NavKey
 import com.materialkolor.PaletteStyle
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.datastore.rememberIsLandscape
-import dev.chrisbanes.haze.HazeEffectScope
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.hazeEffect
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import java.io.BufferedReader
@@ -320,23 +314,6 @@ fun String.isEmoji(): Boolean {
 }
 
 fun String.isLink() = Patterns.WEB_URL.matcher(this).matches()
-
-@Composable
-fun Modifier.cuteHazeEffect(
-    state: HazeState,
-    intensity: Dp = 15.dp,
-    backgroundColor: Color = MaterialTheme.colorScheme.surface,
-    block: (HazeEffectScope.() -> Unit)? = null,
-) = hazeEffect(
-    state = state,
-    style = HazeStyle(
-        backgroundColor = backgroundColor,
-        tints = emptyList(),
-        blurRadius = intensity,
-        noiseFactor = 0f
-    ),
-    block = block
-)
 
 
 fun Long.toShortDate(context: Context): String {
@@ -705,11 +682,7 @@ fun TextFieldState.backspace() {
 
 
 fun String.isShortCode(): Boolean {
-    if (Patterns.EMAIL_ADDRESS.matcher(this).matches()) {
-        return false
-    }
-
-    return any { it.isLetter() }
+    return !Patterns.EMAIL_ADDRESS.matcher(this).matches() && any { it.isLetter() }
 }
 
 fun String.toPaletteStyle(): PaletteStyle {

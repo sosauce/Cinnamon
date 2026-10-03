@@ -46,6 +46,17 @@ class MessagesRepository(
         }.flowOn(Dispatchers.IO)
     }
 
+    /**
+     * One-shot SMS+MMS snapshot for a thread, sorted by timestamp.
+     * Used by the conversation backup/export flow.
+     */
+    suspend fun getMessagesForThread(threadId: Long): List<CuteMessage> =
+        withContext(Dispatchers.IO) {
+            val sms = fetchSmsForThread(threadId).fastMap { it.toCuteMessage(context) }
+            val mms = fetchMmsForThread(threadId).fastMap { it.toCuteMessage(context) }
+            (sms + mms).sortedBy { it.timestamp }
+        }
+
 
     private fun fetchSmsForThread(threadId: Long): List<CuteMessageEntity> {
 

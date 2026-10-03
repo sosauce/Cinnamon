@@ -2,7 +2,6 @@
 
 package com.sosauce.cinnamon.features.contacts.data.repository
 
-import android.accounts.AccountManager
 import android.content.ContentProviderOperation
 import android.content.Context
 import android.net.Uri
@@ -36,9 +35,6 @@ import kotlinx.coroutines.withContext
 class ContactsRepository(
     private val context: Context
 ) {
-
-
-
     fun fetchLatestContacts() =
         context.contentResolver
             .observe(ContactsContract.Contacts.CONTENT_URI)
@@ -60,6 +56,19 @@ class ContactsRepository(
             extraSelection = "${ContactsContract.Contacts.HAS_PHONE_NUMBER} = ?",
             extraSelectionArgs = arrayOf("1")
         ).fastMap { it.toDomain() }
+
+    /**
+     * One-shot snapshot of all contacts for the backup/export flow.
+     * Reuses the same provider queries as [fetchLatestContacts].
+     */
+    suspend fun getContactsOnce(): List<CuteContactEntity> =
+        withContext(Dispatchers.IO) { fetchContacts() }
+
+    /**
+     * One-shot full details for a single contact for the backup/export flow.
+     */
+    suspend fun getContactDetailsOnce(contactId: Long): CuteContactDetails =
+        withContext(Dispatchers.IO) { fetchContactDetails(contactId) }
 
     fun fetchContact(contactId: Long) =
         context.contentResolver

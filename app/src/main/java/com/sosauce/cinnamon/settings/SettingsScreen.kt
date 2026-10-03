@@ -80,12 +80,12 @@ fun SettingsScreen(
             description = stringResource(R.string.phone_settings_desc),
             onNavigate = { backStack.add(SettingsScreens.Phone) }
         ),
-//        Item(
-//            icon = R.drawable.migrate,
-//            name = stringResource(R.string.migration),
-//            description = stringResource(R.string.migration_desc),
-//            onNavigate = { backStack.add(SettingsScreens.Migration) }
-//        )
+        Item(
+            icon = R.drawable.migrate,
+            name = stringResource(R.string.migration),
+            description = stringResource(R.string.migration_desc),
+            onNavigate = { backStack.add(SettingsScreens.Migration) }
+        )
     )
 
 
@@ -184,6 +184,9 @@ fun SettingsScreen(
                 }
                 entry<SettingsScreens.Permissions> {
                     SettingsPermissions()
+                }
+                entry<SettingsScreens.Migration> {
+                    SettingsMigration()
                 }
             }
         )
