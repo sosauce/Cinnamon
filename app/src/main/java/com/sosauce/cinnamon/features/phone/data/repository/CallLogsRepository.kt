@@ -69,6 +69,11 @@ class CallLogsRepository(
             val locationColumn = cursor.getColumnIndexOrThrow(CallLog.Calls.GEOCODED_LOCATION)
             val photoColumn =  cursor.getColumnIndexOrThrow(CallLog.Calls.CACHED_PHOTO_URI)
 
+            // Per-load memo of PhoneLookup results keyed by the raw number string.
+            // Same number across rows is queried once; negative (null) results
+            // are cached too so unknown numbers don't re-query per row.
+            val lookupCache = mutableMapOf<String, Pair<String?, String?>>()
+
             while (cursor.moveToNext()) {
 
                 val id = cursor.getLong(idColumn)
@@ -77,29 +82,37 @@ class CallLogsRepository(
                 val date = cursor.getLong(dateColumn)
                 val duration = cursor.getLong(durationColumn)
                 val presentation = cursor.getInt(presentationColumn)
-                val cachedName = cursor.getString(cachedNameColumn)
+                val cachedName = cursor.getString(cachedNameColumn) ?: ""
                 val location = cursor.getString(locationColumn)
                 val photo = cursor.getString(photoColumn)
+
+                val needsName = cachedName.isEmpty()
+                val needsPhoto = photo.isNullOrEmpty()
+
+                var resolvedName: String? = null
+                var resolvedPhoto: String? = null
+                if ((needsName || needsPhoto) && number.isNotEmpty()) {
+                    val cached = lookupCache.getOrPut(number) {
+                        numberLookup.fetchContactInfo(
+                            number = number,
+                            fullQuality = false
+                        )
+                    }
+                    if (needsName) resolvedName = cached.first
+                    if (needsPhoto) resolvedPhoto = cached.second
+                }
 
                 logs.add(
                     CuteCallLogEntity(
                         id = id,
                         number = number.ifEmpty { context.getString(R.string.private_number) },
-                        cachedName = cachedName,
+                        cachedName = cachedName.ifEmpty { resolvedName },
                         date = date,
                         duration = duration,
                         location = location,
                         presentation = presentation,
                         type = callType,
-                        photo = photo?.ifEmpty {
-                            numberLookup.fetchPhoto(
-                                number = number,
-                                fullQuality = false
-                            )
-                        } ?: numberLookup.fetchPhoto(
-                            number = number,
-                            fullQuality = false
-                        )
+                        photo = if (!photo.isNullOrEmpty()) photo else resolvedPhoto
                     )
                 )
 

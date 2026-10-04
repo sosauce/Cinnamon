@@ -2,6 +2,7 @@ package com.sosauce.cinnamon.settings
 
 import android.net.Uri
 import androidx.annotation.StringRes
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -38,7 +39,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class MessageBackupUiState(
-    val fileName: String = "",
     val selectedThreadIds: Set<Long> = emptySet(),
     val isExporting: Boolean = false,
     val progressDone: Int? = null,
@@ -46,7 +46,6 @@ data class MessageBackupUiState(
 )
 
 data class ContactsBackupUiState(
-    val fileName: String = "",
     val selectedContactIds: Set<Long> = emptySet(),
     val isExporting: Boolean = false,
     val progressDone: Int? = null,
@@ -54,7 +53,6 @@ data class ContactsBackupUiState(
 )
 
 data class CallLogsBackupUiState(
-    val fileName: String = "",
     val selectedLogIds: Set<Long> = emptySet(),
     val isExporting: Boolean = false,
     val progressDone: Int? = null,
@@ -101,20 +99,22 @@ class MigrationViewModel(
                 emptyList()
             )
 
-    private val _backupUiState = MutableStateFlow(
-        MessageBackupUiState(fileName = messageBackupRepository.defaultFileName())
-    )
+    val smsBackupFileNameState = TextFieldState(messageBackupRepository.defaultFileName())
+
+    val contactsBackupFileNameState =
+        TextFieldState(contactsBackupRepository.defaultFileName())
+
+    val callLogsBackupFileNameState =
+        TextFieldState(callLogsBackupRepository.defaultFileName())
+
+    private val _backupUiState = MutableStateFlow(MessageBackupUiState())
     val backupUiState: StateFlow<MessageBackupUiState> = _backupUiState.asStateFlow()
 
-    private val _contactsBackupUiState = MutableStateFlow(
-        ContactsBackupUiState(fileName = contactsBackupRepository.defaultFileName())
-    )
+    private val _contactsBackupUiState = MutableStateFlow(ContactsBackupUiState())
     val contactsBackupUiState: StateFlow<ContactsBackupUiState> =
         _contactsBackupUiState.asStateFlow()
 
-    private val _callLogsBackupUiState = MutableStateFlow(
-        CallLogsBackupUiState(fileName = callLogsBackupRepository.defaultFileName())
-    )
+    private val _callLogsBackupUiState = MutableStateFlow(CallLogsBackupUiState())
     val callLogsBackupUiState: StateFlow<CallLogsBackupUiState> =
         _callLogsBackupUiState.asStateFlow()
 
@@ -191,14 +191,6 @@ class MigrationViewModel(
         _backupUiState.update {
             it.copy(selectedThreadIds = emptySet())
         }
-    }
-
-    fun onBackupFileNameChange(name: String) {
-        _backupUiState.update { it.copy(fileName = name) }
-    }
-
-    fun sanitizedSmsFileName(): String {
-        return messageBackupRepository.sanitizeFileName(_backupUiState.value.fileName)
     }
 
     fun exportSmsBackup(destination: Uri) {
@@ -282,14 +274,6 @@ class MigrationViewModel(
         }
     }
 
-    fun onContactsFileNameChange(name: String) {
-        _contactsBackupUiState.update { it.copy(fileName = name) }
-    }
-
-    fun sanitizedContactsFileName(): String {
-        return contactsBackupRepository.sanitizeFileName(_contactsBackupUiState.value.fileName)
-    }
-
     fun exportContactsBackup(destination: Uri) {
         if (_contactsBackupUiState.value.isExporting) return
 
@@ -368,14 +352,6 @@ class MigrationViewModel(
         _callLogsBackupUiState.update {
             it.copy(selectedLogIds = emptySet())
         }
-    }
-
-    fun onCallLogsFileNameChange(name: String) {
-        _callLogsBackupUiState.update { it.copy(fileName = name) }
-    }
-
-    fun sanitizedCallLogsFileName(): String {
-        return callLogsBackupRepository.sanitizeFileName(_callLogsBackupUiState.value.fileName)
     }
 
     fun exportCallLogsBackup(destination: Uri) {

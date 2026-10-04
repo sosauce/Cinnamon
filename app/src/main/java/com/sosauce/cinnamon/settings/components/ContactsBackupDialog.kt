@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -25,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.core.ui.ValidFileNameTransformation
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.settings.ContactsBackupUiState
 
@@ -32,11 +35,11 @@ import com.sosauce.cinnamon.settings.ContactsBackupUiState
 fun ContactsBackupDialog(
     contacts: List<CuteContact>,
     uiState: ContactsBackupUiState,
+    fileNameState: TextFieldState,
     hasContactsPermission: Boolean,
     onToggleContact: (contactId: Long, selected: Boolean) -> Unit,
     onSelectAll: () -> Unit,
     onClearSelection: () -> Unit,
-    onFileNameChange: (String) -> Unit,
     onDismiss: () -> Unit,
     onStartBackup: () -> Unit
 ) {
@@ -55,14 +58,14 @@ fun ContactsBackupDialog(
             ) {
                 item {
                     OutlinedTextField(
-                        value = uiState.fileName,
-                        onValueChange = onFileNameChange,
+                        state = fileNameState,
                         label = {
                             Text(
                                 text = stringResource(R.string.backup_file_name, ".vcf")
                             )
                         },
-                        singleLine = true,
+                        lineLimits = TextFieldLineLimits.SingleLine,
+                        inputTransformation = ValidFileNameTransformation,
                         enabled = !uiState.isExporting,
                         modifier = Modifier.fillMaxWidth()
                     )

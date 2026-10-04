@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -25,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.core.ui.ValidFileNameTransformation
 import com.sosauce.cinnamon.features.phone.domain.CuteCallLog2
 import com.sosauce.cinnamon.settings.CallLogsBackupUiState
 
@@ -32,11 +35,11 @@ import com.sosauce.cinnamon.settings.CallLogsBackupUiState
 fun CallLogsBackupDialog(
     logs: List<CuteCallLog2>,
     uiState: CallLogsBackupUiState,
+    fileNameState: TextFieldState,
     hasCallLogPermission: Boolean,
     onToggleLog: (logId: Long, selected: Boolean) -> Unit,
     onSelectAll: () -> Unit,
     onClearSelection: () -> Unit,
-    onFileNameChange: (String) -> Unit,
     onDismiss: () -> Unit,
     onStartBackup: () -> Unit
 ) {
@@ -45,7 +48,7 @@ fun CallLogsBackupDialog(
         title = { Text(stringResource(R.string.backup_call_logs)) },
         icon = {
             Icon(
-                painter = painterResource(R.drawable.phone),
+                painter = painterResource(R.drawable.migrate),
                 contentDescription = null
             )
         },
@@ -54,23 +57,15 @@ fun CallLogsBackupDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 item {
-                    Text(
-                        text = stringResource(R.string.backup_call_logs_desc),
-                        style = MaterialTheme.typography.bodyMediumEmphasized.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                }
-                item {
                     OutlinedTextField(
-                        value = uiState.fileName,
-                        onValueChange = onFileNameChange,
+                        state = fileNameState,
                         label = {
                             Text(
                                 text = stringResource(R.string.backup_file_name, ".json")
                             )
                         },
-                        singleLine = true,
+                        lineLimits = TextFieldLineLimits.SingleLine,
+                        inputTransformation = ValidFileNameTransformation,
                         enabled = !uiState.isExporting,
                         modifier = Modifier.fillMaxWidth()
                     )

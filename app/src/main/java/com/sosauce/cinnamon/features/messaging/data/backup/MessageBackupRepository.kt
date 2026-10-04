@@ -105,17 +105,6 @@ class MessageBackupRepository(
 
     fun defaultFileName(nowMillis: Long = System.currentTimeMillis()): String {
         val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
-        return "backup_${formatter.format(Date(nowMillis))}.json"
-    }
-
-    fun sanitizeFileName(raw: String, fallback: String = defaultFileName()): String {
-        val trimmed = raw.trim()
-        if (trimmed.isEmpty()) return fallback
-        // SAF display names must not contain path separators; replace them.
-        var name = trimmed.replace('/', '_').replace('\\', '_')
-        if (!name.endsWith(".json", ignoreCase = true)) {
-            name += ".json"
-        }
-        return name
+        return "backup_${formatter.format(Date(nowMillis))}"
     }
 }

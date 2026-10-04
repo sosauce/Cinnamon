@@ -47,6 +47,43 @@ class NumberLookup(
     }
 
     /**
+     * Combined lookup for [fetchContactDisplayName] + [fetchPhoto] in a single
+     * `PhoneLookup` query. The key must always be the raw number string.
+     *
+     * @param fullQuality If false, will provide a thumbnail
+     * @return Pair(displayName, photoUriString), each null when not found.
+     */
+    suspend fun fetchContactInfo(
+        number: String,
+        fullQuality: Boolean
+    ): Pair<String?, String?> = withContext(Dispatchers.IO) {
+        if (number.isEmpty()) return@withContext null to null
+
+        val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number))
+
+        val photoQuality = if (fullQuality) ContactsContract.PhoneLookup.PHOTO_URI else ContactsContract.PhoneLookup.PHOTO_THUMBNAIL_URI
+
+        context.contentResolver.query(
+            uri,
+            arrayOf(
+                ContactsContract.PhoneLookup.DISPLAY_NAME,
+                photoQuality
+            ),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            val nameColumn = cursor.getColumnIndexOrThrow(ContactsContract.PhoneLookup.DISPLAY_NAME)
+            val photoColumn = cursor.getColumnIndexOrThrow(photoQuality)
+
+            if (cursor.moveToFirst()) {
+                return@withContext cursor.getString(nameColumn) to cursor.getString(photoColumn)
+            }
+        }
+        return@withContext null to null
+    }
+
+    /**
      * @return The display name of the contact associated with [number] if it exists.
      */
     fun fetchContactDisplayName(

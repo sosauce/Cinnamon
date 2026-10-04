@@ -167,14 +167,14 @@ fun SettingsMigration() {
         SmsBackupDialog(
             conversations = conversations,
             uiState = smsState,
+            fileNameState = viewModel.smsBackupFileNameState,
             hasSmsPermission = hasSmsPermission,
             onToggleConversation = viewModel::toggleConversationSelected,
             onSelectAll = { viewModel.selectAllConversations(conversations.map { it.threadId }) },
             onClearSelection = viewModel::clearConversationSelection,
-            onFileNameChange = viewModel::onBackupFileNameChange,
             onDismiss = { showSmsDialog = false },
             onStartBackup = {
-                smsDocumentLauncher.launch(viewModel.sanitizedSmsFileName())
+                smsDocumentLauncher.launch(viewModel.smsBackupFileNameState.text.toString() + ".json")
             }
         )
     }
@@ -183,14 +183,14 @@ fun SettingsMigration() {
         CallLogsBackupDialog(
             logs = callLogs,
             uiState = callsState,
+            fileNameState = viewModel.callLogsBackupFileNameState,
             hasCallLogPermission = hasCallLogPermission,
             onToggleLog = viewModel::toggleCallLogSelected,
             onSelectAll = { viewModel.selectAllCallLogs(callLogs.map { it.id }) },
             onClearSelection = viewModel::clearCallLogsSelection,
-            onFileNameChange = viewModel::onCallLogsFileNameChange,
             onDismiss = { showCallsDialog = false },
             onStartBackup = {
-                callsDocumentLauncher.launch(viewModel.sanitizedCallLogsFileName())
+                callsDocumentLauncher.launch(viewModel.callLogsBackupFileNameState.text.toString() + ".json")
             }
         )
     }
@@ -199,14 +199,16 @@ fun SettingsMigration() {
         ContactsBackupDialog(
             contacts = contacts,
             uiState = contactsState,
+            fileNameState = viewModel.contactsBackupFileNameState,
             hasContactsPermission = hasContactsPermission,
             onToggleContact = viewModel::toggleContactSelected,
             onSelectAll = { viewModel.selectAllContacts(contacts.map { it.id }) },
             onClearSelection = viewModel::clearContactsSelection,
-            onFileNameChange = viewModel::onContactsFileNameChange,
             onDismiss = { showContactsDialog = false },
             onStartBackup = {
-                contactsDocumentLauncher.launch(viewModel.sanitizedContactsFileName())
+                val filename = viewModel.contactsBackupFileNameState.text.toString() + ".vcf"
+
+                contactsDocumentLauncher.launch(filename)
             }
         )
     }

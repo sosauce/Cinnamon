@@ -6,6 +6,7 @@ import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import androidx.compose.ui.util.fastFilter
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.PermissionUtils
@@ -37,10 +38,9 @@ import java.util.Locale
  * Builds a standard multi-vCard (`.vcf`, vCard 3.0) snapshot of the selected
  * contacts and persists it through the Storage Access Framework [Uri].
  *
- * Source data comes from [ContactsRepository], i.e. the same provider queries
- * the rest of the app uses. Photo bytes are embedded best-effort (skipped
- * when unreadable); event dates that cannot be parsed fall back to an
- * `X-ABDATE` extended property so no data is silently dropped.
+ * Photo bytes are embedded best-effort (skipped
+ * when unreadable). Dates that cannot be parsed fall back to an
+ * `X-ABDATE` extended property.
  */
 class ContactsBackupRepository(
     private val context: Context,
@@ -55,8 +55,8 @@ class ContactsBackupRepository(
             throw SecurityException(context.getString(R.string.backup_needs_contacts_permission))
         }
 
-        val entities = contactsRepository.getContactsOnce()
-            .filter { it.id in contactIds }
+        val entities = contactsRepository.fetchContacts()
+            .fastFilter { it.id in contactIds }
 
         val vcards = ArrayList<ezvcard.VCard>(entities.size)
         entities.forEachIndexed { index, entity ->
@@ -82,17 +82,7 @@ class ContactsBackupRepository(
 
     fun defaultFileName(nowMillis: Long = System.currentTimeMillis()): String {
         val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
-        return "contacts_${formatter.format(Date(nowMillis))}.vcf"
-    }
-
-    fun sanitizeFileName(raw: String, fallback: String = defaultFileName()): String {
-        val trimmed = raw.trim()
-        if (trimmed.isEmpty()) return fallback
-        var name = trimmed.replace('/', '_').replace('\\', '_')
-        if (!name.endsWith(".vcf", ignoreCase = true)) {
-            name += ".vcf"
-        }
-        return name
+        return "contacts_${formatter.format(Date(nowMillis))}"
     }
 
     private fun buildVCard(entity: CuteContactEntity, details: CuteContactDetails?): ezvcard.VCard {

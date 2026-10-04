@@ -77,7 +77,7 @@
     <string name="dialpad">Dialpad</string>
     <string name="phone">Phone</string>
     <string name="migration">Migration</string>
-    <string name="migration_desc">Migrate everything to get going with Cinnamon!</string>
+    <string name="migration_desc">Backup &amp; restore everything to get going with Cinnamon !</string>
     <string name="select_number">Select a phone number</string>
     <string name="next_step">Next step</string>
     <string name="select_all">Select all</string>
@@ -164,7 +164,7 @@
     <string name="send_to_number">Send to: %1$s</string>
     <string name="default_launch_screen">Default launch screen</string>
     <string name="navigation">Navigation</string>
-    <string name="navigation_desc">Don\'t get lost!</string>
+    <string name="navigation_desc">Don\'t get lost !</string>
     <string name="default_apps">Default apps</string>
     <string name="permissions">Permissions</string>
     <string name="permissions_desc">Make sure the app is good to go !</string>
@@ -208,7 +208,7 @@
     <string name="import_sms_desc">Restore conversations from a JSON backup file</string>
     <string name="import_contacts">Import contacts</string>
     <string name="import_contacts_desc">Restore contacts from a .vcf file</string>
-    <string name="import_start">Start Import</string>
+    <string name="import_start">Start import</string>
     <string name="import_strategy_title">If an item already exists</string>
     <string name="import_skip_existing">Skip existing</string>
     <string name="import_import_all">Import anyway</string>

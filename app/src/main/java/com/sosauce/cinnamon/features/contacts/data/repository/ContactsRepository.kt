@@ -57,12 +57,6 @@ class ContactsRepository(
             extraSelectionArgs = arrayOf("1")
         ).fastMap { it.toDomain() }
 
-    /**
-     * One-shot snapshot of all contacts for the backup/export flow.
-     * Reuses the same provider queries as [fetchLatestContacts].
-     */
-    suspend fun getContactsOnce(): List<CuteContactEntity> =
-        withContext(Dispatchers.IO) { fetchContacts() }
 
     /**
      * One-shot full details for a single contact for the backup/export flow.
@@ -81,7 +75,7 @@ class ContactsRepository(
             }
             .flowOn(Dispatchers.IO)
 
-    private fun fetchContacts(
+    fun fetchContacts(
         extraSelection: String? = null,
         extraSelectionArgs: Array<String> = emptyArray(),
     ): List<CuteContactEntity> {
