@@ -184,21 +184,18 @@
     <string name="show_character_count_on_typing">Show character count on typing</string>
     <string name="pinch_to_zoom">Pinch to zoom</string>
     <string name="backup_messages">Backup messages</string>
-    <string name="backup_messages_desc">Export SMS/MMS conversations to a JSON file</string>
+    <string name="backup_messages_desc">Export conversations to a JSON file</string>
     <string name="backup_contacts">Backup contacts</string>
-    <string name="backup_contacts_desc">Export contacts to a standard .vcf file</string>
-    <string name="backup_file_name">Backup file name</string>
     <string name="backup_export">Export backup</string>
-    <string name="backup_start">Start Backup</string>
+    <string name="backup_start">Start backup</string>
     <string name="backup_close">Close</string>
     <string name="backup_select_conversations">Select conversations to back up</string>
-    <string name="backup_select_contacts">Select contacts to back up</string>
-    <string name="backup_selected_count">%1$d of %2$d selected</string>
     <string name="backup_select_at_least_one">Select at least one conversation to back up</string>
     <string name="backup_select_at_least_one_contact">Select at least one contact to back up</string>
     <string name="backup_success">Backed up %1$d conversations (%2$d messages)</string>
     <string name="backup_contacts_success">Backed up %1$d contacts</string>
     <string name="backup_failed">Backup failed. Please try again.</string>
+    <string name="error_details">%1$s</string>
     <string name="backup_no_conversations">No conversations found to back up.</string>
     <string name="backup_no_contacts">No contacts found to back up.</string>
     <string name="backup_needs_sms_permission">SMS permission is required to back up conversations.</string>
@@ -207,8 +204,7 @@
     <string name="backup_progress_items">Backing up %1$d of %2$d…</string>
     <string name="backup_exporting_generic">Backing up, please wait…</string>
     <string name="backup_mms_note">MMS media files are referenced by metadata only, not embedded.</string>
-    <string name="backup_vcf_note">Contacts are exported in the standard vCard (.vcf) format.</string>
-    <string name="import_sms">Import SMS/MMS</string>
+    <string name="import_messages">Import messages</string>
     <string name="import_sms_desc">Restore conversations from a JSON backup file</string>
     <string name="import_contacts">Import contacts</string>
     <string name="import_contacts_desc">Restore contacts from a .vcf file</string>
@@ -225,6 +221,22 @@
     <string name="import_preview_sms">%1$d conversations • %2$d messages</string>
     <string name="import_preview_contacts">%1$d contacts</string>
     <string name="import_messages_count">%1$d messages</string>
+    <string name="backup_file_name">Backup file name (%1$s)</string>
+    <string name="backup_contacts_desc">Export contacts to a .vcf file</string>
+    <string name="backup_call_logs">Backup call logs</string>
+    <string name="backup_call_logs_desc">Export call history to a JSON file</string>
+    <string name="backup_select_at_least_one_call_log">Select at least one call log to back up</string>
+    <string name="backup_calls_success">Backed up %1$d calls</string>
+    <string name="backup_no_call_logs">No call logs found to back up.</string>
+    <string name="backup_needs_call_log_permission">Call log permission is required to back up call history.</string>
+    <string name="import_call_logs">Import call logs</string>
+    <string name="import_call_logs_desc">Restore call history from a JSON backup file</string>
+    <string name="import_call_logs_success">Imported %1$d calls (%2$d skipped)</string>
+    <string name="import_preview_calls">%1$d calls</string>
+    <string name="import_needs_call_log_permission">Call log permissions are required to import call history.</string>
+    <string name="backup">Backup</string>
+    <string name="import_backups">Import backups</string>
+    <string name="export_backups">Export backups</string>
 
 
     <plurals name="delete_msg">

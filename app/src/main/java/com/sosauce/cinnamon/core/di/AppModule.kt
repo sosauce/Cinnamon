@@ -28,7 +28,7 @@ import com.sosauce.cinnamon.features.contacts.presentation.ContactsViewModel
 import com.sosauce.cinnamon.features.contacts.presentation.editor.EditContactViewModel
 import com.sosauce.cinnamon.features.messaging.data.ScheduledMessageManager
 import com.sosauce.cinnamon.features.messaging.data.backup.MessageBackupRepository
-import com.sosauce.cinnamon.features.messaging.data.backup.SmsImportRepository
+import com.sosauce.cinnamon.features.messaging.data.backup.MessagesImportRepository
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsDao
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsDatabase
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.MIGRATION_1_2_CONVERSATION_SETTINGS
@@ -44,6 +44,8 @@ import com.sosauce.cinnamon.features.messaging.presentation.conversation.compone
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.forwarding.ForwardingViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.customization.ThemingViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.starter.StartConversationViewModel
+import com.sosauce.cinnamon.features.phone.data.backup.CallLogsBackupRepository
+import com.sosauce.cinnamon.features.phone.data.backup.CallLogsImportRepository
 import com.sosauce.cinnamon.features.phone.data.repository.CallLogsRepository
 import com.sosauce.cinnamon.features.phone.data.repository.VoicemailsRepository
 import com.sosauce.cinnamon.features.phone.presentation.call.CallingViewModel
@@ -123,7 +125,9 @@ val appModule = module {
     singleOf(::MessageBackupRepository)
     singleOf(::ContactsBackupRepository)
     singleOf(::ContactsImportRepository)
-    singleOf(::SmsImportRepository)
+    singleOf(::MessagesImportRepository)
+    singleOf(::CallLogsBackupRepository)
+    singleOf(::CallLogsImportRepository)
 
 
     viewModelOf(::ContactsViewModel)

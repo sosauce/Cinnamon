@@ -30,4 +30,18 @@ object PermissionUtils {
 
     }
 
+    fun hasCallLogReadPermission(context: Context): Boolean {
+        return context.checkSelfPermission(
+            Manifest.permission.READ_CALL_LOG
+        ) == PackageManager.PERMISSION_GRANTED
+
+    }
+
+    fun hasCallLogWritePermission(context: Context): Boolean {
+        return context.checkSelfPermission(
+            Manifest.permission.WRITE_CALL_LOG
+        ) == PackageManager.PERMISSION_GRANTED
+
+    }
+
 }

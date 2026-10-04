@@ -20,23 +20,28 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.features.messaging.data.backup.ImportStrategy
 
 /**
- * Shared backup progress UI. Item counts are trackable in both backup flows,
- * so [progress] carries real 0..1 progress; when null (e.g. right before the
+ * Shared backup progress UI. When unknown (e.g. right before the
  * first item completes) an indeterminate wavy indicator is shown instead.
  */
 @Composable
 fun BackupProgressIndicator(
-    progress: Float?,
-    label: String?,
-    modifier: Modifier = Modifier
+    done: Int?,
+    total: Int?,
+    modifier: Modifier = Modifier,
+    labelOverride: String? = null
 ) {
+    val progress = if (done != null && total != null && total > 0) {
+        (done.toFloat() / total).coerceIn(0f, 1f)
+    } else {
+        null
+    }
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         if (progress != null) {
             LinearWavyProgressIndicator(
-                progress = { progress.coerceIn(0f, 1f) },
+                progress = { progress },
                 modifier = Modifier.fillMaxWidth()
             )
         } else {
@@ -45,7 +50,11 @@ fun BackupProgressIndicator(
             )
         }
         Text(
-            text = label ?: stringResource(R.string.backup_exporting_generic),
+            text = labelOverride ?: if (done != null && total != null) {
+                stringResource(R.string.backup_progress_items, done, total)
+            } else {
+                stringResource(R.string.backup_exporting_generic)
+            },
             style = MaterialTheme.typography.bodySmallEmphasized.copy(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

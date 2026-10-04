@@ -24,9 +24,8 @@ data class SmsImportResult(
 
 /**
  * Restores SMS/MMS conversations from a JSON backup produced by
- * [MessageBackupRepository]. Reads the picked file through SAF, checks for
- * duplicates against the Telephony provider and inserts messages on
- * [Dispatchers.IO] with per-message progress.
+ * [MessageBackupRepository]. Checks for
+ * duplicates against the Telephony provider and inserts messages with per-message progress.
  *
  * Writing to the SMS provider requires Cinnamon to be the default SMS app;
  * callers must gate on [isDefaultSmsApp] first.
@@ -35,7 +34,7 @@ data class SmsImportResult(
  * entries contain their text bodies; group threads are rebuilt via
  * [Telephony.Threads.getOrCreateThreadId].
  */
-class SmsImportRepository(
+class MessagesImportRepository(
     private val context: Context
 ) {
 
@@ -43,6 +42,8 @@ class SmsImportRepository(
 
     fun isDefaultSmsApp(): Boolean =
         Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
+
+
 
     suspend fun parseBackup(uri: Uri): MessageBackupFile = withContext(Dispatchers.IO) {
         val text = context.contentResolver.openInputStream(uri)?.use { stream ->
@@ -54,7 +55,7 @@ class SmsImportRepository(
     suspend fun importConversations(
         conversations: List<BackupConversation>,
         strategy: ImportStrategy,
-        onProgress: suspend (done: Int, total: Int) -> Unit = { _, _ -> }
+        onProgress: (done: Int, total: Int) -> Unit = { _, _ -> }
     ): SmsImportResult = withContext(Dispatchers.IO) {
         if (!PermissionUtils.hasSmsPermission(context)) {
             throw SecurityException(context.getString(R.string.backup_needs_sms_permission))
@@ -72,9 +73,7 @@ class SmsImportRepository(
             val numbers =
                 conversation.participants.mapNotNull { it.rawNumber.takeIf { n -> n.isNotBlank() } }
             val threadId = numbers.takeIf { it.isNotEmpty() }?.let { recipients ->
-                runCatching {
-                    Telephony.Threads.getOrCreateThreadId(context, recipients.toSet())
-                }.getOrNull()
+                Telephony.Threads.getOrCreateThreadId(context, recipients.toSet())
             }
 
             conversation.messages.forEach { message ->

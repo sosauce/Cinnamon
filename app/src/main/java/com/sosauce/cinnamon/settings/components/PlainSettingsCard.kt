@@ -30,7 +30,7 @@ fun PlainSettingsCard(
     Card(
         colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceContainer),
         modifier = Modifier
-            .padding(horizontal = 16.dp, vertical = 2.dp),
+            .padding(horizontal = 16.dp, vertical = 1.dp),
         shape = RoundedCornerShape(
             topStart = topDp,
             topEnd = topDp,

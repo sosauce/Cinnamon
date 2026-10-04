@@ -1,7 +1,6 @@
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
-
 package com.sosauce.cinnamon.settings.components
 
+import android.text.format.DateUtils
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,26 +10,27 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.features.messaging.data.backup.ImportStrategy
-import com.sosauce.cinnamon.settings.ContactsImportSession
+import com.sosauce.cinnamon.settings.CallLogsImportSession
 
 @Composable
-fun ContactsImportDialog(
-    session: ContactsImportSession,
-    onToggleContact: (key: Int, selected: Boolean) -> Unit,
+fun CallLogsImportDialog(
+    session: CallLogsImportSession,
+    onToggleLog: (key: Int, selected: Boolean) -> Unit,
     onSelectAll: () -> Unit,
     onClearSelection: () -> Unit,
     onStrategyChange: (ImportStrategy) -> Unit,
@@ -39,13 +39,14 @@ fun ContactsImportDialog(
 ) {
     val busy = session.isParsing || session.isImporting
     val preview = session.preview
+    val context = LocalContext.current
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text(stringResource(R.string.import_contacts)) },
+        title = { Text(stringResource(R.string.import_call_logs)) },
         icon = {
             Icon(
-                painter = painterResource(R.drawable.migrate),
+                painter = painterResource(R.drawable.phone),
                 contentDescription = null
             )
         },
@@ -75,7 +76,10 @@ fun ContactsImportDialog(
                 } else {
                     item {
                         Text(
-                            text = stringResource(R.string.import_preview_contacts, preview.size),
+                            text = stringResource(
+                                R.string.import_preview_calls,
+                                preview.size
+                            ),
                             style = MaterialTheme.typography.bodyMediumEmphasized
                         )
                     }
@@ -122,34 +126,48 @@ fun ContactsImportDialog(
                     items(
                         items = preview,
                         key = { it.key }
-                    ) { contact ->
-                        val selected = contact.key in session.selectedKeys
+                    ) { item ->
+                        val selected = item.key in session.selectedKeys
+                        val log = item.log
+                        val title = log.cachedName?.takeIf { it.isNotBlank() }
+                            ?: log.number.takeIf { it.isNotBlank() }
+                            ?: stringResource(R.string.private_number)
+                        val subtitle = remember(log.dateMillis, log.durationSeconds) {
+                            val date = DateUtils.formatDateTime(
+                                context,
+                                log.dateMillis,
+                                DateUtils.FORMAT_ABBREV_MONTH
+                            )
+                            if (log.durationSeconds > 0) {
+                                "$date • ${DateUtils.formatElapsedTime(log.durationSeconds)}"
+                            } else {
+                                date
+                            }
+                        }
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Checkbox(
                                 checked = selected,
-                                onCheckedChange = { onToggleContact(contact.key, it) },
+                                onCheckedChange = { onToggleLog(item.key, it) },
                                 enabled = !session.isImporting
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = contact.displayName,
+                                    text = title,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     style = MaterialTheme.typography.bodyMediumEmphasized
                                 )
-                                if (contact.detailLine.isNotBlank()) {
-                                    Text(
-                                        text = contact.detailLine,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        style = MaterialTheme.typography.bodySmallEmphasized.copy(
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                Text(
+                                    text = subtitle,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = MaterialTheme.typography.bodySmallEmphasized.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-                                }
+                                )
                             }
                         }
                     }

@@ -25,15 +25,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.features.contacts.domain.CuteContact
-import com.sosauce.cinnamon.settings.ContactsBackupUiState
+import com.sosauce.cinnamon.features.phone.domain.CuteCallLog2
+import com.sosauce.cinnamon.settings.CallLogsBackupUiState
 
 @Composable
-fun ContactsBackupDialog(
-    contacts: List<CuteContact>,
-    uiState: ContactsBackupUiState,
-    hasContactsPermission: Boolean,
-    onToggleContact: (contactId: Long, selected: Boolean) -> Unit,
+fun CallLogsBackupDialog(
+    logs: List<CuteCallLog2>,
+    uiState: CallLogsBackupUiState,
+    hasCallLogPermission: Boolean,
+    onToggleLog: (logId: Long, selected: Boolean) -> Unit,
     onSelectAll: () -> Unit,
     onClearSelection: () -> Unit,
     onFileNameChange: (String) -> Unit,
@@ -42,10 +42,10 @@ fun ContactsBackupDialog(
 ) {
     AlertDialog(
         onDismissRequest = { if (!uiState.isExporting) onDismiss() },
-        title = { Text(stringResource(R.string.backup_contacts)) },
+        title = { Text(stringResource(R.string.backup_call_logs)) },
         icon = {
             Icon(
-                painter = painterResource(R.drawable.migrate),
+                painter = painterResource(R.drawable.phone),
                 contentDescription = null
             )
         },
@@ -54,12 +54,20 @@ fun ContactsBackupDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 item {
+                    Text(
+                        text = stringResource(R.string.backup_call_logs_desc),
+                        style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+                item {
                     OutlinedTextField(
                         value = uiState.fileName,
                         onValueChange = onFileNameChange,
                         label = {
                             Text(
-                                text = stringResource(R.string.backup_file_name, ".vcf")
+                                text = stringResource(R.string.backup_file_name, ".json")
                             )
                         },
                         singleLine = true,
@@ -76,21 +84,21 @@ fun ContactsBackupDialog(
                         Row {
                             TextButton(
                                 onClick = onSelectAll,
-                                enabled = contacts.isNotEmpty() && !uiState.isExporting,
+                                enabled = logs.isNotEmpty() && !uiState.isExporting,
                                 shapes = ButtonDefaults.shapes()
                             ) {
                                 Text(stringResource(R.string.select_all))
                             }
                             TextButton(
                                 onClick = onClearSelection,
-                                enabled = uiState.selectedContactIds.isNotEmpty() && !uiState.isExporting,
+                                enabled = uiState.selectedLogIds.isNotEmpty() && !uiState.isExporting,
                                 shapes = ButtonDefaults.shapes()
                             ) {
                                 Text(stringResource(R.string.unselect_all))
                             }
                         }
                         Text(
-                            text = "${uiState.selectedContactIds.size}/${contacts.size}",
+                            text = "${uiState.selectedLogIds.size}/${logs.size}",
                             style = MaterialTheme.typography.bodySmallEmphasized.copy(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -99,10 +107,10 @@ fun ContactsBackupDialog(
                 }
 
                 when {
-                    !hasContactsPermission -> {
+                    !hasCallLogPermission -> {
                         item {
                             Text(
-                                text = stringResource(R.string.backup_needs_contacts_permission),
+                                text = stringResource(R.string.backup_needs_call_log_permission),
                                 style = MaterialTheme.typography.bodyMediumEmphasized.copy(
                                     color = MaterialTheme.colorScheme.error
                                 )
@@ -110,10 +118,10 @@ fun ContactsBackupDialog(
                         }
                     }
 
-                    contacts.isEmpty() -> {
+                    logs.isEmpty() -> {
                         item {
                             Text(
-                                text = stringResource(R.string.backup_no_contacts),
+                                text = stringResource(R.string.backup_no_call_logs),
                                 style = MaterialTheme.typography.bodyMediumEmphasized.copy(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -123,10 +131,10 @@ fun ContactsBackupDialog(
 
                     else -> {
                         items(
-                            items = contacts,
+                            items = logs,
                             key = { it.id }
-                        ) { contact ->
-                            val selected = contact.id in uiState.selectedContactIds
+                        ) { log ->
+                            val selected = log.id in uiState.selectedLogIds
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.fillMaxWidth()
@@ -134,7 +142,7 @@ fun ContactsBackupDialog(
                                 Checkbox(
                                     checked = selected,
                                     onCheckedChange = {
-                                        onToggleContact(contact.id, it)
+                                        onToggleLog(log.id, it)
                                     },
                                     enabled = !uiState.isExporting
                                 )
@@ -142,23 +150,23 @@ fun ContactsBackupDialog(
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Text(
-                                        text = contact.displayName.ifBlank { contact.id.toString() },
+                                        text = log.displayName,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                         style = MaterialTheme.typography.bodyMediumEmphasized
                                     )
-                                    val subtitle = contact.phoneNumbers.firstOrNull()?.number
-                                        ?: contact.accountName
-                                    if (subtitle.isNotBlank()) {
-                                        Text(
-                                            text = subtitle,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            style = MaterialTheme.typography.bodySmallEmphasized.copy(
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
+                                    Text(
+                                        text = if (log.duration != null) {
+                                            "${log.date} • ${log.duration}"
+                                        } else {
+                                            log.date
+                                        },
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        style = MaterialTheme.typography.bodySmallEmphasized.copy(
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
-                                    }
+                                    )
                                 }
                             }
                         }
@@ -179,7 +187,7 @@ fun ContactsBackupDialog(
         confirmButton = {
             TextButton(
                 onClick = onStartBackup,
-                enabled = uiState.selectedContactIds.isNotEmpty() && !uiState.isExporting,
+                enabled = uiState.selectedLogIds.isNotEmpty() && !uiState.isExporting,
                 shapes = ButtonDefaults.shapes()
             ) {
                 Text(stringResource(R.string.backup_start))

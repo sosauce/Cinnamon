@@ -13,15 +13,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/**
- * Builds a JSON-serializable snapshot of the selected conversations and
- * persists it through the Storage Access Framework [Uri] supplied by the UI.
- *
- * MMS media bytes are intentionally NOT embedded: only metadata (type,
- * filename, size, originating content Uri) plus the text body is exported.
- * This keeps backups small, avoids OOM on large threads and avoids needing
- * any storage permission (SAF write only).
- */
 class MessageBackupRepository(
     private val context: Context,
     private val conversationsRepository: ConversationsRepository,

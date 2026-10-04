@@ -1,9 +1,9 @@
 package com.sosauce.cinnamon.settings
 
-import android.app.Application
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.compose.ui.util.fastMap
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.features.contacts.data.backup.ContactsBackupRepository
@@ -14,10 +14,15 @@ import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.messaging.data.backup.BackupConversation
 import com.sosauce.cinnamon.features.messaging.data.backup.ImportStrategy
 import com.sosauce.cinnamon.features.messaging.data.backup.MessageBackupRepository
-import com.sosauce.cinnamon.features.messaging.data.backup.SmsImportRepository
+import com.sosauce.cinnamon.features.messaging.data.backup.MessagesImportRepository
 import com.sosauce.cinnamon.features.messaging.data.model.toCuteConversation
 import com.sosauce.cinnamon.features.messaging.data.repository.ConversationsRepository
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
+import com.sosauce.cinnamon.features.phone.data.backup.CallLogsBackupRepository
+import com.sosauce.cinnamon.features.phone.data.backup.CallLogsImportRepository
+import com.sosauce.cinnamon.features.phone.data.backup.ImportableCallLog
+import com.sosauce.cinnamon.features.phone.data.repository.CallLogsRepository
+import com.sosauce.cinnamon.features.phone.domain.CuteCallLog2
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +30,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -35,27 +41,37 @@ data class MessageBackupUiState(
     val fileName: String = "",
     val selectedThreadIds: Set<Long> = emptySet(),
     val isExporting: Boolean = false,
-    val progress: Float? = null,
-    val progressLabel: String? = null
+    val progressDone: Int? = null,
+    val progressTotal: Int? = null
 )
 
 data class ContactsBackupUiState(
     val fileName: String = "",
     val selectedContactIds: Set<Long> = emptySet(),
     val isExporting: Boolean = false,
-    val progress: Float? = null,
-    val progressLabel: String? = null
+    val progressDone: Int? = null,
+    val progressTotal: Int? = null
+)
+
+data class CallLogsBackupUiState(
+    val fileName: String = "",
+    val selectedLogIds: Set<Long> = emptySet(),
+    val isExporting: Boolean = false,
+    val progressDone: Int? = null,
+    val progressTotal: Int? = null
 )
 
 class MigrationViewModel(
-    private val application: Application,
     private val contactsRepository: ContactsRepository,
     private val conversationsRepository: ConversationsRepository,
     private val messageBackupRepository: MessageBackupRepository,
     private val contactsBackupRepository: ContactsBackupRepository,
-    private val smsImportRepository: SmsImportRepository,
-    private val contactsImportRepository: ContactsImportRepository
-) : AndroidViewModel(application) {
+    private val messagesImportRepository: MessagesImportRepository,
+    private val contactsImportRepository: ContactsImportRepository,
+    private val callLogsRepository: CallLogsRepository,
+    private val callLogsBackupRepository: CallLogsBackupRepository,
+    private val callLogsImportRepository: CallLogsImportRepository
+) : ViewModel() {
 
     val backupConversations: StateFlow<List<CuteConversation>> =
         conversationsRepository.fetchLatestConversations()
@@ -76,6 +92,15 @@ class MigrationViewModel(
                 emptyList()
             )
 
+    val backupCallLogs: StateFlow<List<CuteCallLog2>> =
+        callLogsRepository.fetchLatestCallLog()
+            .catch { emit(emptyList()) }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                emptyList()
+            )
+
     private val _backupUiState = MutableStateFlow(
         MessageBackupUiState(fileName = messageBackupRepository.defaultFileName())
     )
@@ -87,8 +112,18 @@ class MigrationViewModel(
     val contactsBackupUiState: StateFlow<ContactsBackupUiState> =
         _contactsBackupUiState.asStateFlow()
 
+    private val _callLogsBackupUiState = MutableStateFlow(
+        CallLogsBackupUiState(fileName = callLogsBackupRepository.defaultFileName())
+    )
+    val callLogsBackupUiState: StateFlow<CallLogsBackupUiState> =
+        _callLogsBackupUiState.asStateFlow()
+
     private val _smsImportSession = MutableStateFlow<SmsImportSession?>(null)
     val smsImportSession: StateFlow<SmsImportSession?> = _smsImportSession.asStateFlow()
+
+    private val _callLogsImportSession = MutableStateFlow<CallLogsImportSession?>(null)
+    val callLogsImportSession: StateFlow<CallLogsImportSession?> =
+        _callLogsImportSession.asStateFlow()
 
     private val _contactsImportSession = MutableStateFlow<ContactsImportSession?>(null)
     val contactsImportSession: StateFlow<ContactsImportSession?> =
@@ -99,10 +134,9 @@ class MigrationViewModel(
 
     private var smsSelectionInitialized = false
     private var contactsSelectionInitialized = false
+    private var callLogsSelectionInitialized = false
 
     init {
-        // Default to select-all on first load so Export works immediately.
-        // Users can still deselect individual items afterwards.
         viewModelScope.launch {
             backupConversations.collect { conversations ->
                 if (!smsSelectionInitialized && conversations.isNotEmpty()) {
@@ -115,7 +149,17 @@ class MigrationViewModel(
             }
         }
         viewModelScope.launch {
-            backupContacts.collect { contacts ->
+            backupCallLogs.collect { logs ->
+                if (!callLogsSelectionInitialized && logs.isNotEmpty()) {
+                    callLogsSelectionInitialized = true
+                    _callLogsBackupUiState.update {
+                        it.copy(selectedLogIds = logs.fastMap { c -> c.id }.toSet())
+                    }
+                }
+            }
+        }
+        viewModelScope.launch {
+            backupContacts.collectLatest { contacts ->
                 if (!contactsSelectionInitialized && contacts.isNotEmpty()) {
                     contactsSelectionInitialized = true
                     _contactsBackupUiState.update {
@@ -164,9 +208,7 @@ class MigrationViewModel(
             val snapshot = _backupUiState.value
             if (snapshot.selectedThreadIds.isEmpty()) {
                 _events.send(
-                    MigrationEvent.SmsExportError(
-                        application.getString(R.string.backup_select_at_least_one)
-                    )
+                    MigrationEvent.Error(R.string.backup_select_at_least_one)
                 )
                 return@launch
             }
@@ -174,8 +216,8 @@ class MigrationViewModel(
             _backupUiState.update {
                 it.copy(
                     isExporting = true,
-                    progress = 0f,
-                    progressLabel = null
+                    progressDone = null,
+                    progressTotal = null
                 )
             }
             try {
@@ -183,12 +225,7 @@ class MigrationViewModel(
                     messageBackupRepository.buildBackup(snapshot.selectedThreadIds) { done, total ->
                         _backupUiState.update {
                             it.copy(
-                                progress = done.toFloat() / total,
-                                progressLabel = application.getString(
-                                    R.string.backup_progress_items,
-                                    done,
-                                    total
-                                )
+                                progressDone = done, progressTotal = total
                             )
                         }
                     }
@@ -197,31 +234,26 @@ class MigrationViewModel(
                 _backupUiState.update {
                     it.copy(
                         isExporting = false,
-                        progress = null,
-                        progressLabel = null
+                        progressDone = null,
+                        progressTotal = null
                     )
                 }
                 _events.send(
-                    MigrationEvent.SmsExportSuccess(
-                        application.getString(
-                            R.string.backup_success,
-                            backup.conversations.size,
-                            messageCount
-                        )
+                    MigrationEvent.Success(
+                        R.string.backup_success,
+                        listOf(backup.conversations.size, messageCount)
                     )
                 )
             } catch (e: Exception) {
                 _backupUiState.update {
                     it.copy(
                         isExporting = false,
-                        progress = null,
-                        progressLabel = null
+                        progressDone = null,
+                        progressTotal = null
                     )
                 }
                 _events.send(
-                    MigrationEvent.SmsExportError(
-                        e.message ?: application.getString(R.string.backup_failed)
-                    )
+                    e.toMigrationError(R.string.backup_failed)
                 )
             }
         }
@@ -265,9 +297,7 @@ class MigrationViewModel(
             val snapshot = _contactsBackupUiState.value
             if (snapshot.selectedContactIds.isEmpty()) {
                 _events.send(
-                    MigrationEvent.ContactsExportError(
-                        application.getString(R.string.backup_select_at_least_one_contact)
-                    )
+                    MigrationEvent.Error(R.string.backup_select_at_least_one_contact)
                 )
                 return@launch
             }
@@ -275,8 +305,8 @@ class MigrationViewModel(
             _contactsBackupUiState.update {
                 it.copy(
                     isExporting = true,
-                    progress = 0f,
-                    progressLabel = null
+                    progressDone = null,
+                    progressTotal = null
                 )
             }
             try {
@@ -284,12 +314,7 @@ class MigrationViewModel(
                     contactsBackupRepository.buildVcf(snapshot.selectedContactIds) { done, total ->
                         _contactsBackupUiState.update {
                             it.copy(
-                                progress = done.toFloat() / total,
-                                progressLabel = application.getString(
-                                    R.string.backup_progress_items,
-                                    done,
-                                    total
-                                )
+                                progressDone = done, progressTotal = total
                             )
                         }
                     }
@@ -297,30 +322,114 @@ class MigrationViewModel(
                 _contactsBackupUiState.update {
                     it.copy(
                         isExporting = false,
-                        progress = null,
-                        progressLabel = null
+                        progressDone = null,
+                        progressTotal = null
                     )
                 }
                 _events.send(
-                    MigrationEvent.ContactsExportSuccess(
-                        application.getString(
-                            R.string.backup_contacts_success,
-                            snapshot.selectedContactIds.size
-                        )
+                    MigrationEvent.Success(
+                        R.string.backup_contacts_success,
+                        listOf(snapshot.selectedContactIds.size)
                     )
                 )
             } catch (e: Exception) {
                 _contactsBackupUiState.update {
                     it.copy(
                         isExporting = false,
-                        progress = null,
-                        progressLabel = null
+                        progressDone = null,
+                        progressTotal = null
                     )
                 }
                 _events.send(
-                    MigrationEvent.ContactsExportError(
-                        e.message ?: application.getString(R.string.backup_failed)
+                    e.toMigrationError(R.string.backup_failed)
+                )
+            }
+        }
+    }
+
+    fun toggleCallLogSelected(logId: Long, selected: Boolean) {
+        _callLogsBackupUiState.update { state ->
+            val updated = if (selected) {
+                state.selectedLogIds + logId
+            } else {
+                state.selectedLogIds - logId
+            }
+            state.copy(selectedLogIds = updated)
+        }
+    }
+
+    fun selectAllCallLogs(logIds: List<Long>) {
+        _callLogsBackupUiState.update {
+            it.copy(selectedLogIds = logIds.toSet())
+        }
+    }
+
+    fun clearCallLogsSelection() {
+        _callLogsBackupUiState.update {
+            it.copy(selectedLogIds = emptySet())
+        }
+    }
+
+    fun onCallLogsFileNameChange(name: String) {
+        _callLogsBackupUiState.update { it.copy(fileName = name) }
+    }
+
+    fun sanitizedCallLogsFileName(): String {
+        return callLogsBackupRepository.sanitizeFileName(_callLogsBackupUiState.value.fileName)
+    }
+
+    fun exportCallLogsBackup(destination: Uri) {
+        if (_callLogsBackupUiState.value.isExporting) return
+
+        viewModelScope.launch {
+            val snapshot = _callLogsBackupUiState.value
+            if (snapshot.selectedLogIds.isEmpty()) {
+                _events.send(
+                    MigrationEvent.Error(R.string.backup_select_at_least_one_call_log)
+                )
+                return@launch
+            }
+
+            _callLogsBackupUiState.update {
+                it.copy(
+                    isExporting = true,
+                    progressDone = null,
+                    progressTotal = null
+                )
+            }
+            try {
+                val backup =
+                    callLogsBackupRepository.buildBackup(snapshot.selectedLogIds) { done, total ->
+                        _callLogsBackupUiState.update {
+                            it.copy(
+                                progressDone = done, progressTotal = total
+                            )
+                        }
+                    }
+                callLogsBackupRepository.writeBackupToUri(destination, backup)
+                _callLogsBackupUiState.update {
+                    it.copy(
+                        isExporting = false,
+                        progressDone = null,
+                        progressTotal = null
                     )
+                }
+                _events.send(
+                    MigrationEvent.Success(
+                        R.string.backup_calls_success,
+                        listOf(backup.calls.size)
+                    )
+                )
+            } catch (e: Exception) {
+                _callLogsBackupUiState.update {
+                    it.copy(
+                        isExporting = false,
+                        progressDone = null,
+                        progressTotal = null
+                    )
+                }
+                _events.send(
+                    e.toMigrationError(R.string.backup_failed)
                 )
             }
         }
@@ -328,15 +437,15 @@ class MigrationViewModel(
 
     fun loadSmsImport(uri: Uri) {
         _smsImportSession.value = SmsImportSession(
-            fileName = smsImportRepository.readDisplayName(uri)
+            fileName = messagesImportRepository.readDisplayName(uri)
         )
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val backup = smsImportRepository.parseBackup(uri)
+                val backup = messagesImportRepository.parseBackup(uri)
                 if (backup.conversations.isEmpty()) {
-                    _smsImportSession.value = null
+                    _smsImportSession.update { null }
                     _events.send(
-                        MigrationEvent.SmsImportError(application.getString(R.string.import_empty_file))
+                        MigrationEvent.Error(R.string.import_empty_file)
                     )
                     return@launch
                 }
@@ -348,18 +457,16 @@ class MigrationViewModel(
                     )
                 }
             } catch (e: Exception) {
-                _smsImportSession.value = null
+                _smsImportSession.update { null }
                 _events.send(
-                    MigrationEvent.SmsImportError(
-                        e.message ?: application.getString(R.string.import_parse_error)
-                    )
+                    e.toMigrationError(R.string.import_parse_error)
                 )
             }
         }
     }
 
     fun clearSmsImport() {
-        _smsImportSession.value = null
+        _smsImportSession.update { null }
     }
 
     fun toggleSmsImportSelected(threadId: Long, selected: Boolean) {
@@ -395,74 +502,67 @@ class MigrationViewModel(
     fun startSmsImport() {
         val session = _smsImportSession.value ?: return
         if (session.isImporting || session.isParsing) return
+
         viewModelScope.launch(Dispatchers.IO) {
             if (session.selectedThreadIds.isEmpty()) {
                 _events.send(
-                    MigrationEvent.SmsImportError(application.getString(R.string.backup_select_at_least_one))
+                    MigrationEvent.Error(R.string.backup_select_at_least_one)
                 )
                 return@launch
             }
-            if (!smsImportRepository.isDefaultSmsApp()) {
+            if (!messagesImportRepository.isDefaultSmsApp()) {
                 _events.send(
-                    MigrationEvent.SmsImportError(application.getString(R.string.import_needs_default_sms))
+                    MigrationEvent.Error(R.string.import_needs_default_sms)
                 )
                 return@launch
             }
             _smsImportSession.update {
-                it?.copy(isImporting = true, progress = 0f, progressLabel = null)
+                it?.copy(isImporting = true, progressDone = null, progressTotal = null)
             }
             try {
                 val selected = session.preview.orEmpty()
                     .filter { it.threadId in session.selectedThreadIds }
-                val result = smsImportRepository.importConversations(
+                val result = messagesImportRepository.importConversations(
                     selected,
                     session.strategy
                 ) { done, total ->
                     _smsImportSession.update {
                         it?.copy(
-                            progress = done.toFloat() / total,
-                            progressLabel = application.getString(
-                                R.string.backup_progress_items,
-                                done,
-                                total
-                            )
+                            progressDone = done, progressTotal = total
                         )
                     }
                 }
-                _smsImportSession.value = null
+                _smsImportSession.update { null }
                 _events.send(
-                    MigrationEvent.SmsImportSuccess(
-                        application.getString(
-                            R.string.import_sms_success,
-                            result.imported,
-                            result.skipped
-                        )
+                    MigrationEvent.Success(
+                        R.string.import_sms_success,
+                        listOf(result.imported, result.skipped)
                     )
                 )
             } catch (e: Exception) {
                 _smsImportSession.update {
-                    it?.copy(isImporting = false, progress = null, progressLabel = null)
+                    it?.copy(isImporting = false, progressDone = null, progressTotal = null)
                 }
                 _events.send(
-                    MigrationEvent.SmsImportError(
-                        e.message ?: application.getString(R.string.backup_failed)
-                    )
+                    e.toMigrationError(R.string.backup_failed)
                 )
             }
         }
     }
 
     fun loadContactsImport(uri: Uri) {
-        _contactsImportSession.value = ContactsImportSession(
-            fileName = contactsImportRepository.readDisplayName(uri)
-        )
+        _contactsImportSession.update {
+            it?.copy(
+                fileName = contactsImportRepository.readDisplayName(uri)
+            )
+        }
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val items = contactsImportRepository.parseVcf(uri)
                 if (items.isEmpty()) {
-                    _contactsImportSession.value = null
+                    _contactsImportSession.update { null }
                     _events.send(
-                        MigrationEvent.ContactsImportError(application.getString(R.string.import_empty_file))
+                        MigrationEvent.Error(R.string.import_empty_file)
                     )
                     return@launch
                 }
@@ -474,11 +574,9 @@ class MigrationViewModel(
                     )
                 }
             } catch (e: Exception) {
-                _contactsImportSession.value = null
+                _contactsImportSession.update { null }
                 _events.send(
-                    MigrationEvent.ContactsImportError(
-                        e.message ?: application.getString(R.string.import_parse_error)
-                    )
+                    e.toMigrationError(R.string.import_parse_error)
                 )
             }
         }
@@ -524,14 +622,12 @@ class MigrationViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             if (session.selectedKeys.isEmpty()) {
                 _events.send(
-                    MigrationEvent.ContactsImportError(
-                        application.getString(R.string.backup_select_at_least_one_contact)
-                    )
+                    MigrationEvent.Error(R.string.backup_select_at_least_one_contact)
                 )
                 return@launch
             }
             _contactsImportSession.update {
-                it?.copy(isImporting = true, progress = 0f, progressLabel = null)
+                it?.copy(isImporting = true, progressDone = null, progressTotal = null)
             }
             try {
                 val selected = session.preview.orEmpty()
@@ -542,33 +638,134 @@ class MigrationViewModel(
                 ) { done, total ->
                     _contactsImportSession.update {
                         it?.copy(
-                            progress = done.toFloat() / total,
-                            progressLabel = application.getString(
-                                R.string.backup_progress_items,
-                                done,
-                                total
-                            )
+                            progressDone = done, progressTotal = total
                         )
                     }
                 }
-                _contactsImportSession.value = null
+                _contactsImportSession.update { null }
                 _events.send(
-                    MigrationEvent.ContactsImportSuccess(
-                        application.getString(
-                            R.string.import_contacts_success,
-                            result.imported,
-                            result.skipped
-                        )
+                    MigrationEvent.Success(
+                        R.string.import_contacts_success,
+                        listOf(result.imported, result.skipped)
                     )
                 )
             } catch (e: Exception) {
                 _contactsImportSession.update {
-                    it?.copy(isImporting = false, progress = null, progressLabel = null)
+                    it?.copy(isImporting = false, progressDone = null, progressTotal = null)
                 }
                 _events.send(
-                    MigrationEvent.ContactsImportError(
-                        e.message ?: application.getString(R.string.backup_failed)
+                    e.toMigrationError(R.string.backup_failed)
+                )
+            }
+        }
+    }
+
+    fun loadCallLogsImport(uri: Uri) {
+        _callLogsImportSession.value = CallLogsImportSession(
+            fileName = callLogsImportRepository.readDisplayName(uri)
+        )
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val items = callLogsImportRepository.parseBackup(uri)
+                if (items.isEmpty()) {
+                    _callLogsImportSession.update { null }
+                    _events.send(
+                        MigrationEvent.Error(R.string.import_empty_file)
                     )
+                    return@launch
+                }
+                _callLogsImportSession.update { session ->
+                    val preview = items.mapIndexed { index, log ->
+                        ImportableCallLog(key = index, log = log)
+                    }
+                    session?.copy(
+                        isParsing = false,
+                        preview = preview,
+                        selectedKeys = preview.fastMap { it.key }.toSet()
+                    )
+                }
+            } catch (e: Exception) {
+                _callLogsImportSession.update { null }
+                _events.send(
+                    e.toMigrationError(R.string.import_parse_error)
+                )
+            }
+        }
+    }
+
+    fun clearCallLogsImport() {
+        _callLogsImportSession.value = null
+    }
+
+    fun toggleCallLogsImportSelected(key: Int, selected: Boolean) {
+        _callLogsImportSession.update { session ->
+            session?.copy(
+                selectedKeys = if (selected) {
+                    session.selectedKeys + key
+                } else {
+                    session.selectedKeys - key
+                }
+            )
+        }
+    }
+
+    fun selectAllCallLogsImport(keys: List<Int>) {
+        _callLogsImportSession.update { session ->
+            session?.copy(selectedKeys = keys.toSet())
+        }
+    }
+
+    fun clearCallLogsImportSelection() {
+        _callLogsImportSession.update { session ->
+            session?.copy(selectedKeys = emptySet())
+        }
+    }
+
+    fun setCallLogsImportStrategy(strategy: ImportStrategy) {
+        _callLogsImportSession.update { session ->
+            session?.copy(strategy = strategy)
+        }
+    }
+
+    fun startCallLogsImport() {
+        val session = _callLogsImportSession.value ?: return
+        if (session.isImporting || session.isParsing) return
+        viewModelScope.launch(Dispatchers.IO) {
+            if (session.selectedKeys.isEmpty()) {
+                _events.send(
+                    MigrationEvent.Error(R.string.backup_select_at_least_one_call_log)
+                )
+                return@launch
+            }
+            _callLogsImportSession.update {
+                it?.copy(isImporting = true, progressDone = null, progressTotal = null)
+            }
+            try {
+                val selected = session.preview.orEmpty()
+                    .filter { it.key in session.selectedKeys }
+                val result = callLogsImportRepository.importCalls(
+                    selected,
+                    session.strategy
+                ) { done, total ->
+                    _callLogsImportSession.update {
+                        it?.copy(
+                            progressDone = done, progressTotal = total
+                        )
+                    }
+                }
+                _callLogsImportSession.update { null }
+                _events.send(
+                    MigrationEvent.Success(
+                        R.string.import_call_logs_success,
+                        listOf(result.imported, result.skipped)
+                    )
+                )
+            } catch (e: Exception) {
+                _callLogsImportSession.update {
+                    it?.copy(isImporting = false, progressDone = null, progressTotal = null)
+                }
+                _events.send(
+                    e.toMigrationError(R.string.backup_failed)
                 )
             }
         }
@@ -591,8 +788,8 @@ data class SmsImportSession(
     val selectedThreadIds: Set<Long> = emptySet(),
     val strategy: ImportStrategy = ImportStrategy.SKIP_EXISTING,
     val isImporting: Boolean = false,
-    val progress: Float? = null,
-    val progressLabel: String? = null
+    val progressDone: Int? = null,
+    val progressTotal: Int? = null
 )
 
 data class ContactsImportSession(
@@ -602,19 +799,40 @@ data class ContactsImportSession(
     val selectedKeys: Set<Int> = emptySet(),
     val strategy: ImportStrategy = ImportStrategy.SKIP_EXISTING,
     val isImporting: Boolean = false,
-    val progress: Float? = null,
-    val progressLabel: String? = null
+    val progressDone: Int? = null,
+    val progressTotal: Int? = null
 )
 
+data class CallLogsImportSession(
+    val fileName: String = "",
+    val isParsing: Boolean = true,
+    val preview: List<ImportableCallLog>? = null,
+    val selectedKeys: Set<Int> = emptySet(),
+    val strategy: ImportStrategy = ImportStrategy.SKIP_EXISTING,
+    val isImporting: Boolean = false,
+    val progressDone: Int? = null,
+    val progressTotal: Int? = null
+)
+
+private fun Exception.toMigrationError(@StringRes fallbackRes: Int): MigrationEvent.Error {
+    val details = message
+    return if (details != null) {
+        MigrationEvent.Error(R.string.error_details, listOf(details))
+    } else {
+        MigrationEvent.Error(fallbackRes)
+    }
+}
+
 sealed interface MigrationEvent {
-    data class SmsExportSuccess(val message: String) : MigrationEvent
-    data class SmsExportError(val message: String) : MigrationEvent
-    data class ContactsExportSuccess(val message: String) : MigrationEvent
-    data class ContactsExportError(val message: String) : MigrationEvent
-    data class SmsImportSuccess(val message: String) : MigrationEvent
-    data class SmsImportError(val message: String) : MigrationEvent
-    data class ContactsImportSuccess(val message: String) : MigrationEvent
-    data class ContactsImportError(val message: String) : MigrationEvent
+    data class Success(
+        @StringRes val messageRes: Int,
+        val args: List<Any> = emptyList()
+    ) : MigrationEvent
+
+    data class Error(
+        @StringRes val messageRes: Int,
+        val args: List<Any> = emptyList()
+    ) : MigrationEvent
 }
 
 sealed interface MigrationAction {
