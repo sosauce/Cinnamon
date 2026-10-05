@@ -84,7 +84,7 @@ To get started with contributing, please check the [get started readme](https://
 
 ---
 
-#### You can find the SHA-256 [here](https://sosauce.github.io/projects/)
+#### You can find the SHA-256 [here](https://sosauce.vercel.app/projects)
 
 ---
 
