@@ -103,7 +103,7 @@ class CallNotificationManager(
                 NotificationCompat.CallStyle.forIncomingCall(
                     Person.Builder()
                         .setIcon(personIcon)
-                        .setName(numberLookup.fetchContactDisplayName(number))
+                        .setName(numberLookup.fetchContactDisplayName(number) ?: number)
                         .build(),
                     declinePendingIntent,
                     acceptPendingIntent
@@ -148,7 +148,7 @@ class CallNotificationManager(
                 NotificationCompat.CallStyle.forOngoingCall(
                     Person.Builder()
                         .setIcon(personIcon)
-                        .setName(numberLookup.fetchContactDisplayName(number))
+                        .setName(numberLookup.fetchContactDisplayName(number) ?: number)
                         .build(),
                     hangupPendingIntent
 
@@ -191,7 +191,7 @@ class CallNotificationManager(
                 NotificationCompat.CallStyle.forOngoingCall(
                     Person.Builder()
                         .setIcon(personIcon)
-                        .setName(numberLookup.fetchContactDisplayName(number))
+                        .setName(numberLookup.fetchContactDisplayName(number) ?: number)
                         .build(),
                     hangupPendingIntent
 
