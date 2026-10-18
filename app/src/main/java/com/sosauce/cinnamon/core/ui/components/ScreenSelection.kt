@@ -6,6 +6,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationItemIconPosition
 import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.Text
@@ -55,29 +56,27 @@ fun SharedTransitionScope.ScreenSelection(
     ShortNavigationBar(
         modifier = Modifier.clip(RoundedCornerShape(24.dp))
     ) {
-            screens.forEach { screen ->
+        screens.forEach { screen ->
+            val haptic = LocalHapticFeedback.current
+            val selected = currentScreen == screen.screen
 
-                val haptic = LocalHapticFeedback.current
-                val selected = currentScreen == screen.screen
-
-
-                ShortNavigationBarItem(
-                    selected = selected,
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.Confirm)
-                        dismiss()
-                        screen.onClick()
-                    },
-                    icon = {
-                        val icon = if (selected) screen.selectedIcon else screen.unselectedIcon
-                        Icon(
-                            painter = painterResource(icon),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .sharedElement(
-                                    sharedContentState = rememberSharedContentState(icon),
-                                    animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                                )
+            ShortNavigationBarItem(
+                selected = selected,
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                    dismiss()
+                    screen.onClick()
+                },
+                icon = {
+                    val icon = if (selected) screen.selectedIcon else screen.unselectedIcon
+                    Icon(
+                        painter = painterResource(icon),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .sharedElement(
+                                sharedContentState = rememberSharedContentState(icon),
+                                animatedVisibilityScope = LocalNavAnimatedContentScope.current
+                            )
                         )
                     },
                     label = {

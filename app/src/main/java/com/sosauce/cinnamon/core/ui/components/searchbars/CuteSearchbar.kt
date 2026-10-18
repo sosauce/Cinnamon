@@ -1,12 +1,6 @@
-@file:OptIn(
-    ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3ExpressiveApi::class, ExperimentalHazeMaterialsApi::class
-)
-
 package com.sosauce.cinnamon.core.ui.components.searchbars
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,8 +15,6 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,16 +40,13 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.ScreenSelection
 import com.sosauce.cinnamon.core.utils.LocalScreen
-import com.sosauce.cinnamon.core.utils.rememberSearchbarMaxFloatValue
-import com.sosauce.cinnamon.core.utils.rememberSearchbarRightPadding
-import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 
 @Composable
 fun CuteSearchbar(
     modifier: Modifier = Modifier,
     textFieldState: TextFieldState = rememberTextFieldState(),
     sortingMenu: @Composable (() -> Unit)? = null,
-    navigationIcon: @Composable (() -> Unit)? = null,
+    navigationButton: @Composable (() -> Unit)? = null,
     fab: @Composable (() -> Unit)? = null,
     onNavigate: (Screen) -> Unit,
 ) {
@@ -76,8 +65,7 @@ fun CuteSearchbar(
     Column(
         modifier = modifier
             .navigationBarsPadding()
-            .fillMaxWidth(rememberSearchbarMaxFloatValue())
-            .padding(end = rememberSearchbarRightPadding())
+            .fillMaxWidth(0.85f)
             .imePadding()
 
     ) {
@@ -87,7 +75,7 @@ fun CuteSearchbar(
                 .padding(bottom = 4.dp),
             horizontalArrangement = Arrangement.End
         ) {
-            navigationIcon?.invoke()
+            navigationButton?.invoke()
             Spacer(Modifier.weight(1f))
             fab?.invoke()
         }

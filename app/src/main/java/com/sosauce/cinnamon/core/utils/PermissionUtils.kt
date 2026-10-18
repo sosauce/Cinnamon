@@ -1,8 +1,11 @@
 package com.sosauce.cinnamon.core.utils
 
 import android.Manifest
+import android.app.role.RoleManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
+import android.provider.Telephony
 
 object PermissionUtils {
 
@@ -42,6 +45,15 @@ object PermissionUtils {
             Manifest.permission.WRITE_CALL_LOG
         ) == PackageManager.PERMISSION_GRANTED
 
+    }
+
+    fun isDefaultSmsApp(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val rm = context.getSystemService(RoleManager::class.java)
+            rm.isRoleHeld(RoleManager.ROLE_SMS)
+        } else {
+            Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
+        }
     }
 
 }

@@ -61,7 +61,7 @@ fun SharedTransitionScope.ArchivedConversationsScreen(
                     CuteSearchbar(
                         modifier = Modifier.selfAlignHorizontally(),
                         onNavigate = onNavigate,
-                        navigationIcon = { CuteNavigationButtonSurface(onNavigateUp = onNavigateUp) }
+                        navigationButton = { CuteNavigationButtonSurface(onNavigateUp = onNavigateUp) }
                     )
                 } else {
                     ConversationsSelectedBar(

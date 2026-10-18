@@ -17,6 +17,7 @@ import com.sosauce.cinnamon.core.datastore.PreferencesKeys.DEFAULT_PHONE_HANDLE_
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.ENABLE_DELIVERY_REPORTS
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.ENABLE_T9_DIALING
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.GROUP_SUBSEQUENT_CALLS
+import com.sosauce.cinnamon.core.datastore.PreferencesKeys.LAST_CRASH_LOG
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.PINNED_CONVOS
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SEND_GROUP_AS_MMS
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SEND_LONG_AS_MMS
@@ -144,6 +145,12 @@ class UserPreferences(
         context.dataStore.edit { preferences ->
             preferences[DEFAULT_PHONE_HANDLE_ID] = handle.id
             println("Testing - Saved ID: ${handle.id}")
+        }
+    }
+
+    suspend fun saveCrashLogs(crash: String) {
+        context.dataStore.edit { preferences ->
+            preferences[LAST_CRASH_LOG] = crash
         }
     }
 }

@@ -74,6 +74,7 @@ object LazyListKeys {
     const val GROUP_CHAT_BUTTON = "GROUP_CHAT_BUTTON"
     const val SEND_TO = "SEND_TO"
     const val VOICEMAIL = "VOICEMAIL"
+    const val EMPTY_STATE = "EMPTY_STATE"
 
 }
 

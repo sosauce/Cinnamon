@@ -115,7 +115,7 @@ fun VoicemailScreen(
                     CuteSearchbar(
                         modifier = Modifier.selfAlignHorizontally(),
                         textFieldState = textFieldState,
-                        navigationIcon = {
+                        navigationButton = {
                             CuteNavigationButton(
                                 onNavigateUp = onNavigateUp
                             )

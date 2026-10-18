@@ -5,10 +5,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar
@@ -16,8 +13,6 @@ import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.Conversation
 import com.sosauce.nekobites.animations.AnimatedFab
 import com.sosauce.nekobites.components.LoadingBox
-import com.sosauce.nekobites.helpers.ScopedViewModel
-import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ForwardingScreen(
@@ -32,7 +27,7 @@ fun ForwardingScreen(
             bottomBar = {
                 CuteSearchbar(
                     modifier = Modifier.selfAlignHorizontally(),
-                    navigationIcon = {
+                    navigationButton = {
                         AnimatedFab(
                             onClick = onNavigateBack,
                             icon = R.drawable.back,

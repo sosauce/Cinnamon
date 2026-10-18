@@ -3,7 +3,6 @@
 package com.sosauce.cinnamon.core.utils
 
 import android.app.Activity
-import android.app.WallpaperManager
 import android.app.role.RoleManager
 import android.content.ContentResolver
 import android.content.Context
@@ -21,13 +20,12 @@ import android.telephony.PhoneNumberUtils
 import android.text.format.DateFormat
 import android.text.format.DateUtils
 import android.util.Patterns
+import androidx.annotation.FloatRange
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.delete
@@ -39,18 +37,13 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.materialkolor.PaletteStyle
 import com.sosauce.cinnamon.R
@@ -509,44 +502,8 @@ fun rememberSearchbarAlignment(
 }
 
 @Composable
-fun rememberSearchbarMaxFloatValue(
-): Float {
-
-    val isLandscape = rememberIsLandscape()
-
-    return remember(isLandscape) {
-        if (isLandscape) {
-            0.4f
-        } else {
-            0.85f
-        }
-    }
-}
-
-@Composable
-fun rememberSearchbarRightPadding(
-): Dp {
-
-    val isLandscape = rememberIsLandscape()
-
-    return remember(isLandscape) {
-        if (isLandscape) {
-            10.dp
-        } else {
-            0.dp
-        }
-    }
-}
-
-@Composable
 fun rememberInteractionSource(): MutableInteractionSource {
     return remember { MutableInteractionSource() }
-}
-
-@Composable
-fun keyboardAsState(): State<Boolean> {
-    val isImeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-    return rememberUpdatedState(isImeVisible)
 }
 
 @Composable
@@ -571,23 +528,11 @@ fun anyLightColorScheme(): ColorScheme {
     }
 }
 
-fun Modifier.selfAlignHorizontally(align: Alignment.Horizontal = Alignment.CenterHorizontally): Modifier {
-    return fillMaxWidth().wrapContentWidth(align)
-}
-
-fun Context.getAdaptivePrimaryColor(fallbackColor: Color): Color {
-    val color = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> dynamicDarkColorScheme(this).primary
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 -> {
-            val manager = WallpaperManager.getInstance(this)
-            manager.getWallpaperColors(WallpaperManager.FLAG_SYSTEM)?.primaryColor?.toArgb()
-                ?.let { Color(it) } ?: fallbackColor
-        }
-
-        else -> fallbackColor
-    }
-
-    return color
+fun Modifier.selfAlignHorizontally(
+    align: Alignment.Horizontal = Alignment.CenterHorizontally,
+    @FloatRange fraction: Float = 1f
+): Modifier {
+    return fillMaxWidth(fraction).wrapContentWidth(align)
 }
 
 /**

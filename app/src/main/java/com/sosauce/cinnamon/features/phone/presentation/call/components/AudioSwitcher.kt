@@ -33,52 +33,42 @@ fun AudioSwitcher(
     onCallAction: (CallAction) -> Unit,
     routes: List<AudioRoute>
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+    LazyColumn(
+        modifier = Modifier.padding(vertical = 6.dp)
     ) {
-        Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            LazyColumn(
-                modifier = Modifier.padding(vertical = 6.dp)
-            ) {
-                itemsIndexed(
-                    items = routes
-                ) { index, route ->
-                    CuteListItem(
-                        onClick = { onCallAction(CallAction.SwitchAudioTarget(route)) },
-                        shape = MenuDefaults.getItemShape(index, routes.lastIndex),
-                        backgroundColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        leadingContent = {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(
-                                        color = MaterialTheme.colorScheme.secondary,
-                                        shape = RoundedCornerShape(12.dp)
-                                    )
-                            ) {
-                                Icon(
-                                    painter = painterResource(route.type.routeToIcon()),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSecondary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                    ) {
-                        Text(
-                            text = route.name.lowercase().replaceFirstChar { it.uppercase() },
-                            style = MaterialTheme.typography.titleSmallEmphasized.copy(
-                                color = MaterialTheme.colorScheme.onSurface
+        itemsIndexed(
+            items = routes
+        ) { index, route ->
+            CuteListItem(
+                onClick = { onCallAction(CallAction.SwitchAudioTarget(route)) },
+                shape = MenuDefaults.getItemShape(index, routes.lastIndex),
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                leadingContent = {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .padding(start = 10.dp)
+                            .size(40.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.secondary,
+                                shape = RoundedCornerShape(12.dp)
                             )
+                    ) {
+                        Icon(
+                            painter = painterResource(route.type.routeToIcon()),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
+            ) {
+                Text(
+                    text = route.name.lowercase().replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.titleSmallEmphasized.copy(
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                )
             }
         }
     }

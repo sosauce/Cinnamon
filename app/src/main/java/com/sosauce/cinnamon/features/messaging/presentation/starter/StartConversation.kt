@@ -98,7 +98,7 @@ fun SharedTransitionScope.StartConversation(
                 modifier = Modifier.selfAlignHorizontally(),
                 textFieldState = textFieldState,
                 onNavigate = onNavigate,
-                navigationIcon = {
+                navigationButton = {
                     CuteNavigationButtonSurface(
                         onNavigateUp = onNavigateUp
                     )
@@ -348,8 +348,9 @@ fun SharedTransitionScope.StartConversation(
                             }
                         }
                 } else {
-                    item {
+                    item(LazyListKeys.EMPTY_STATE) {
                         NoXFound(
+                            modifier = Modifier.animateItem(),
                             headlineText = R.string.no_contacts_found,
                             bodyText = R.string.no_contacts_found_starter_desc,
                             icon = R.drawable.contacts

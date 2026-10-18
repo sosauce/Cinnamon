@@ -8,15 +8,22 @@ import android.app.NotificationChannelGroup
 import android.app.NotificationManager
 import android.media.AudioAttributes
 import android.media.RingtoneManager
+import android.util.Log
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import coil3.request.crossfade
 import coil3.video.VideoFrameDecoder
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.core.di.appModule
 import com.sosauce.cinnamon.core.telephony.message.MessageNotificationManager
 import com.sosauce.cinnamon.core.telephony.phone.CallNotificationManager
+import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.runBlocking
+import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.androix.startup.KoinStartup
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -28,22 +35,37 @@ class CinnamonApplication : Application(), KoinStartup, SingletonImageLoader.Fac
         @Volatile
         var isCallActivityVisible: Boolean = false
         // StateFlow for overlay manager to observe visibility changes
-        val isCallActivityVisibleFlow = kotlinx.coroutines.flow.MutableStateFlow(false)
+        val isCallActivityVisibleFlow = MutableStateFlow(false)
     }
 
     override fun onCreate() {
         super.onCreate()
-        registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
+
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        val userPreferences by inject<UserPreferences>()
+
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            Log.e("CinnamonCrash", "FATAL CRASH on thread ${thread.name}: ${throwable.message}", throwable)
+
+            runBlocking {
+                userPreferences.saveCrashLogs(throwable.stackTraceToString())
+            }
+
+            defaultHandler?.uncaughtException(thread, throwable)
+        }
+
+
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityResumed(activity: android.app.Activity) {
-                if (activity is com.sosauce.cinnamon.features.phone.presentation.call.CallActivity) {
+                if (activity is CallActivity) {
                     isCallActivityVisible = true
-                    isCallActivityVisibleFlow.value = true
+                    isCallActivityVisibleFlow.update { true }
                 }
             }
             override fun onActivityPaused(activity: android.app.Activity) {
-                if (activity is com.sosauce.cinnamon.features.phone.presentation.call.CallActivity) {
+                if (activity is CallActivity) {
                     isCallActivityVisible = false
-                    isCallActivityVisibleFlow.value = false
+                    isCallActivityVisibleFlow.update { false }
                 }
             }
             override fun onActivityCreated(a: android.app.Activity, b: android.os.Bundle?) {}
@@ -51,9 +73,9 @@ class CinnamonApplication : Application(), KoinStartup, SingletonImageLoader.Fac
             override fun onActivityStopped(a: android.app.Activity) {}
             override fun onActivitySaveInstanceState(a: android.app.Activity, b: android.os.Bundle) {}
             override fun onActivityDestroyed(a: android.app.Activity) {
-                if (a is com.sosauce.cinnamon.features.phone.presentation.call.CallActivity) {
+                if (a is CallActivity) {
                     isCallActivityVisible = false
-                    isCallActivityVisibleFlow.value = false
+                    isCallActivityVisibleFlow.update { false }
                 }
             }
         })

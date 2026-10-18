@@ -35,8 +35,6 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.utils.LocalScreen
 import com.sosauce.cinnamon.core.utils.rememberInteractionSource
-import com.sosauce.cinnamon.core.utils.rememberSearchbarMaxFloatValue
-import com.sosauce.cinnamon.core.utils.rememberSearchbarRightPadding
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.dialogs.DeleteConversationsDialog
@@ -52,8 +50,7 @@ fun <T> SelectedBarSurface(
     Column(
         modifier = modifier
             .navigationBarsPadding()
-            .fillMaxWidth(rememberSearchbarMaxFloatValue())
-            .padding(end = rememberSearchbarRightPadding())
+            .fillMaxWidth(0.85f)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

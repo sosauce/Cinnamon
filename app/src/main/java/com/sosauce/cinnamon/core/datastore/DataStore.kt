@@ -14,6 +14,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.DEFAULT_TAB
+import com.sosauce.cinnamon.core.datastore.PreferencesKeys.LAST_CRASH_LOG
 import com.sosauce.cinnamon.core.utils.CutePaletteStyle
 import com.sosauce.cinnamon.core.utils.CuteTheme
 import com.sosauce.cinnamon.core.utils.DefaultTabOption
@@ -50,6 +51,7 @@ data object PreferencesKeys {
     val INCOMING_CALL_FULLSCREEN = booleanPreferencesKey("INCOMING_CALL_FULLSCREEN")
     val ENABLE_PINCH_TO_ZOOM = booleanPreferencesKey("ENABLE_PINCH_TO_ZOOM")
     val CHAT_ZOOM_SCALE = floatPreferencesKey("CHAT_ZOOM_SCALE")
+    val LAST_CRASH_LOG = stringPreferencesKey("LAST_CRASH_LOG")
 }
 
 
@@ -120,6 +122,9 @@ fun rememberEnablePinchToZoom() = rememberPreference(PreferencesKeys.ENABLE_PINC
 
 @Composable
 fun rememberInitialScreen() = rememberPreference(DEFAULT_TAB, DefaultTabOption.MESSAGES)
+
+@Composable
+fun rememberLastCrash() = rememberPreference(LAST_CRASH_LOG, "")
 
 @Composable
 fun rememberInitialScreenBlocking(): Int {

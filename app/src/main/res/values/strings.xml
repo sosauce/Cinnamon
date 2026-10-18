@@ -237,6 +237,12 @@
     <string name="backup">Backup</string>
     <string name="import_backups">Import backups</string>
     <string name="export_backups">Export backups</string>
+    <string name="close">Close</string>
+    <string name="unmute">Unmute</string>
+    <string name="mute">Mute</string>
+    <string name="hold">Hold</string>
+    <string name="audio">Audio</string>
+    <string name="hang_up">Hang up</string>
 
 
     <plurals name="delete_msg">
