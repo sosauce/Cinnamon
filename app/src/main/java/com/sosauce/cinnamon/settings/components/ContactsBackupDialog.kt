@@ -22,12 +22,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.ValidFileNameTransformation
+import com.sosauce.cinnamon.core.utils.LocalScreen
+import com.sosauce.cinnamon.core.utils.PermissionUtils
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.settings.ContactsBackupUiState
 
@@ -36,13 +39,14 @@ fun ContactsBackupDialog(
     contacts: List<CuteContact>,
     uiState: ContactsBackupUiState,
     fileNameState: TextFieldState,
-    hasContactsPermission: Boolean,
     onToggleContact: (contactId: Long, selected: Boolean) -> Unit,
     onSelectAll: () -> Unit,
     onClearSelection: () -> Unit,
     onDismiss: () -> Unit,
     onStartBackup: () -> Unit
 ) {
+    val ctx = LocalContext.current
+
     AlertDialog(
         onDismissRequest = { if (!uiState.isExporting) onDismiss() },
         title = { Text(stringResource(R.string.backup_contacts)) },
@@ -102,7 +106,7 @@ fun ContactsBackupDialog(
                 }
 
                 when {
-                    !hasContactsPermission -> {
+                    !PermissionUtils.hasContactsPermission(ctx) -> {
                         item {
                             Text(
                                 text = stringResource(R.string.backup_needs_contacts_permission),

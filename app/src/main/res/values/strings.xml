@@ -76,8 +76,6 @@
     <string name="default_tab">Default tab to open at launch</string>
     <string name="dialpad">Dialpad</string>
     <string name="phone">Phone</string>
-    <string name="migration">Migration</string>
-    <string name="migration_desc">Backup &amp; restore everything to get going with Cinnamon !</string>
     <string name="select_number">Select a phone number</string>
     <string name="next_step">Next step</string>
     <string name="select_all">Select all</string>
@@ -243,6 +241,8 @@
     <string name="hold">Hold</string>
     <string name="audio">Audio</string>
     <string name="hang_up">Hang up</string>
+    <string name="backup_and_restore"><![CDATA[Backup & restore]]></string>
+    <string name="backup_desc">Backup and restore, what do you expect?</string>
 
 
     <plurals name="delete_msg">

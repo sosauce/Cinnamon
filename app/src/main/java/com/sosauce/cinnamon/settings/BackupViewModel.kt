@@ -59,7 +59,7 @@ data class CallLogsBackupUiState(
     val progressTotal: Int? = null
 )
 
-class MigrationViewModel(
+class BackupViewModel(
     private val contactsRepository: ContactsRepository,
     private val conversationsRepository: ConversationsRepository,
     private val messageBackupRepository: MessageBackupRepository,

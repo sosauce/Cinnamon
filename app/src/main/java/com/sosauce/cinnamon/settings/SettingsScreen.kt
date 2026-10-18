@@ -55,25 +55,12 @@ fun SettingsScreen(
             description = stringResource(R.string.navigation_desc),
             onNavigate = { backStack.add(SettingsScreens.Navigation) }
         ),
-//        Item(
-//            icon = R.drawable.behavior,
-//            name = stringResource(R.string.behavior),
-//            description = stringResource(R.string.behavior_desc),
-//            onNavigate = { backStack.add(SettingsScreens.Behavior) }
-//        ),
         Item(
             icon = R.drawable.message_rounded,
             name = stringResource(R.string.messages),
             description = stringResource(R.string.messages_settings_desc),
             onNavigate = { backStack.add(SettingsScreens.Messages) }
         ),
-        // TODO: re-implement contact import/export
-//        Item(
-//            icon = R.drawable.contacts,
-//            name = stringResource(R.string.contacts),
-//            description = stringResource(R.string.contacts_settings_desc),
-//            onNavigate = { backStack.add(SettingsScreens.Contacts) }
-//        ),
         Item(
             icon = R.drawable.phone,
             name = stringResource(R.string.phone),
@@ -81,10 +68,10 @@ fun SettingsScreen(
             onNavigate = { backStack.add(SettingsScreens.Phone) }
         ),
         Item(
-            icon = R.drawable.migrate,
-            name = stringResource(R.string.migration),
-            description = stringResource(R.string.migration_desc),
-            onNavigate = { backStack.add(SettingsScreens.Migration) }
+            icon = R.drawable.backup,
+            name = stringResource(R.string.backup_and_restore),
+            description = stringResource(R.string.backup_desc),
+            onNavigate = { backStack.add(SettingsScreens.Backup) }
         )
     )
 
@@ -185,8 +172,8 @@ fun SettingsScreen(
                 entry<SettingsScreens.Permissions> {
                     SettingsPermissions()
                 }
-                entry<SettingsScreens.Migration> {
-                    SettingsMigration()
+                entry<SettingsScreens.Backup> {
+                    SettingsBackup()
                 }
             }
         )

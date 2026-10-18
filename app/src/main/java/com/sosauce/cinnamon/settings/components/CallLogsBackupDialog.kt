@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
-
 package com.sosauce.cinnamon.settings.components
 
 import androidx.compose.foundation.layout.Arrangement
@@ -22,12 +20,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.ValidFileNameTransformation
+import com.sosauce.cinnamon.core.utils.PermissionUtils
 import com.sosauce.cinnamon.features.phone.domain.CuteCallLog2
 import com.sosauce.cinnamon.settings.CallLogsBackupUiState
 
@@ -36,13 +36,14 @@ fun CallLogsBackupDialog(
     logs: List<CuteCallLog2>,
     uiState: CallLogsBackupUiState,
     fileNameState: TextFieldState,
-    hasCallLogPermission: Boolean,
     onToggleLog: (logId: Long, selected: Boolean) -> Unit,
     onSelectAll: () -> Unit,
     onClearSelection: () -> Unit,
     onDismiss: () -> Unit,
     onStartBackup: () -> Unit
 ) {
+    val ctx = LocalContext.current
+
     AlertDialog(
         onDismissRequest = { if (!uiState.isExporting) onDismiss() },
         title = { Text(stringResource(R.string.backup_call_logs)) },
@@ -102,7 +103,7 @@ fun CallLogsBackupDialog(
                 }
 
                 when {
-                    !hasCallLogPermission -> {
+                    !PermissionUtils.hasCallLogReadPermission(ctx) -> {
                         item {
                             Text(
                                 text = stringResource(R.string.backup_needs_call_log_permission),

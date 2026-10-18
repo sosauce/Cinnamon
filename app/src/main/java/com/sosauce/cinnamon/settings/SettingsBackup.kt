@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.core.utils.PermissionUtils
 import com.sosauce.cinnamon.settings.components.CallLogsBackupDialog
 import com.sosauce.cinnamon.settings.components.CallLogsImportDialog
 import com.sosauce.cinnamon.settings.components.ContactsBackupDialog
@@ -30,10 +31,10 @@ import com.sosauce.nekobites.helpers.ObserveAsEvents
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun SettingsMigration() {
+fun SettingsBackup() {
     val context = LocalContext.current
     val resources = LocalResources.current
-    val viewModel = koinViewModel<MigrationViewModel>()
+    val viewModel = koinViewModel<BackupViewModel>()
 
     val conversations by viewModel.backupConversations.collectAsStateWithLifecycle()
     val smsState by viewModel.backupUiState.collectAsStateWithLifecycle()
@@ -49,18 +50,6 @@ fun SettingsMigration() {
     var showContactsDialog by remember { mutableStateOf(false) }
     var showCallsDialog by remember { mutableStateOf(false) }
 
-    val hasSmsPermission = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.READ_SMS
-    ) == PackageManager.PERMISSION_GRANTED
-    val hasContactsPermission = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.READ_CONTACTS
-    ) == PackageManager.PERMISSION_GRANTED
-    val hasCallLogPermission = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.READ_CALL_LOG
-    ) == PackageManager.PERMISSION_GRANTED
 
     ObserveAsEvents(viewModel.events) { event ->
         val message = when (event) {
@@ -168,7 +157,6 @@ fun SettingsMigration() {
             conversations = conversations,
             uiState = smsState,
             fileNameState = viewModel.smsBackupFileNameState,
-            hasSmsPermission = hasSmsPermission,
             onToggleConversation = viewModel::toggleConversationSelected,
             onSelectAll = { viewModel.selectAllConversations(conversations.map { it.threadId }) },
             onClearSelection = viewModel::clearConversationSelection,
@@ -184,7 +172,6 @@ fun SettingsMigration() {
             logs = callLogs,
             uiState = callsState,
             fileNameState = viewModel.callLogsBackupFileNameState,
-            hasCallLogPermission = hasCallLogPermission,
             onToggleLog = viewModel::toggleCallLogSelected,
             onSelectAll = { viewModel.selectAllCallLogs(callLogs.map { it.id }) },
             onClearSelection = viewModel::clearCallLogsSelection,
@@ -200,7 +187,6 @@ fun SettingsMigration() {
             contacts = contacts,
             uiState = contactsState,
             fileNameState = viewModel.contactsBackupFileNameState,
-            hasContactsPermission = hasContactsPermission,
             onToggleContact = viewModel::toggleContactSelected,
             onSelectAll = { viewModel.selectAllContacts(contacts.map { it.id }) },
             onClearSelection = viewModel::clearContactsSelection,

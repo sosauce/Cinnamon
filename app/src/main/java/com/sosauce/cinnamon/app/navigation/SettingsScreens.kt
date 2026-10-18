@@ -28,7 +28,7 @@ sealed class SettingsScreens : NavKey {
     data object Navigation : SettingsScreens()
 
     @Serializable
-    data object Migration : SettingsScreens()
+    data object Backup : SettingsScreens()
 
     @Serializable
     data object Permissions : SettingsScreens()
