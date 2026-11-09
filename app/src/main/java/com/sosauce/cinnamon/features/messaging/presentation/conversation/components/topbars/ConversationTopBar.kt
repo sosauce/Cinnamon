@@ -5,6 +5,14 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation.components.topbars
 
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -132,7 +140,8 @@ fun ConversationTopBar(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { showDeleteDialog = false }
+                    onClick = { showDeleteDialog = false },
+                    shapes = ButtonDefaults.shapes()
                 ) { Text(stringResource(R.string.cancel)) }
             },
             confirmButton = {
@@ -140,7 +149,8 @@ fun ConversationTopBar(
                     onClick = {
                         onDeleteConversation()
                         onNavigateUp()
-                    }
+                    },
+                    shapes = ButtonDefaults.shapes()
                 ) { Text(stringResource(R.string.delete)) }
             },
             text = { Text(stringResource(R.string.delete_convo_u_sure)) },
@@ -155,48 +165,68 @@ fun ConversationTopBar(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            IconButton(
+            FilledIconButton(
                 onClick = { onNavigate(Screen.Conversations) },
-                shapes = IconButtonDefaults.shapes()
+                shapes = IconButtonDefaults.shapes(),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
             ) {
                 Icon(
                     painter = painterResource(R.drawable.back),
                     contentDescription = null
                 )
             }
-            Box(
-                modifier = Modifier
-                    .padding(end = 10.dp)
-            ) {
-                if (state.conversation.isGroupChat) {
-                    DefaultGroupChatIcon()
-                } else {
-                    ConversationIcon(
-                        conversation = state.conversation,
-                        size = 40.dp
+            Spacer(Modifier.width(6.dp))
+            if (state.conversation.isGroupChat) {
+                DefaultGroupChatIcon(size = 40.dp)
+            } else {
+                ConversationIcon(
+                    conversation = state.conversation,
+                    size = 40.dp
+                )
+            }
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = state.conversation.name,
+                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    maxLines = 1,
+                    modifier = Modifier.basicMarquee()
+                )
+                val subtitle = if (state.conversation.isGroupChat) {
+                    pluralStringResource(
+                        R.plurals.participants_count,
+                        state.conversation.participants.size,
+                        state.conversation.participants.size
+                    )
+                } else null
+                subtitle?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmallEmphasized,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        modifier = Modifier.basicMarquee()
                     )
                 }
-
             }
-            Text(
-                text = state.conversation.name,
-                maxLines = 1,
-                modifier = Modifier
-                    .weight(1f),
-                overflow = TextOverflow.Ellipsis
-            )
 
             if (!state.conversation.isGroupChat) {
-                IconButton(
+                FilledTonalIconButton(
                     onClick = {
                         val number = state.conversation.participants.first().rawNumber
                         onHandleConversationActions(ConversationActions.CallNumber(number))
                     },
-                    shapes = IconButtonDefaults.shapes()
+                    shapes = IconButtonDefaults.shapes(),
+                    modifier = Modifier.size(
+                        IconButtonDefaults.smallContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)
+                    )
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.call),
-                        contentDescription = null
+                        contentDescription = stringResource(R.string.call)
                     )
                 }
             }
@@ -225,6 +255,7 @@ fun ConversationTopBar(
                                 text = {
                                     Text(
                                         text = stringResource(action.text),
+                                        style = MaterialTheme.typography.bodyLargeEmphasized,
                                         color = action.tint ?: LocalContentColor.current
                                     )
                                 },
@@ -240,7 +271,6 @@ fun ConversationTopBar(
                     }
                 }
             }
-
         }
     }
 }

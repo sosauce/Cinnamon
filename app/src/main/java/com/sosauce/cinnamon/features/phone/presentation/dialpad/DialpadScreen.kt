@@ -31,7 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -126,7 +126,7 @@ fun SharedTransitionScope.DialpadScreen(
                     .navigationBarsPadding()
             ) {
                 DisableSoftKeyboard {
-                    OutlinedTextField(
+                    TextField(
                         state = textFieldState,
                         lineLimits = TextFieldLineLimits.SingleLine,
                         shape = RoundedCornerShape(50.dp),

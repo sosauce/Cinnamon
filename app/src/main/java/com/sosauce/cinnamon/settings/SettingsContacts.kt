@@ -34,15 +34,15 @@ import androidx.compose.ui.util.fastForEachIndexed
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.copyMutate
 import com.sosauce.cinnamon.core.utils.getItemShape
-import com.sosauce.cinnamon.settings.components.PlainSettingsCard
-import com.sosauce.cinnamon.settings.components.SettingsWithTitle
+import com.sosauce.cinnamon.settings.components.SettingsClickable
+import com.sosauce.cinnamon.settings.components.SettingsGroup
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun SettingsContacts() {
 
     val context = LocalContext.current
-    val migrationViewModel = koinViewModel<MigrationViewModel>()
+    val backupViewModel = koinViewModel<BackupViewModel>()
     var importSource by remember { mutableStateOf("" to "") }
     val accountManager =
         remember(context) { context.getSystemService(Context.ACCOUNT_SERVICE) as AccountManager }
@@ -52,7 +52,7 @@ fun SettingsContacts() {
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri == null) return@rememberLauncherForActivityResult
 
-            migrationViewModel.handleMigrationAction(
+            backupViewModel.handleMigrationAction(
                 MigrationAction.ImportContacts(
                     importSource,
                     uri
@@ -117,22 +117,11 @@ fun SettingsContacts() {
     }
 
 
-    Column {
-        SettingsWithTitle(
-            title = R.string.contacts
-        ) {
-            PlainSettingsCard(
-                onClick = { showContactsImportSheet = true },
-                topDp = 24.dp,
-                bottomDp = 24.dp,
-                text = stringResource(R.string.import_contact_from_vcf)
-            )
-//            PlainSettingsCard(
-//                onClick = {},
-//                topDp = 4.dp,
-//                bottomDp = 24.dp,
-//                text = stringResource(R.string.export_contact_to_vcf)
-//            )
-        }
+    SettingsGroup(title = stringResource(R.string.contacts)) {
+        SettingsClickable(
+            title = stringResource(R.string.import_contact_from_vcf),
+            icon = R.drawable.contacts,
+            onClick = { showContactsImportSheet = true }
+        )
     }
 }

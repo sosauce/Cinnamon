@@ -12,6 +12,13 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -19,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -26,22 +34,26 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.CinnamonTheme
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 
-/**
- * M3 Expressive incoming call bottom bar — no swipe, only Answer / Decline
- * Full pill shapes, tonal error/primary containers, spring motion.
- */
 @Composable
 fun IncomingBottomBar(
     onCallAction: (CallAction) -> Unit
 ) {
     val haptics = LocalHapticFeedback.current
+    val transition = rememberInfiniteTransition()
+    val breath by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
 
     Column(
         modifier = Modifier
@@ -56,9 +68,9 @@ fun IncomingBottomBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            androidx.compose.material3.Button(
+            Button(
                 onClick = {
                     haptics.performHapticFeedback(HapticFeedbackType.Reject)
                     onCallAction(CallAction.DeclineCall)
@@ -71,26 +83,23 @@ fun IncomingBottomBar(
                     containerColor = MaterialTheme.colorScheme.error,
                     contentColor = MaterialTheme.colorScheme.onError
                 ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp, pressedElevation = 6.dp),
                 modifier = Modifier
                     .weight(1f)
                     .height(64.dp)
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.phone_filled),
+                    painter = painterResource(R.drawable.hang_up_filled),
                     contentDescription = stringResource(R.string.decline),
-                    modifier = Modifier
-                        .size(22.dp)
-                        .graphicsLayer { rotationZ = 135f }
+                    modifier = Modifier.size(ButtonDefaults.MediumIconSize)
                 )
                 Text(
                     text = stringResource(R.string.decline),
-                    style = MaterialTheme.typography.titleSmallEmphasized.copy(fontWeight = FontWeight.ExtraBold),
+                    style = MaterialTheme.typography.titleMediumEmphasized,
                     modifier = Modifier.padding(start = 10.dp)
                 )
             }
 
-            androidx.compose.material3.Button(
+            Button(
                 onClick = {
                     haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                     onCallAction(CallAction.AnswerCall)
@@ -103,19 +112,22 @@ fun IncomingBottomBar(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp, pressedElevation = 6.dp),
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(1.4f)
                     .height(64.dp)
+                    .graphicsLayer {
+                        scaleX = breath
+                        scaleY = breath
+                    }
             ) {
                 Icon(
                     painter = painterResource(R.drawable.phone_filled),
                     contentDescription = stringResource(R.string.answer),
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(ButtonDefaults.MediumIconSize)
                 )
                 Text(
                     text = stringResource(R.string.answer),
-                    style = MaterialTheme.typography.titleSmallEmphasized.copy(fontWeight = FontWeight.ExtraBold),
+                    style = MaterialTheme.typography.titleMediumEmphasized,
                     modifier = Modifier.padding(start = 10.dp)
                 )
             }

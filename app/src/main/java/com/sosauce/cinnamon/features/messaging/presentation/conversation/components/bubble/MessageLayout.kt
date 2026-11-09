@@ -1,5 +1,12 @@
 package com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bubble
 
+import com.sosauce.nekobites.animations.bouncySpec
+import com.sosauce.cinnamon.core.utils.rememberInteractionSource
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.animateColorAsState
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
@@ -54,23 +61,39 @@ fun MessageLayout(
         SandwichPosition.SOLO -> 5.dp
         else -> 1.dp
     }
+    val interactionSource = rememberInteractionSource()
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val bubbleScale by animateFloatAsState(
+        targetValue = if (isPressed || isSelected) 0.95f else 1f,
+        animationSpec = bouncySpec()
+    )
+    val selectionColor by animateColorAsState(
+        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent
+    )
 
 
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .padding(horizontal = 5.dp)
+            .background(selectionColor, RoundedCornerShape(24.dp))
             .combinedClickable(
+                interactionSource = interactionSource,
+                indication = null,
                 onClick = onClick,
                 onLongClick = onLongClick
             )
-            .background(if (isSelected) MaterialTheme.colorScheme.surfaceContainerHighest else Color.Transparent)
-            .padding(horizontal = 10.dp, vertical = verticalPadding)
+            .padding(horizontal = 5.dp, vertical = verticalPadding)
 
     ) {
         Box(
             modifier = Modifier
                 .align(alignment)
                 .widthIn(max = config.screenWidthDp.dp * 0.8f)
+                .graphicsLayer {
+                    scaleX = bubbleScale
+                    scaleY = bubbleScale
+                }
         ) {
             bubbleContent()
         }
@@ -81,32 +104,41 @@ fun MessageLayout(
             modifier = Modifier
                 .padding(5.dp)
                 .background(
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     shape = RoundedCornerShape(50)
                 )
                 .align(alignment)
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
                 when {
                     message.delivered -> {
                         Icon(
                             painter = painterResource(R.drawable.delivered),
-                            contentDescription = null
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .size(18.dp)
                         )
                     }
 
                     message.isScheduled -> {
                         Icon(
                             painter = painterResource(R.drawable.timer),
-                            contentDescription = null
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .size(18.dp)
                         )
                     }
                 }
                 Text(
                     text = message.time,
-                    style = MaterialTheme.typography.bodyMediumEmphasized
+                    style = MaterialTheme.typography.labelLargeEmphasized
                 )
             }
         }
@@ -136,6 +168,7 @@ fun BubbleShape(
     sandwichPosition: SandwichPosition,
     messageType: MessageType
 ): Shape {
+
 
     return if (messageType == MessageType.SENT) {
 

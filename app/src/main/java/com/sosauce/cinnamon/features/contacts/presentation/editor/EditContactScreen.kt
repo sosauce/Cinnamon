@@ -2,6 +2,13 @@
 
 package com.sosauce.cinnamon.features.contacts.presentation.editor
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.animateColorAsState
 import android.net.Uri
 import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -45,7 +52,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
@@ -211,6 +220,7 @@ fun SharedTransitionScope.EditContactScreen(
 
                 Spacer(Modifier.height(25.dp))
 
+                FieldGroup {
                 ContactEditTextField(
                     value = rawContact.firstName ?: "",
                     label = R.string.first_name,
@@ -243,6 +253,7 @@ fun SharedTransitionScope.EditContactScreen(
                             rawContact = rawContact.copy(company = "")
                         }
                     )
+                }
                 }
 
                 Spacer(Modifier.height(25.dp))
@@ -390,6 +401,7 @@ fun SharedTransitionScope.EditContactScreen(
 
 
                 rawContact.note?.let { note ->
+                    FieldGroup {
                     ContactEditTextField(
                         value = note,
                         label = R.string.notes,
@@ -401,6 +413,7 @@ fun SharedTransitionScope.EditContactScreen(
                             rawContact = rawContact.copy(note = null)
                         }
                     )
+                    }
 
                 }
 
@@ -531,35 +544,86 @@ private fun ContactEditTextField(
     LaunchedEffect(state.text) { onValueChange(state.text.toString()) }
 
 
-    OutlinedTextField(
-        modifier = modifier.fillMaxWidth(),
-        state = state,
-        shape = RoundedCornerShape(12.dp),
-        label = { Text(stringResource(label)) },
-        leadingIcon = {
-            Icon(
-                painter = painterResource(leadingIcon),
-                contentDescription = null
-            )
-        },
-        lineLimits = TextFieldLineLimits.SingleLine,
-        keyboardOptions = KeyboardOptions(
-            keyboardType = keyboardType
-        ),
-        trailingIcon = {
-            if (onClickRemove != null) {
-                IconButton(
-                    onClick = onClickRemove,
-                    shapes = IconButtonDefaults.shapes()
+    val colors = MaterialTheme.colorScheme
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    val corner by animateDpAsState(
+        targetValue = if (isFocused) 16.dp else 2.dp,
+        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec()
+    )
+    val container by animateColorAsState(
+        if (isFocused) colors.surfaceContainerHigh else colors.surfaceContainer
+    )
+
+    Surface(
+        shape = RoundedCornerShape(corner),
+        color = container,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        TextField(
+            state = state,
+            label = { Text(text = stringResource(label), maxLines = 1, modifier = Modifier.basicMarquee()) },
+            leadingIcon = {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .size(36.dp)
+                        .background(colors.secondaryContainer, MaterialShapes.Cookie9Sided.toShape())
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.remove_all_filled),
+                        painter = painterResource(leadingIcon),
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error
+                        tint = colors.onSecondaryContainer,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
-            }
-        }
+            },
+            lineLimits = TextFieldLineLimits.SingleLine,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = keyboardType
+            ),
+            interactionSource = interactionSource,
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent
+            ),
+            trailingIcon = {
+                if (onClickRemove != null) {
+                    IconButton(
+                        onClick = onClickRemove,
+                        shapes = IconButtonDefaults.shapes()
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.remove_all_filled),
+                            contentDescription = null,
+                            tint = colors.error
+                        )
+                    }
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+        )
+    }
+}
+
+@Composable
+private fun FieldGroup(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp)),
+        content = content
     )
 }
 
@@ -634,16 +698,21 @@ private fun <T> ContactDataSection(
     valueProvider: (T) -> String
 ) {
     if (items.isNotEmpty()) {
-        Column {
-            items.fastForEachIndexed { index, item ->
-                ContactEditTextField(
-                    value = valueProvider(item),
-                    keyboardType = keyboardType,
-                    label = labelRes,
-                    leadingIcon = iconRes,
-                    onValueChange = { newValue -> onValueChange(index, newValue) },
-                    onClickRemove = { onRemove(index) }
-                )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(bottom = 10.dp)
+        ) {
+            FieldGroup {
+                items.fastForEachIndexed { index, item ->
+                    ContactEditTextField(
+                        value = valueProvider(item),
+                        keyboardType = keyboardType,
+                        label = labelRes,
+                        leadingIcon = iconRes,
+                        onValueChange = { newValue -> onValueChange(index, newValue) },
+                        onClickRemove = { onRemove(index) }
+                    )
+                }
             }
 
             Button(

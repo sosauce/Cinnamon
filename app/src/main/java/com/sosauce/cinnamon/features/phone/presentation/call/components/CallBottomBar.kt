@@ -13,7 +13,10 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +30,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
+import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.HorizontalFloatingToolbar
@@ -119,7 +123,7 @@ fun CallBottomBar(
         modifier = Modifier
             .navigationBarsPadding()
             .selfAlignHorizontally()
-            .fillMaxWidth(0.96f)
+            .fillMaxWidth(0.95f)
             .padding(bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -134,23 +138,19 @@ fun CallBottomBar(
                 DialerPaneContent.NOTHING -> Unit
                 DialerPaneContent.DIALPAD, DialerPaneContent.AUDIO_SWITCHER -> {
                     Surface(
-                        shape = RoundedCornerShape(28.dp),
+                        shape = MaterialTheme.shapes.extraLarge,
                         color = MaterialTheme.colorScheme.surfaceContainer,
-                        tonalElevation = 3.dp,
-                        shadowElevation = 2.dp,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .padding(12.dp)
-                        ) {
+                        Box(Modifier.padding(12.dp)) {
                             when (target) {
                                 DialerPaneContent.DIALPAD -> Dialpad(
                                     onSendTone = { onCallAction(CallAction.StartTone(it)) },
                                 )
                                 DialerPaneContent.AUDIO_SWITCHER -> AudioSwitcher(
                                     onCallAction = onCallAction,
-                                    routes = callUiState.availableAudioRoutes
+                                    routes = callUiState.availableAudioRoutes,
+                                    currentRoute = callUiState.currentAudioRoute
                                 )
                             }
                         }
@@ -161,59 +161,56 @@ fun CallBottomBar(
         Surface(
             shape = RoundedCornerShape(32.dp),
             color = MaterialTheme.colorScheme.surfaceContainer,
-            tonalElevation = 2.dp,
-            shadowElevation = 1.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        shape = RoundedCornerShape(32.dp)
-                    )
-                    .padding(horizontal = 12.dp, vertical = 14.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.padding(10.dp)
             ) {
                 ButtonGroup(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
                     overflowIndicator = {}
                 ) {
                     actions.fastForEachIndexed { index, action ->
                         customItem(
                             buttonGroupContent = {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                                    modifier = Modifier.weight(1f)
+                                ToggleButton(
+                                    checked = action.isActive,
+                                    onCheckedChange = { action.onClick() },
+                                    enabled = !isEnded,
+                                    interactionSource = interactionSources[index],
+                                    shapes = when (index) {
+                                        0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                                        actions.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                                        else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                                    },
+                                    colors = ToggleButtonDefaults.colors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        contentColor = MaterialTheme.colorScheme.onSurface,
+                                        checkedContainerColor = MaterialTheme.colorScheme.primary,
+                                        checkedContentColor = MaterialTheme.colorScheme.onPrimary
+                                    ),
+                                    contentPadding = PaddingValues(4.dp),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(76.dp)
+                                        .animateWidth(interactionSources[index])
                                 ) {
-                                    ToggleButton(
-                                        checked = action.isActive,
-                                        onCheckedChange = { action.onClick() },
-                                        enabled = !isEnded,
-                                        interactionSource = interactionSources[index],
-                                        colors = ToggleButtonDefaults.colors(
-                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                            contentColor = MaterialTheme.colorScheme.onSurface,
-                                            checkedContainerColor = MaterialTheme.colorScheme.primary,
-                                            checkedContentColor = MaterialTheme.colorScheme.onPrimary
-                                        ),
-                                        modifier = Modifier
-                                            .size(64.dp)
-                                            .animateWidth(interactionSources[index])
-                                    ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Icon(
                                             painter = painterResource(action.icon),
                                             contentDescription = null,
-                                            modifier = Modifier.size(22.dp)
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            text = stringResource(action.label),
+                                            style = MaterialTheme.typography.labelMediumEmphasized,
+                                            maxLines = 1,
+                                            modifier = Modifier.basicMarquee()
                                         )
                                     }
-                                    Text(
-                                        text = stringResource(action.label),
-                                        style = MaterialTheme.typography.labelSmallEmphasized.copy(
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    )
                                 }
                             },
                             menuContent = {}
@@ -221,40 +218,33 @@ fun CallBottomBar(
                     }
                 }
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                Button(
+                    onClick = { onCallAction(CallAction.HangUp) },
+                    enabled = !isEnded,
+                    shapes = ButtonDefaults.shapes(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    contentPadding = ButtonDefaults.contentPaddingFor(ButtonDefaults.MediumContainerHeight),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
                 ) {
-                    Button(
-                        onClick = { onCallAction(CallAction.HangUp) },
-                        enabled = !isEnded,
-                        shapes = ButtonDefaults.shapes(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError,
-                            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 2.dp,
-                            pressedElevation = 4.dp
-                        ),
-                        contentPadding = ButtonDefaults.ContentPadding,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(64.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.phone_filled),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .rotate(135f)
-                                .size(24.dp)
-                        )
-                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Icon(
+                        painter = painterResource(R.drawable.hang_up_filled),
+                        contentDescription = null,
+                        modifier = Modifier.size(ButtonDefaults.MediumIconSize)
+                    )
+                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                    AnimatedContent(
+                        targetState = isEnded,
+                        transitionSpec = { fadeIn() togetherWith fadeOut() }
+                    ) { ended ->
                         Text(
-                            text = stringResource(if (isEnded) R.string.call_ended else R.string.hang_up),
+                            text = stringResource(if (ended) R.string.call_ended else R.string.hang_up),
                             style = MaterialTheme.typography.titleMediumEmphasized
                         )
                     }

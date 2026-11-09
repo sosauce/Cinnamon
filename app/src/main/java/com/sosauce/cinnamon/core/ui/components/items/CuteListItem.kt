@@ -1,7 +1,9 @@
 package com.sosauce.cinnamon.core.ui.components.items
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -10,16 +12,18 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import com.sosauce.cinnamon.core.ui.groupedShape
+import com.sosauce.nekobites.animations.bouncySpec
+import com.sosauce.cinnamon.core.utils.rememberInteractionSource
 
-/**
- * A surface for how all list items should look like
- */
 @Composable
 fun CuteListItem(
     modifier: Modifier = Modifier,
@@ -31,15 +35,28 @@ fun CuteListItem(
     trailingContent: (@Composable RowScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
+
+    val interactionSource = rememberInteractionSource()
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val cardScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else 1f,
+        animationSpec = bouncySpec()
+    )
+
     Box(
         modifier = modifier
+            .graphicsLayer {
+                scaleX = cardScale
+                scaleY = cardScale
+            }
             .padding(horizontal = 5.dp, vertical = 1.dp)
             .clip(shape)
             .background(backgroundColor)
             .combinedClickable(
                 enabled = onClick != null || onLongClick != null,
                 onClick = { onClick?.invoke() },
-                onLongClick = onLongClick
+                onLongClick = onLongClick,
+                interactionSource = interactionSource
             )
     ) {
         Row(
@@ -67,22 +84,6 @@ object CuteListItemDefaults {
         count: Int
     ): Shape {
 
-        return when {
-            count == 1 -> RoundedCornerShape(24.dp)
-            index == 0 -> RoundedCornerShape(
-                topStart = 24.dp,
-                topEnd = 24.dp,
-                bottomStart = 2.dp,
-                bottomEnd = 2.dp
-            )
-            index == count - 1 -> RoundedCornerShape(
-                topStart = 2.dp,
-                topEnd = 2.dp,
-                bottomStart = 24.dp,
-                bottomEnd = 24.dp
-            )
-
-            else -> RoundedCornerShape(2.dp)
-        }
+        return groupedShape(isFirst = index == 0, isLast = index == count - 1)
     }
 }

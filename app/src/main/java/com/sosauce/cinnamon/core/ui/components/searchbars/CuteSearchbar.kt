@@ -2,6 +2,11 @@ package com.sosauce.cinnamon.core.ui.components.searchbars
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -81,7 +86,6 @@ fun CuteSearchbar(
         }
         Surface(
             shape = RoundedCornerShape(24.dp),
-            shadowElevation = 5.dp,
             color = MaterialTheme.colorScheme.surfaceContainer
         ) {
             SharedTransitionLayout(
@@ -89,6 +93,10 @@ fun CuteSearchbar(
             ) {
                 AnimatedContent(
                     targetState = isInScreenSelectionMode,
+                    transitionSpec = {
+                        slideInVertically { it } + fadeIn() togetherWith
+                                slideOutVertically { it } + fadeOut()
+                    }
                 ) {
                     CompositionLocalProvider(LocalNavAnimatedContentScope provides this) {
                         if (it) {
@@ -189,9 +197,3 @@ fun CuteSearchbar(
         }
     }
 }
-
-
-
-
-
-

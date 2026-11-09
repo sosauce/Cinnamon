@@ -2,6 +2,7 @@
 
 package com.sosauce.cinnamon.features.contacts.presentation
 
+import com.sosauce.cinnamon.core.ui.barsContentTransform
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Box
@@ -73,6 +74,7 @@ fun SharedTransitionScope.ContactsScreen(
             bottomBar = {
                 AnimatedContent(
                     targetState = sweetSelectState.isInSelectionMode,
+                    transitionSpec = { barsContentTransform }
                 ) {
                     if (it) {
                         ContactsSelectedBar(

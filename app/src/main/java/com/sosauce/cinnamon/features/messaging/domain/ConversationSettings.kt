@@ -4,7 +4,6 @@ import android.net.Uri
 import androidx.compose.ui.graphics.Color
 
 data class ConversationSettings(
-    val id: Long = 0,
     val threadId: Long = 0,
     val draft: String = "",
     val wallpaper: Uri? = null,

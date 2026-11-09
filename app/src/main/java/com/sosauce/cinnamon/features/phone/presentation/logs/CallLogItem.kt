@@ -49,6 +49,7 @@ import androidx.compose.ui.util.fastForEachIndexed
 import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
+import com.sosauce.cinnamon.core.ui.components.CuteAvatar
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.utils.getItemShape
 import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
@@ -160,37 +161,10 @@ fun CallLogItem(
             AnimatedSelectedIcon(
                 isSelected = isSelected
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(MaterialShapes.Circle.toShape())
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-
-                    val firstChar = callLog.displayName.firstOrNull() ?: '?'
-
-                    if (firstChar.isLetter()) {
-                        Text(
-                            text = firstChar.uppercase(),
-                            style = MaterialTheme.typography.titleLargeEmphasized.copy(
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        )
-                    } else {
-                        Icon(
-                            painter = painterResource(R.drawable.person_filled),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                    AsyncImage(
-                        model = callLog.photo,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
+                CuteAvatar(
+                    name = callLog.displayName,
+                    photo = callLog.photo
+                )
             }
         },
         trailingContent = {
@@ -238,6 +212,7 @@ fun CallLogItem(
     ) {
         Text(
             text = if (numberOfAppearance <= 1) callLog.displayName else "${callLog.displayName} ($numberOfAppearance)",
+            style = MaterialTheme.typography.titleMediumEmphasized,
             maxLines = 1,
             modifier = Modifier.basicMarquee()
         )

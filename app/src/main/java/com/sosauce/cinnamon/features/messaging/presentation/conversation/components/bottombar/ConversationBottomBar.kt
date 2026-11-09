@@ -2,6 +2,15 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bottombar
 
+import com.sosauce.nekobites.animations.rememberAnimatedShape
+import androidx.compose.material3.contentColorFor
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
+import androidx.compose.animation.animateColorAsState
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -223,12 +232,22 @@ fun ConversationBottomBar(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .animateContentSize()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainer)
-                    .dashedBorder(RoundedCornerShape(12.dp))
-                    .padding(5.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.tertiaryContainer)
+                    .padding(start = 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp)
             ) {
-                Text(bottomBarState.scheduledTime?.toDateAndTime() ?: "")
+                Icon(
+                    painter = painterResource(R.drawable.schedule),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = bottomBarState.scheduledTime?.toDateAndTime() ?: "",
+                    style = MaterialTheme.typography.labelLargeEmphasized,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
                 Spacer(Modifier.weight(1f))
                 IconButton(
                     onClick = viewModel::removeScheduledTime,
@@ -287,19 +306,32 @@ fun ConversationBottomBar(
                     color = MaterialTheme.colorScheme.surfaceContainer,
                     shape = RoundedCornerShape(cornerRadius),
                 )
-                .padding(10.dp)
+                .padding(6.dp)
         ) {
             Row(
                 modifier = Modifier.animateContentSize(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = { isActionPickerExpanded = !isActionPickerExpanded },
-                    shapes = IconButtonDefaults.shapes()
+                val attachContainer by animateColorAsState(
+                    if (isActionPickerExpanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest
+                )
+                val attachShape = rememberAnimatedShape(
+                    condition = isActionPickerExpanded,
+                    shapeA = MaterialShapes.Circle,
+                    shapeB = MaterialShapes.Cookie9Sided
+                )
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(attachShape)
+                        .background(attachContainer)
+                        .clickable { isActionPickerExpanded = !isActionPickerExpanded }
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.add),
                         contentDescription = null,
+                        tint = contentColorFor(attachContainer),
                         modifier = Modifier.rotate(attachmentRotation)
                     )
                 }
@@ -313,8 +345,16 @@ fun ConversationBottomBar(
                     modifier = Modifier.weight(1f),
                     colors = TextFieldDefaults.colors(
                         unfocusedIndicatorColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent
                     ),
+                    placeholder = {
+                        Text(
+                            text = stringResource(R.string.type_a_message),
+                            maxLines = 1
+                        )
+                    },
                     trailingIcon =
                         if (showCharCount) {
                             {
@@ -323,25 +363,25 @@ fun ConversationBottomBar(
                                     if (charCount <= 160) 1 else ceil(charCount / 160.0).toInt()
                                 CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodySmallEmphasized) {
                                     Row {
-                                       AnimatedCounter(charCount)
+                                       AnimatedCounter(count = charCount, textStyle = LocalTextStyle.current)
                                         Text("/")
-                                       AnimatedCounter(segmentCount)
+                                       AnimatedCounter(count = segmentCount, textStyle = LocalTextStyle.current)
                                     }
                                 }
                             }
 
                         } else null
                 )
-                IconButton(
+                FilledIconButton(
                     onClick = {
                         if (bottomBarState.scheduledTime != null) {
                             onHandleConversationActions(
                                 ConversationActions.ScheduleMessage(
                                     ScheduledMessageEntity(
                                         threadId = state.conversation.threadId,
-                                        address = state.conversation.participants.firstOrNull()?.rawNumber ?: return@IconButton,
+                                        address = state.conversation.participants.firstOrNull()?.rawNumber ?: return@FilledIconButton,
                                         message = bottomBarState.message,
-                                        sendAt = bottomBarState.scheduledTime ?: return@IconButton
+                                        sendAt = bottomBarState.scheduledTime ?: return@FilledIconButton
                                     )
                                 )
                             )
@@ -358,6 +398,7 @@ fun ConversationBottomBar(
                     },
                     shapes = IconButtonDefaults.shapes(),
                     enabled = (bottomBarState.message.isNotEmpty() && bottomBarState.message.isNotBlank()) || bottomBarState.attachments.isNotEmpty(),
+                    modifier = Modifier.size(48.dp)
                 ) {
 
                     AnimatedContent(

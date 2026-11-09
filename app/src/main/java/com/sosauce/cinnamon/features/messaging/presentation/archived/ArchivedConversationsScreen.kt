@@ -2,6 +2,7 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.archived
 
+import com.sosauce.cinnamon.core.ui.barsContentTransform
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.lazy.LazyColumn
@@ -56,6 +57,7 @@ fun SharedTransitionScope.ArchivedConversationsScreen(
         bottomBar = {
             AnimatedContent(
                 targetState = sweetSelectState.isInSelectionMode,
+                transitionSpec = { barsContentTransform }
             ) {
                 if (!it) {
                     CuteSearchbar(

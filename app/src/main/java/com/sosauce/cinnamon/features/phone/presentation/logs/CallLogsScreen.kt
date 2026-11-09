@@ -2,6 +2,7 @@
 
 package com.sosauce.cinnamon.features.phone.presentation.logs
 
+import com.sosauce.cinnamon.core.ui.barsContentTransform
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
@@ -64,7 +65,8 @@ fun CallLogsScreen(
         bottomBar = {
 
             AnimatedContent(
-                targetState = sweetSelectState.isInSelectionMode
+                targetState = sweetSelectState.isInSelectionMode,
+                transitionSpec = { barsContentTransform }
             ) {
                 if (it) {
                     val items = state.callLogs.values.flatten().fastMap { it.first }

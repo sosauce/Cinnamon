@@ -1,18 +1,19 @@
 package com.sosauce.cinnamon.settings
 
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.rememberAppTheme
@@ -23,74 +24,55 @@ import com.sosauce.cinnamon.core.utils.CutePaletteStyle
 import com.sosauce.cinnamon.core.utils.CuteTheme
 import com.sosauce.cinnamon.core.utils.anyDarkColorScheme
 import com.sosauce.cinnamon.core.utils.anyLightColorScheme
-import com.sosauce.cinnamon.settings.components.PaletteSelector
-import com.sosauce.cinnamon.settings.components.SettingsSelector
-import com.sosauce.cinnamon.settings.components.SettingsWithTitle
-import com.sosauce.cinnamon.settings.components.SwitchSettingsCard
-import com.sosauce.nekobites.components.LazyRowWithScrollButton
+import com.sosauce.cinnamon.settings.components.PaletteTile
+import com.sosauce.cinnamon.settings.components.SelectableTile
+import com.sosauce.cinnamon.settings.components.SettingsGroup
+import com.sosauce.cinnamon.settings.components.SettingsPicker
+import com.sosauce.cinnamon.settings.components.SettingsSwitch
 
 @Composable
 fun SettingsLookAndFeel() {
 
     var theme by rememberAppTheme()
-    val isSystemDark = isSystemInDarkTheme()
     var useSystemFont by rememberUseSystemFont()
     var paletteStyle by rememberPaletteStyle()
+    var incomingFullscreen by rememberIncomingCallFullscreen()
+    val isSystemDark = isSystemInDarkTheme()
     val anyDark = anyDarkColorScheme()
     val anyLight = anyLightColorScheme()
 
-
-    val themeItems = listOf(
-        ThemeItem(
-            onClick = { theme = CuteTheme.SYSTEM },
-            backgroundColor = if (isSystemDark) anyDark.surface else anyLight.surface,
-            iconColor = if (isSystemDark) anyDark.onSurface else anyLight.onSurface,
-            text = R.string.system,
-            isSelected = theme == CuteTheme.SYSTEM,
-            icon = R.drawable.system_theme
+    val themes = listOf(
+        ThemeOption(
+            value = CuteTheme.SYSTEM,
+            label = R.string.system,
+            icon = R.drawable.system_theme,
+            background = if (isSystemDark) anyDark.surfaceContainerHighest else anyLight.surfaceContainerHighest,
+            iconColor = if (isSystemDark) anyDark.onSurface else anyLight.onSurface
         ),
-        ThemeItem(
-            onClick = { theme = CuteTheme.DARK },
-            backgroundColor = anyDark.surface,
-            iconColor = anyDark.onSurface,
-            text = R.string.dark,
-            isSelected = theme == CuteTheme.DARK,
-            icon = R.drawable.dark_mode
+        ThemeOption(
+            value = CuteTheme.DARK,
+            label = R.string.dark,
+            icon = R.drawable.dark_mode,
+            background = anyDark.surfaceContainerHighest,
+            iconColor = anyDark.onSurface
         ),
-        ThemeItem(
-            onClick = { theme = CuteTheme.LIGHT },
-            backgroundColor = anyLight.surface,
-            iconColor = anyLight.onSurface,
-            text = R.string.light,
+        ThemeOption(
+            value = CuteTheme.LIGHT,
+            label = R.string.light,
             icon = R.drawable.light_mode,
-            isSelected = theme == CuteTheme.LIGHT
+            background = anyLight.surfaceContainerHighest,
+            iconColor = anyLight.onSurface
         ),
-        ThemeItem(
-            onClick = { theme = CuteTheme.AMOLED },
-            backgroundColor = Color.Black,
-            iconColor = Color.White,
-            text = R.string.amoled,
+        ThemeOption(
+            value = CuteTheme.AMOLED,
+            label = R.string.amoled,
             icon = R.drawable.amoled,
-            isSelected = theme == CuteTheme.AMOLED
+            background = Color.Black,
+            iconColor = Color.White
         )
     )
 
-    val fontItems = listOf(
-        FontItem(
-            onClick = { useSystemFont = false },
-            isSelected = !useSystemFont,
-            icon = R.drawable.match_case,
-            text = R.string.default_text
-        ),
-        FontItem(
-            onClick = { useSystemFont = true },
-            isSelected = useSystemFont,
-            icon = R.drawable.system_font,
-            text = R.string.system
-        )
-    )
-
-    val paletteItems = listOf(
+    val palettes = listOf(
         CutePaletteStyle.TONAL_SPOT,
         CutePaletteStyle.EXPRESSIVE,
         CutePaletteStyle.VIBRANT,
@@ -100,112 +82,87 @@ fun SettingsLookAndFeel() {
         CutePaletteStyle.FRUIT_SALAD
     )
 
-    var incomingFullscreen by rememberIncomingCallFullscreen()
-
-    Column {
-        SettingsWithTitle(
-            title = R.string.theme
-        ) {
-            Card(
-                colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceContainer),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 2.dp),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                LazyRowWithScrollButton(
-                    items = themeItems
-                ) { theme ->
-                    SettingsSelector(
-                        onClick = theme.onClick,
-                        icon = theme.icon,
-                        text = theme.text,
-                        isSelected = theme.isSelected,
-                        containerColor = theme.backgroundColor,
-                        contentColor = theme.iconColor
+    SettingsGroup(title = stringResource(R.string.appearance)) {
+        SettingsPicker(title = stringResource(R.string.theme)) {
+            items(themes) { option ->
+                SelectableTile(
+                    selected = theme == option.value,
+                    onClick = { theme = option.value },
+                    label = stringResource(option.label),
+                    containerColor = option.background
+                ) {
+                    Icon(
+                        painter = painterResource(option.icon),
+                        contentDescription = null,
+                        tint = option.iconColor
                     )
                 }
             }
         }
-
-        SettingsWithTitle(
-            title = R.string.palette
-        ) {
-            Card(
-                colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceContainer),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 2.dp),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                LazyRowWithScrollButton(
-                    items = paletteItems
-                ) { palette ->
-                    PaletteSelector(
-                        isSelected = palette == paletteStyle,
-                        onSelectNewPalette = { paletteStyle = palette },
-                        paletteStyle = palette
-                    )
-                }
+        SettingsPicker(title = stringResource(R.string.palette)) {
+            items(palettes) { palette ->
+                PaletteTile(
+                    paletteStyle = palette,
+                    selected = palette == paletteStyle,
+                    onClick = { paletteStyle = palette }
+                )
             }
         }
-
-        SettingsWithTitle(
-            title = R.string.font
-        ) {
-            Card(
-                colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceContainer),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 2.dp),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                LazyRowWithScrollButton(
-                    items = fontItems
-                ) { font ->
-                    SettingsSelector(
-                        onClick = font.onClick,
-                        icon = font.icon,
-                        text = font.text,
-                        isSelected = font.isSelected
-                    )
-                }
+        SettingsPicker(title = stringResource(R.string.font)) {
+            item {
+                FontTile(
+                    selected = !useSystemFont,
+                    onClick = { useSystemFont = false },
+                    icon = R.drawable.match_case,
+                    label = R.string.default_text
+                )
+            }
+            item {
+                FontTile(
+                    selected = useSystemFont,
+                    onClick = { useSystemFont = true },
+                    icon = R.drawable.system_font,
+                    label = R.string.system
+                )
             }
         }
+    }
 
-        // Incoming call popup — moved from Permissions (blur options removed per request)
-        SettingsWithTitle(
-            title = R.string.look_and_feel
-        ) {
-            SwitchSettingsCard(
-                checked = incomingFullscreen,
-                onCheckedChange = { incomingFullscreen = !incomingFullscreen },
-                topDp = 24.dp,
-                bottomDp = 24.dp,
-                text = "Incoming call full-screen popup"
-            )
-        }
-
+    SettingsGroup(title = stringResource(R.string.calls)) {
+        SettingsSwitch(
+            title = stringResource(R.string.incoming_call_fullscreen),
+            description = stringResource(R.string.incoming_call_fullscreen_desc),
+            checked = incomingFullscreen,
+            onCheckedChange = { incomingFullscreen = !incomingFullscreen }
+        )
     }
 }
 
-data class ThemeItem(
-    val onClick: () -> Unit,
-    val backgroundColor: Color,
-    val iconColor: Color = Color.White,
-    val text: Int,
-    val icon: Int,
-    val isSelected: Boolean
-)
-
-data class FontItem(
-    val onClick: () -> Unit,
-    val icon: Int,
-    val text: Int,
-    val isSelected: Boolean
-)
-
-enum class FontStyle {
-    DEFAULT,
-    SYSTEM
+@Composable
+private fun FontTile(
+    selected: Boolean,
+    onClick: () -> Unit,
+    @DrawableRes icon: Int,
+    @StringRes label: Int
+) {
+    SelectableTile(
+        selected = selected,
+        onClick = onClick,
+        label = stringResource(label)
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(26.dp)
+        )
+    }
 }
+
+private data class ThemeOption(
+    val value: String,
+    @param:StringRes val label: Int,
+    @param:DrawableRes val icon: Int,
+    val background: Color,
+    val iconColor: Color
+)

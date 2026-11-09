@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.core.ui.components.CuteAvatar
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
@@ -61,42 +62,16 @@ fun SharedTransitionScope.ContactListItem(
             AnimatedSelectedIcon(
                 isSelected = isSelected
             ) {
-                Box(
-                    modifier = modifier
-                        .size(50.dp)
-                        .clip(MaterialShapes.Circle.toShape())
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-
-                    val firstLetter = contact.displayName.firstOrNull() ?: '?'
-
-                    if (firstLetter.isLetter()) {
-                        Text(
-                            text = firstLetter.uppercase(),
-                            style = MaterialTheme.typography.titleLargeEmphasized.copy(
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        )
-                    } else {
-                        Icon(
-                            painter = painterResource(R.drawable.person_filled),
-                            contentDescription = null,
-                            tint = contentColorFor(MaterialTheme.colorScheme.onPrimary)
-                        )
-                    }
-                    AsyncImage(
-                        model = contact.thumbnail,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
+                CuteAvatar(
+                    name = contact.displayName,
+                    photo = contact.thumbnail
+                )
             }
         }
     ) {
         Text(
             text = contact.displayName,
+            style = MaterialTheme.typography.titleMediumEmphasized,
             maxLines = 1,
             modifier = Modifier
                 .sharedBounds(
@@ -114,6 +89,7 @@ fun SharedTransitionScope.ContactListItem(
                     }
                 },
                 maxLines = 1,
+                style = MaterialTheme.typography.bodyMediumEmphasized,
                 modifier = Modifier
                     .basicMarquee(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant

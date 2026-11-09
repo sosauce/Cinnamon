@@ -78,7 +78,6 @@ fun ConversationSettingsEntity.toConversationSettings(): ConversationSettings {
     val color = if (color == -1) null else Color(color)
 
     return ConversationSettings(
-        id = id,
         threadId = threadId,
         draft = draft,
         wallpaper = wallpaperUri,
@@ -89,10 +88,9 @@ fun ConversationSettingsEntity.toConversationSettings(): ConversationSettings {
 
 fun ConversationSettings.toEntity(): ConversationSettingsEntity {
     return ConversationSettingsEntity(
-        id = id,
         threadId = threadId,
         draft = draft,
-        wallpaper = wallpaper.toString(),
+        wallpaper = wallpaper?.toString().orEmpty(),
         wallpaperBlurIntensity = wallpaperBlurIntensity,
         color = color?.toArgb() ?: -1
     )

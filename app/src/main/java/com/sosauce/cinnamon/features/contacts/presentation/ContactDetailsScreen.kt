@@ -2,6 +2,7 @@
 
 package com.sosauce.cinnamon.features.contacts.presentation
 
+import androidx.compose.foundation.shape.CircleShape
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
@@ -309,15 +310,9 @@ fun SharedTransitionScope.ContactDetailsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    CuteNavigationButtonSurface(onNavigateUp = onNavigateBack)
                     Surface(
-                        shadowElevation = 5.dp,
-                        shape = MaterialShapes.Cookie9Sided.toShape()
-                    ) {
-                        CuteNavigationButtonSurface(onNavigateUp = onNavigateBack)
-                    }
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        shadowElevation = 5.dp,
+                        shape = CircleShape,
                         color = MaterialTheme.colorScheme.surfaceContainerHigh
                     ) {
                         Row {
@@ -390,9 +385,6 @@ fun SharedTransitionScope.ContactDetailsScreen(
                 }
             }
         ) { pv ->
-            // Header metrics: poster bleeds under the status bar, the contact icon
-            // sits centered on the poster/card seam (clear of the status bar), and
-            // the content card overlaps the poster's bottom edge.
             val posterHeight = 280.dp
             val iconSize = 170.dp
             val cardOverlap = 25.dp
@@ -525,30 +517,6 @@ fun SharedTransitionScope.ContactDetailsScreen(
                             shape = MaterialShapes.Cookie9Sided.toShape()
                         )
 
-
-                        val favoriteButtonColor by animateColorAsState(
-                            if (state.contact.isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceContainerHigh
-                        )
-
-                        FilledIconButton(
-                            onClick = {
-                                onHandleContactDetailsAction(ContactDetailsAction.ToggleFavorite)
-                                playFavoriteAnimation = true
-                            },
-                            shapes = IconButtonDefaults.shapes(),
-                            colors = IconButtonDefaults.iconButtonColors(
-                                containerColor = favoriteButtonColor,
-                                contentColor = contentColorFor(favoriteButtonColor)
-                            ),
-                            modifier = Modifier.align(Alignment.BottomEnd)
-                        ) {
-                            val icon = if (state.contact.isFavorite) R.drawable.favorite_filled else R.drawable.favorite
-
-                            Icon(
-                                painter = painterResource(icon),
-                                contentDescription = null
-                            )
-                        }
                     }
 
                 }

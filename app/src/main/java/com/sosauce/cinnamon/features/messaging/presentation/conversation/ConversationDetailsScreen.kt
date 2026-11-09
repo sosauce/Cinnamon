@@ -6,6 +6,7 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation
 
+import com.sosauce.cinnamon.core.ui.components.CuteHero
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.SharedTransitionScope
@@ -180,11 +181,7 @@ fun SharedTransitionScope.ConversationDetailsScreen(
                             prefilledMessage = prefilledMessage,
                             onSaveDraft = { draft ->
                                 onHandleConversationSettingsActions(
-                                    ConversationSettingActions.UpsertConversationSettings(
-                                        state.settings.copy(
-                                            draft = draft
-                                        )
-                                    )
+                                    ConversationSettingActions.UpsertDraft(draft)
                                 )
                             },
                             onHandleConversationActions = onHandleConversationActions
@@ -197,7 +194,6 @@ fun SharedTransitionScope.ConversationDetailsScreen(
             Box(
                 Modifier.fillMaxSize()
             ) {
-                // Wallpaper
                 AsyncImage(
                     model = state.settings.wallpaper,
                     contentDescription = null,
@@ -280,11 +276,13 @@ fun SharedTransitionScope.ConversationDetailsScreen(
                                                             verticalAlignment = Alignment.CenterVertically
                                                         ) {
                                                             CircularWavyProgressIndicator(
-                                                                modifier = Modifier.size(30.dp)
+                                                                modifier = Modifier.size(20.dp)
                                                             )
-                                                            Spacer(Modifier.width(5.dp))
+                                                            Spacer(Modifier.width(6.dp))
                                                             Text(
-                                                                text = stringResource(R.string.sending)
+                                                                text = stringResource(R.string.sending),
+                                                                style = MaterialTheme.typography.labelLargeEmphasized,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                                             )
                                                         }
                                                     }
@@ -296,11 +294,13 @@ fun SharedTransitionScope.ConversationDetailsScreen(
                                                             Icon(
                                                                 painter = painterResource(R.drawable.info),
                                                                 contentDescription = null,
-                                                                tint = MaterialTheme.colorScheme.error
+                                                                tint = MaterialTheme.colorScheme.error,
+                                                                modifier = Modifier.size(18.dp)
                                                             )
-                                                            Spacer(Modifier.width(5.dp))
+                                                            Spacer(Modifier.width(6.dp))
                                                             Text(
                                                                 text = stringResource(R.string.not_sent),
+                                                                style = MaterialTheme.typography.labelLargeEmphasized,
                                                                 color = MaterialTheme.colorScheme.error
                                                             )
                                                         }
@@ -313,8 +313,8 @@ fun SharedTransitionScope.ConversationDetailsScreen(
 
                                             val bubbleColor = when {
                                                 message.body.isEmoji() || message.isScheduled -> Color.Transparent
-                                                message.type == MessageType.RECEIVED -> MaterialTheme.colorScheme.tertiaryFixedDim
-                                                else -> MaterialTheme.colorScheme.primaryFixedDim
+                                                message.type == MessageType.RECEIVED -> MaterialTheme.colorScheme.surfaceContainerHigh
+                                                else -> MaterialTheme.colorScheme.primary
                                             }
                                             if (message.isMms) {
                                                 MmsBubble(
@@ -342,44 +342,34 @@ fun SharedTransitionScope.ConversationDetailsScreen(
                                             modifier = Modifier
                                                 .animateItem()
                                                 .fillMaxWidth()
-                                                .padding(vertical = 5.dp),
+                                                .padding(vertical = 10.dp),
                                             horizontalArrangement = Arrangement.Center
                                         ) {
                                             Text(
                                                 text = date,
-                                                color = MaterialTheme.colorScheme.onSurface,
+                                                style = MaterialTheme.typography.labelLargeEmphasized,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer,
                                                 modifier = Modifier
                                                     .background(
-                                                        color = MaterialTheme.colorScheme.surface,
+                                                        color = MaterialTheme.colorScheme.secondaryContainer,
                                                         shape = RoundedCornerShape(50)
                                                     )
-                                                    .padding(5.dp)
+                                                    .padding(horizontal = 12.dp, vertical = 6.dp)
                                             )
                                         }
                                     }
                                 }
                         } else {
                             item {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                CuteHero(
+                                    icon = R.drawable.message_rounded,
+                                    title = stringResource(R.string.conversation_starter),
+                                    description = stringResource(R.string.conversation_starter_desc),
+                                    size = 140.dp,
                                     modifier = Modifier
-                                        .padding(horizontal = 10.dp)
                                         .fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.conversation_starter),
-                                        style = MaterialTheme.typography.headlineMediumEmphasized.copy(
-                                            textAlign = TextAlign.Center
-                                        )
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.conversation_starter_desc),
-                                        style = MaterialTheme.typography.bodyMediumEmphasized.copy(
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            textAlign = TextAlign.Center
-                                        )
-                                    )
-                                }
+                                        .padding(vertical = 24.dp)
+                                )
                             }
                         }
 

@@ -263,4 +263,33 @@
         <item quantity="other">Medias</item>
     </plurals>
 
+    <string name="github">GitHub</string>
+    <string name="appearance">Appearance</string>
+    <string name="incoming_call_fullscreen">Full-screen incoming calls</string>
+    <string name="incoming_call_fullscreen_desc">Show a big full-screen popup when someone calls, instead of a tiny notification</string>
+    <string name="sim_card">SIM card</string>
+    <string name="default_sim">Default SIM</string>
+    <string name="default_sim_messages">Default SIM for messaging functions.</string>
+    <string name="no_sim_available">No SIM found… are you texting with carrier pigeons?</string>
+    <string name="no_sim_phone_permission">No SIM available. Grant the Phone permission to pick a default SIM.</string>
+    <string name="conversations">Conversations</string>
+    <string name="sending_settings">Sending</string>
+    <string name="default_dialer_desc">Required for the call screen and bubbles over other apps</string>
+    <string name="default_sms_desc">Required to send and receive SMS/MMS</string>
+    <string name="set_as_default_dialer">Set as default dialer</string>
+    <string name="bubbles_tip">Tip: bubbles and full-screen calls need \"Display over other apps\" and the notification permission.</string>
+
+    <string name="grant_me">Hey, grant me &gt;:(</string>
+    <plurals name="participants_count">
+        <item quantity="one">%d participant</item>
+        <item quantity="other">%d participants</item>
+    </plurals>
+    <string name="type_a_message">Type a message</string>
+    <string name="chat_color_desc">Give this chat its own flavor</string>
+    <string name="pick_wallpaper">Pick a wallpaper</string>
+    <string name="change_wallpaper">Change wallpaper</string>
+    <string name="remove_wallpaper">Remove wallpaper</string>
+    <string name="preview_received_1">Did you change something?</string>
+    <string name="preview_received_2">This chat looks purrfect now</string>
+    <string name="preview_sent">Fresh paint, same cat 🐱</string>
 </resources>

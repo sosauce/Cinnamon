@@ -2,6 +2,7 @@
 
 package com.sosauce.cinnamon.features.phone.presentation.voicemail
 
+import com.sosauce.cinnamon.core.ui.barsContentTransform
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -86,6 +87,7 @@ fun VoicemailScreen(
         bottomBar = {
             AnimatedContent(
                 targetState = sweetSelectState.isInSelectionMode,
+                transitionSpec = { barsContentTransform }
             ) {
                 if (it) {
                     SelectedBarSurface(

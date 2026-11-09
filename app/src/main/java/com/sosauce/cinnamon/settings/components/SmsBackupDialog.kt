@@ -2,6 +2,8 @@
 
 package com.sosauce.cinnamon.settings.components
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,18 +18,21 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.ValidFileNameTransformation
+import com.sosauce.cinnamon.core.utils.PermissionUtils
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.cinnamon.settings.MessageBackupUiState
 import com.sosauce.nekobites.components.Spacer
@@ -37,13 +42,15 @@ fun SmsBackupDialog(
     conversations: List<CuteConversation>,
     uiState: MessageBackupUiState,
     fileNameState: TextFieldState,
-    hasSmsPermission: Boolean,
     onToggleConversation: (threadId: Long, selected: Boolean) -> Unit,
     onSelectAll: () -> Unit,
     onClearSelection: () -> Unit,
     onDismiss: () -> Unit,
     onStartBackup: () -> Unit
 ) {
+
+    val ctx = LocalContext.current
+
     AlertDialog(
         onDismissRequest = { if (!uiState.isExporting) onDismiss() },
         title = { Text(stringResource(R.string.backup_messages)) },
@@ -77,8 +84,14 @@ fun SmsBackupDialog(
                 }
 
                 item {
-                    OutlinedTextField(
+                    TextField(
                         state = fileNameState,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent
+                        ),
                         label = {
                             Text(
                                 text = stringResource(R.string.backup_file_name, ".json")
@@ -122,7 +135,7 @@ fun SmsBackupDialog(
                 }
 
                 when {
-                    !hasSmsPermission -> {
+                    !PermissionUtils.hasSmsPermission(ctx) -> {
                         item {
                             Text(
                                 text = stringResource(R.string.backup_needs_sms_permission),

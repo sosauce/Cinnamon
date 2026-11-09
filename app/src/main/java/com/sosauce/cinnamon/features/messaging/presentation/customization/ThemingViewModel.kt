@@ -43,6 +43,12 @@ class ThemingViewModel(
                     conversationSettingsDao.upsertConversation(entity)
                 }
             }
+
+            is ConversationSettingActions.UpsertDraft -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    conversationSettingsDao.upsertDraft(threadId, action.draft)
+                }
+            }
         }
     }
 

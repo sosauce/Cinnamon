@@ -29,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -53,8 +52,7 @@ fun Dialpad(
     ) {
         Surface(
             shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            tonalElevation = 0.dp,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 4.dp)
@@ -68,9 +66,8 @@ fun Dialpad(
                 if (value.isEmpty()) {
                     Text(
                         text = stringResource(R.string.enter_number),
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        ),
+                        style = MaterialTheme.typography.titleMediumEmphasized,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
                 } else {
@@ -78,10 +75,8 @@ fun Dialpad(
                         text = value,
                         maxLines = 1,
                         textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.headlineSmallEmphasized.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
+                        style = MaterialTheme.typography.headlineMediumEmphasized,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier
                             .fillMaxWidth()
                             .horizontalScroll(scrollState)
@@ -109,13 +104,13 @@ fun DialpadKeys(
     val row4 = listOf('*', '0', '#')
     val all = listOf(row1, row2, row3, row4)
     Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         all.fastForEach { row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 row.fastForEach { number ->
                     Button(
@@ -138,9 +133,7 @@ fun DialpadKeys(
                         ) {
                             Text(
                                 text = number.toString(),
-                                style = MaterialTheme.typography.headlineSmallEmphasized.copy(
-                                    fontWeight = FontWeight.ExtraBold
-                                )
+                                style = MaterialTheme.typography.headlineSmallEmphasized
                             )
                             val sub = when (number) {
                                 '2' -> "ABC"
@@ -156,10 +149,8 @@ fun DialpadKeys(
                             if (sub != null) {
                                 Text(
                                     text = sub,
-                                    style = MaterialTheme.typography.labelSmallEmphasized.copy(
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
+                                    style = MaterialTheme.typography.labelSmallEmphasized,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }

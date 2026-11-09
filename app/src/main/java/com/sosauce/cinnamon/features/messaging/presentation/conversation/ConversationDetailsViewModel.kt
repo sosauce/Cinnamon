@@ -107,6 +107,12 @@ class ConversationDetailsViewModel(
                     conversationSettingsDao.upsertConversation(action.conversationSettings.toEntity())
                 }
             }
+
+            is ConversationSettingActions.UpsertDraft -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    conversationSettingsDao.upsertDraft(threadId, action.draft)
+                }
+            }
         }
     }
 

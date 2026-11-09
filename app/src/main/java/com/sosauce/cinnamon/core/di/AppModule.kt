@@ -32,6 +32,7 @@ import com.sosauce.cinnamon.features.messaging.data.backup.MessagesImportReposit
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsDao
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsDatabase
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.MIGRATION_1_2_CONVERSATION_SETTINGS
+import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.MIGRATION_2_3_CONVERSATION_SETTINGS
 import com.sosauce.cinnamon.features.messaging.data.local.scheduledMessages.MIGRATION_1_2_SCHEDULED_MESSAGE
 import com.sosauce.cinnamon.features.messaging.data.local.scheduledMessages.ScheduledMessagesDao
 import com.sosauce.cinnamon.features.messaging.data.local.scheduledMessages.ScheduledMessagesDatabase
@@ -52,7 +53,7 @@ import com.sosauce.cinnamon.features.phone.presentation.call.CallingViewModel
 import com.sosauce.cinnamon.features.phone.presentation.dialpad.DialpadViewModel
 import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsViewModel
 import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailViewModel
-import com.sosauce.cinnamon.settings.MigrationViewModel
+import com.sosauce.cinnamon.settings.BackupViewModel
 import com.sosauce.cinnamon.settings.SimsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -68,7 +69,7 @@ val appModule = module {
             context = androidContext(),
             klass = ConversationSettingsDatabase::class.java,
             name = "conversationSettingsEntity.db"
-        ).addMigrations(MIGRATION_1_2_CONVERSATION_SETTINGS).build().dao
+        ).addMigrations(MIGRATION_1_2_CONVERSATION_SETTINGS, MIGRATION_2_3_CONVERSATION_SETTINGS).build().dao
     }
 
     single<ScheduledMessagesDao> {
@@ -141,7 +142,7 @@ val appModule = module {
     viewModelOf(::DialpadViewModel)
     viewModelOf(::CallingViewModel)
     viewModelOf(::BottomBarViewModel)
-    viewModelOf(::MigrationViewModel)
+    viewModelOf(::BackupViewModel)
     viewModelOf(::StartConversationViewModel)
     viewModelOf(::EditContactViewModel)
     viewModelOf(::SimsViewModel)

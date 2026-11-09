@@ -2,12 +2,22 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation.components
 
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.toShape
+import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,19 +45,39 @@ fun TextingUnavailableBar(
         TextingUnavailableReason.SHORT_CODE, TextingUnavailableReason.BLOCKED -> R.drawable.block
     }
 
-    HorizontalFloatingToolbar(
-        expanded = false,
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainer,
         modifier = Modifier
             .navigationBarsPadding()
             .selfAlignHorizontally()
             .fillMaxWidth(0.95f)
+            .padding(bottom = 8.dp)
     ) {
-        Icon(
-            painter = painterResource(reasonIcon),
-            contentDescription = null
-        )
-        Spacer(Modifier.width(ICON_TEXT_SPACING.dp))
-        Text(stringResource(reasonText))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(42.dp)
+                    .background(MaterialTheme.colorScheme.errorContainer, MaterialShapes.Cookie9Sided.toShape())
+            ) {
+                Icon(
+                    painter = painterResource(reasonIcon),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = stringResource(reasonText),
+                style = MaterialTheme.typography.bodyMediumEmphasized,
+                modifier = Modifier.padding(end = 12.dp)
+            )
+        }
     }
 }
 

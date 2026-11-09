@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextDecoration
@@ -55,9 +56,10 @@ fun TextBubbleContent(
 
     Box(
         modifier = Modifier
+            .clip(shape)
             .background(
                 color = bubbleColor,
-                shape = shape
+                //shape = shape
             )
             .thenIf(text.isLink()) {
                 Modifier.clickable {
@@ -74,7 +76,7 @@ fun TextBubbleContent(
         Text(
             text = text,
             modifier = Modifier
-                .padding(10.dp),
+                .padding(horizontal = 14.dp, vertical = 10.dp),
             style = MaterialTheme.typography.bodyLargeEmphasized.copy(
                 fontSize = if (text.isEmoji()) 35.sp else TextUnit.Unspecified,
                 color = contentColorFor(bubbleColor),

@@ -5,8 +5,7 @@ import androidx.room.PrimaryKey
 
 @Entity
 data class ConversationSettingsEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
+    @PrimaryKey
     val threadId: Long = 0,
     val draft: String = "",
     val wallpaper: String = "",

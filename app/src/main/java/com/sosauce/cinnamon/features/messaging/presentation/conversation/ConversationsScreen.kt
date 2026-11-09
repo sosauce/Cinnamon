@@ -4,6 +4,7 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation
 
+import com.sosauce.cinnamon.core.ui.barsContentTransform
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
@@ -119,6 +120,7 @@ fun SharedTransitionScope.ConversationsScreen(
             bottomBar = {
                 AnimatedContent(
                     targetState = sweetSelectState.isInSelectionMode,
+                    transitionSpec = { barsContentTransform }
                 ) {
                     if (!it) {
                         CuteSearchbar(
@@ -226,7 +228,10 @@ fun LazyListScope.threadsList(
     onHandleConversationsAction: (ConversationsAction) -> Unit
 ) {
     item(LazyListKeys.PINNED_CONVERSATIONS) {
-        LazyRow(modifier = Modifier.fillMaxWidth()) {
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
             items(
                 items = pinnedConversations,
                 key = { it.threadId }
@@ -237,8 +242,10 @@ fun LazyListScope.threadsList(
                 }
 
                 PinnedConversation(
+                    modifier = Modifier.animateItem(),
                     conversation = conversation,
                     isSelected = isSelected,
+                    isInSelectionMode = sweetSelectState.isInSelectionMode,
                     onClick = {
                         if (sweetSelectState.isInSelectionMode) {
                             sweetSelectState.toggle(conversation)

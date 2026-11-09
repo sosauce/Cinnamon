@@ -5,7 +5,6 @@ import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -14,7 +13,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.R
@@ -23,8 +21,8 @@ import com.sosauce.cinnamon.settings.components.CallLogsBackupDialog
 import com.sosauce.cinnamon.settings.components.CallLogsImportDialog
 import com.sosauce.cinnamon.settings.components.ContactsBackupDialog
 import com.sosauce.cinnamon.settings.components.ContactsImportDialog
-import com.sosauce.cinnamon.settings.components.PlainSettingsCard
-import com.sosauce.cinnamon.settings.components.SettingsWithTitle
+import com.sosauce.cinnamon.settings.components.SettingsClickable
+import com.sosauce.cinnamon.settings.components.SettingsGroup
 import com.sosauce.cinnamon.settings.components.SmsBackupDialog
 import com.sosauce.cinnamon.settings.components.SmsImportDialog
 import com.sosauce.nekobites.helpers.ObserveAsEvents
@@ -103,53 +101,45 @@ fun SettingsBackup() {
             }
         }
 
-    Column {
-        SettingsWithTitle(title = R.string.export_backups) {
-            PlainSettingsCard(
-                onClick = { showSmsDialog = true },
-                topDp = 24.dp,
-                bottomDp = 2.dp,
-                text = stringResource(R.string.backup_messages),
-                optionalDescription = R.string.backup_messages_desc
-            )
-            PlainSettingsCard(
-                onClick = { showContactsDialog = true },
-                topDp = 2.dp,
-                bottomDp = 2.dp,
-                text = stringResource(R.string.backup_contacts),
-                optionalDescription = R.string.backup_contacts_desc
-            )
-            PlainSettingsCard(
-                onClick = { showCallsDialog = true },
-                topDp = 2.dp,
-                bottomDp = 24.dp,
-                text = stringResource(R.string.backup_call_logs),
-                optionalDescription = R.string.backup_call_logs_desc
-            )
-        }
-        SettingsWithTitle(R.string.import_backups) {
-            PlainSettingsCard(
-                onClick = { smsImportPicker.launch(arrayOf("application/json", "text/plain")) },
-                topDp = 24.dp,
-                bottomDp = 2.dp,
-                text = stringResource(R.string.import_messages),
-                optionalDescription = R.string.import_sms_desc
-            )
-            PlainSettingsCard(
-                onClick = { contactsImportPicker.launch(arrayOf("text/vcard", "text/x-vcard")) },
-                topDp = 2.dp,
-                bottomDp = 2.dp,
-                text = stringResource(R.string.import_contacts),
-                optionalDescription = R.string.import_contacts_desc
-            )
-            PlainSettingsCard(
-                onClick = { callsImportPicker.launch(arrayOf("application/json", "text/plain")) },
-                topDp = 2.dp,
-                bottomDp = 24.dp,
-                text = stringResource(R.string.import_call_logs),
-                optionalDescription = R.string.import_call_logs_desc
-            )
-        }
+    SettingsGroup(title = stringResource(R.string.export_backups)) {
+        SettingsClickable(
+            title = stringResource(R.string.backup_messages),
+            description = stringResource(R.string.backup_messages_desc),
+            icon = R.drawable.message_rounded,
+            onClick = { showSmsDialog = true }
+        )
+        SettingsClickable(
+            title = stringResource(R.string.backup_contacts),
+            description = stringResource(R.string.backup_contacts_desc),
+            icon = R.drawable.contacts,
+            onClick = { showContactsDialog = true }
+        )
+        SettingsClickable(
+            title = stringResource(R.string.backup_call_logs),
+            description = stringResource(R.string.backup_call_logs_desc),
+            icon = R.drawable.call_log_rounded,
+            onClick = { showCallsDialog = true }
+        )
+    }
+    SettingsGroup(title = stringResource(R.string.import_backups)) {
+        SettingsClickable(
+            title = stringResource(R.string.import_messages),
+            description = stringResource(R.string.import_sms_desc),
+            icon = R.drawable.download,
+            onClick = { smsImportPicker.launch(arrayOf("application/json", "text/plain")) }
+        )
+        SettingsClickable(
+            title = stringResource(R.string.import_contacts),
+            description = stringResource(R.string.import_contacts_desc),
+            icon = R.drawable.download,
+            onClick = { contactsImportPicker.launch(arrayOf("text/vcard", "text/x-vcard")) }
+        )
+        SettingsClickable(
+            title = stringResource(R.string.import_call_logs),
+            description = stringResource(R.string.import_call_logs_desc),
+            icon = R.drawable.download,
+            onClick = { callsImportPicker.launch(arrayOf("application/json", "text/plain")) }
+        )
     }
 
     if (showSmsDialog) {

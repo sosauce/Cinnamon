@@ -5,6 +5,19 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation.components.topbars
 
+import com.sosauce.nekobites.animations.bouncySpec
+import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Button
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.AnimatedContent
 import android.content.ClipData
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -17,8 +30,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingToolbarDefaults
-import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -34,7 +45,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.painterResource
@@ -112,33 +122,47 @@ fun SelectedTopBar(
             }
         )
     }
-    HorizontalFloatingToolbar(
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .padding(horizontal = 5.dp)
+            .selfAlignHorizontally()
+            .fillMaxWidth(0.95f)
             .statusBarsPadding()
-            .clip(FloatingToolbarDefaults.ContainerShape)
-            .background(MaterialTheme.colorScheme.surfaceContainer),
-        colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
-            toolbarContainerColor = Color.Transparent
-        ),
-        expanded = false
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .padding(6.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+        Button(
+            onClick = onUnselectAll,
+            shapes = ButtonDefaults.shapes(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            )
         ) {
-            IconButton(
-                onClick = onUnselectAll,
-                shapes = IconButtonDefaults.shapes()
+            Icon(
+                painter = painterResource(R.drawable.close),
+                contentDescription = null,
+                modifier = Modifier.size(ButtonDefaults.IconSize)
+            )
+            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+            AnimatedContent(
+                targetState = sweetSelectState.selectedItems.size,
+                transitionSpec = { fadeIn() togetherWith fadeOut() }
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.close),
-                    contentDescription = null
+                Text(
+                    text = it.toString(),
+                    style = MaterialTheme.typography.labelLargeEmphasized
                 )
             }
-            Text(sweetSelectState.selectedItems.size.toString())
-            Spacer(Modifier.weight(1f))
-            AnimatedVisibility(sweetSelectState.selectedItems.size == 1) {
+        }
+        Spacer(Modifier.weight(1f))
+        AnimatedVisibility(
+            visible = sweetSelectState.selectedItems.size == 1,
+            enter = scaleIn(bouncySpec()) + fadeIn(),
+            exit = scaleOut(bouncySpec()) + fadeOut()
+        ) {
+            Row {
                 IconButton(
                     onClick = {
                         val message = sweetSelectState.selectedItems.firstOrNull()?.body ?: return@IconButton
@@ -146,15 +170,14 @@ fun SelectedTopBar(
                         onNavigate(
                             Screen.Forwarding(message)
                         )
-                    }
+                    },
+                    shapes = IconButtonDefaults.shapes()
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.forward),
                         contentDescription = null
                     )
                 }
-            }
-            AnimatedVisibility(sweetSelectState.selectedItems.size == 1) {
                 IconButton(
                     onClick = {
                         val message = sweetSelectState.selectedItems.firstOrNull()?.body ?: return@IconButton
@@ -169,7 +192,8 @@ fun SelectedTopBar(
                             )
                         }
                         onUnselectAll()
-                    }
+                    },
+                    shapes = IconButtonDefaults.shapes()
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.copy_filled),
@@ -177,25 +201,31 @@ fun SelectedTopBar(
                     )
                 }
             }
-            IconButton(
-                onClick = onSelectAll,
-                shapes = IconButtonDefaults.shapes()
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.select_all),
-                    contentDescription = null
-                )
-            }
-            IconButton(
-                onClick = { showDeleteMsgDialog = true },
-                shapes = IconButtonDefaults.shapes()
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.delete_filled),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error
-                )
-            }
+        }
+        IconButton(
+            onClick = onSelectAll,
+            shapes = IconButtonDefaults.shapes()
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.select_all),
+                contentDescription = null
+            )
+        }
+        FilledIconButton(
+            onClick = { showDeleteMsgDialog = true },
+            shapes = IconButtonDefaults.shapes(),
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer
+            ),
+            modifier = Modifier.size(
+                IconButtonDefaults.smallContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)
+            )
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.delete_filled),
+                contentDescription = null
+            )
         }
     }
 }
