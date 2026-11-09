@@ -7,24 +7,26 @@ import android.net.Uri
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.contentColorFor
-import androidx.compose.material3.toShape
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,9 +39,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -52,7 +56,14 @@ import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.buttons.WavySlider
 import com.sosauce.cinnamon.core.utils.ImageUtils
+import com.sosauce.cinnamon.core.utils.rememberInteractionSource
+import com.sosauce.cinnamon.core.utils.toMediaTime
+import com.sosauce.nekobites.animations.AnimatedDrawable
+import com.sosauce.nekobites.animations.AnimatedDrawableFile
+import com.sosauce.nekobites.animations.bouncySpec
+import com.sosauce.nekobites.animations.rememberAnimatedShape
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @SuppressLint("UnsafeOptInUsageError")
 @Composable
@@ -114,7 +125,7 @@ fun VideoAttachment(
         LaunchedEffect(isPlaying) {
             while (isPlaying) {
                 currentPosition = exoPlayer.currentPosition.coerceAtLeast(0)
-                delay(500)
+                delay(500.milliseconds)
             }
         }
 
@@ -128,100 +139,142 @@ fun VideoAttachment(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clickable { showFullscreen = false },
-                contentAlignment = Alignment.Center
+                    .clickable(
+                        interactionSource = null,
+                        indication = null
+                    ) { showFullscreen = false }
             ) {
                 Box(
-                    modifier = Modifier.cloudy(250)
+                    modifier = Modifier.cloudy(100)
                 ) {
                     AsyncImage(
                         model = request,
                         contentDescription = null,
-                        modifier = modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
                     )
                 }
-
-                IconButton(
-                    onClick = { showFullscreen = false },
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                    ),
-                    shapes = IconButtonDefaults.shapes(),
-                    modifier = Modifier
-                        .padding(horizontal = 15.dp)
-                        .statusBarsPadding()
-                        .align(Alignment.TopStart)
-                        .size(IconButtonDefaults.smallContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.keyboard_down),
-                        contentDescription = null
-                    )
-                }
-
-                ContentFrame(
-                    player = exoPlayer,
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(10.dp)
+                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.7f))
                 )
+
                 Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .navigationBarsPadding()
-                        .padding(horizontal = 15.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .fillMaxSize()
+                        .systemBarsPadding()
+                        .padding(15.dp)
                 ) {
                     FilledIconButton(
-                        onClick = { if (isPlaying) exoPlayer.pause() else exoPlayer.play() },
-                        shapes = IconButtonDefaults.shapes()
+                        onClick = { showFullscreen = false },
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        shapes = IconButtonDefaults.shapes(),
+                        modifier = Modifier.size(
+                            IconButtonDefaults.smallContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)
+                        )
                     ) {
-                        val icon =
-                            if (isPlaying) R.drawable.pause_filled else R.drawable.play_filled
                         Icon(
-                            painter = painterResource(icon),
+                            painter = painterResource(R.drawable.keyboard_down),
                             contentDescription = null
                         )
                     }
-                    Box(
+
+                    ContentFrame(
+                        player = exoPlayer,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 15.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceContainer,
-                                shape = RoundedCornerShape(24.dp)
-                            )
+                            .weight(1f)
+                            .clip(MaterialTheme.shapes.extraLarge)
+                    )
+
+                    Surface(
+                        shape = MaterialTheme.shapes.extraLarge,
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .widthIn(max = 640.dp)
+                            .fillMaxWidth()
                     ) {
-                        WavySlider(
-                            modifier = Modifier
-                                .padding(10.dp),
-                            value = animateFloatAsState(
-                                targetValue = tempSliderValue ?: currentPosition.toFloat()
-                            ).value,
-                            valueRange = 0f..duration.toFloat(),
-                            onValueChange = { tempSliderValue = it },
-                            onValueChangeFinished = {
-                                tempSliderValue?.let {
-                                    exoPlayer.seekTo(it.toLong())
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                        ) {
+                            WavySlider(
+                                value = tempSliderValue ?: currentPosition.toFloat(),
+                                valueRange = 0f..duration.toFloat(),
+                                onValueChange = { tempSliderValue = it },
+                                onValueChangeFinished = {
+                                    tempSliderValue?.let {
+                                        exoPlayer.seekTo(it.toLong())
+                                    }
+                                    tempSliderValue = null
+                                },
+                                isPlaying = isPlaying
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = (tempSliderValue?.toLong() ?: currentPosition).toMediaTime(),
+                                    style = MaterialTheme.typography.labelLargeEmphasized,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                FilledIconButton(
+                                    onClick = { if (isPlaying) exoPlayer.pause() else exoPlayer.play() },
+                                    shapes = IconButtonDefaults.shapes(),
+                                    modifier = Modifier.size(
+                                        IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)
+                                    )
+                                ) {
+                                    AnimatedDrawable(
+                                        drawable = AnimatedDrawableFile.PLAY,
+                                        atEnd = isPlaying
+                                    )
                                 }
-                                tempSliderValue = null
-                            },
-                            isPlaying = isPlaying
-                        )
+                                Text(
+                                    text = duration.toMediaTime(),
+                                    style = MaterialTheme.typography.labelLargeEmphasized,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.End,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
                     }
                 }
-
             }
         }
     }
 
+    val interactionSource = rememberInteractionSource()
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else 1f,
+        animationSpec = bouncySpec()
+    )
+    val badgeShape = rememberAnimatedShape(
+        condition = isPressed,
+        shapeA = MaterialShapes.Cookie9Sided,
+        shapeB = MaterialShapes.Circle
+    )
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable { showFullscreen = true }
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(RoundedCornerShape(24.dp))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null
+            ) { showFullscreen = true }
     ) {
         AsyncImage(
             model = request,
@@ -230,17 +283,17 @@ fun VideoAttachment(
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
+                .size(IconButtonDefaults.smallContainerSize(IconButtonDefaults.IconButtonWidthOption.Uniform))
                 .background(
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = MaterialShapes.Circle.toShape()
-                )
-                .size(IconButtonDefaults.smallContainerSize(IconButtonDefaults.IconButtonWidthOption.Uniform)),
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = badgeShape
+                ),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 painter = painterResource(R.drawable.play_filled),
                 contentDescription = null,
-                tint = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+                tint = MaterialTheme.colorScheme.onPrimary
             )
         }
 //        Row(

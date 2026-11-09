@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.features.phone.domain.CuteSimCard
+import com.sosauce.nekobites.components.settings.SelectableTile
 
 @Composable
 fun SimSelector(

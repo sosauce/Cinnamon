@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Button
@@ -32,7 +31,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastMap
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.datastore.rememberSortLogsAscending
@@ -53,6 +55,7 @@ import com.sosauce.sweetselect.rememberSweetSelectState
 @Composable
 fun CallLogsScreen(
     state: CallLogsState,
+    callLogs: LazyPagingItems<CallLogsListItem>,
     textFieldState: TextFieldState,
     onNavigate: (Screen) -> Unit,
     onHandleCallActions: (CallAction) -> Unit,
@@ -69,7 +72,7 @@ fun CallLogsScreen(
                 transitionSpec = { barsContentTransform }
             ) {
                 if (it) {
-                    val items = state.callLogs.values.flatten().fastMap { it.first }
+                    val items = callLogs.itemSnapshotList.items.mapNotNull { (it as? CallLogsListItem.Log)?.log }
 
                     SelectedBarSurface(
                         modifier = Modifier.selfAlignHorizontally(),
@@ -172,8 +175,10 @@ fun CallLogsScreen(
         }
     ) { paddingValues ->
 
+        val isLoading = callLogs.loadState.refresh is LoadState.Loading && callLogs.itemCount == 0
+
         LoadingBox(
-            isLoading = state.isLoading
+            isLoading = isLoading
         ) {
             LazyColumn(
                 contentPadding = paddingValues
@@ -197,22 +202,33 @@ fun CallLogsScreen(
                     Spacer(Modifier.height(10.dp))
                 }
 
-                if (state.callLogs.isEmpty() && !state.isSearching) {
+                if (callLogs.itemCount == 0 && !isLoading) {
                     item {
-                        NoXFound(
-                            headlineText = R.string.no_calls_found,
-                            bodyText = R.string.no_calls_found_desc,
-                            icon = R.drawable.call_log_rounded
-                        )
+                        if (state.isSearching) {
+                            NoResult()
+                        } else {
+                            NoXFound(
+                                headlineText = R.string.no_calls_found,
+                                bodyText = R.string.no_calls_found_desc,
+                                icon = R.drawable.call_log_rounded
+                            )
+                        }
                     }
                 } else {
-                    if (state.callLogs.isNotEmpty()) {
-                        state.callLogs.forEach { (date, logs) ->
-                            item(
-                                key = date
-                            ) {
+                    items(
+                        count = callLogs.itemCount,
+                        key = callLogs.itemKey {
+                            when (it) {
+                                is CallLogsListItem.Header -> "header_${it.beforeLogId}"
+                                is CallLogsListItem.Log -> it.log.id
+                            }
+                        },
+                        contentType = callLogs.itemContentType { it::class }
+                    ) { index ->
+                        when (val item = callLogs[index]) {
+                            is CallLogsListItem.Header -> {
                                 Text(
-                                    text = date,
+                                    text = item.date,
                                     style = MaterialTheme.typography.bodyLargeEmphasized.copy(
                                         color = MaterialTheme.colorScheme.primary
                                     ),
@@ -221,18 +237,16 @@ fun CallLogsScreen(
                                         .padding(horizontal = 20.dp, vertical = 10.dp)
                                 )
                             }
-                            items(
-                                items = logs,
-                                key = { (calls, _) -> calls.id }
-                            ) { (callLog, count) ->
 
+                            is CallLogsListItem.Log -> {
+                                val callLog = item.log
                                 val isSelected by sweetSelectState.isSelectedAsState(callLog)
 
                                 CallLogItem(
                                     modifier = Modifier.animateItem(),
                                     callLog = callLog,
                                     isSelected = isSelected,
-                                    numberOfAppearance = count,
+                                    numberOfAppearance = item.count,
                                     onCallAction = onHandleCallActions,
                                     onNavigate = onNavigate,
                                     onDeleteCallLog = {
@@ -252,12 +266,11 @@ fun CallLogsScreen(
                                         }
                                     },
                                     onLongClick = { sweetSelectState.toggle(callLog) }
-
                                 )
                             }
+
+                            null -> {}
                         }
-                    } else {
-                        item { NoResult() }
                     }
                 }
             }

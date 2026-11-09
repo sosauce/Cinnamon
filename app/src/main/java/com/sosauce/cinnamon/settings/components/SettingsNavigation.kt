@@ -13,6 +13,9 @@ import androidx.compose.ui.res.stringResource
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.rememberInitialScreen
 import com.sosauce.cinnamon.core.utils.DefaultTabOption
+import com.sosauce.nekobites.components.settings.SelectableTile
+import com.sosauce.nekobites.components.settings.SettingsGroup
+import com.sosauce.nekobites.components.settings.SettingsPicker
 
 @Composable
 fun SettingsNavigation() {

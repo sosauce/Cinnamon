@@ -10,10 +10,10 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.rememberEnableT9Dialing
 import com.sosauce.cinnamon.core.datastore.rememberGroupSubsequentCalls
 import com.sosauce.cinnamon.settings.components.PhoneAccountHandleSelector
-import com.sosauce.cinnamon.settings.components.SettingsEmptyState
-import com.sosauce.cinnamon.settings.components.SettingsGroup
-import com.sosauce.cinnamon.settings.components.SettingsPicker
-import com.sosauce.cinnamon.settings.components.SettingsSwitch
+import com.sosauce.nekobites.components.settings.SettingsEmptyState
+import com.sosauce.nekobites.components.settings.SettingsGroup
+import com.sosauce.nekobites.components.settings.SettingsPicker
+import com.sosauce.nekobites.components.settings.SettingsSwitch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable

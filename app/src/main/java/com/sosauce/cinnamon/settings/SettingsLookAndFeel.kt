@@ -25,10 +25,10 @@ import com.sosauce.cinnamon.core.utils.CuteTheme
 import com.sosauce.cinnamon.core.utils.anyDarkColorScheme
 import com.sosauce.cinnamon.core.utils.anyLightColorScheme
 import com.sosauce.cinnamon.settings.components.PaletteTile
-import com.sosauce.cinnamon.settings.components.SelectableTile
-import com.sosauce.cinnamon.settings.components.SettingsGroup
-import com.sosauce.cinnamon.settings.components.SettingsPicker
-import com.sosauce.cinnamon.settings.components.SettingsSwitch
+import com.sosauce.nekobites.components.settings.SelectableTile
+import com.sosauce.nekobites.components.settings.SettingsGroup
+import com.sosauce.nekobites.components.settings.SettingsPicker
+import com.sosauce.nekobites.components.settings.SettingsSwitch
 
 @Composable
 fun SettingsLookAndFeel() {

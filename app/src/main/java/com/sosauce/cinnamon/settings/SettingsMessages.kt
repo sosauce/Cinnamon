@@ -13,11 +13,11 @@ import com.sosauce.cinnamon.core.datastore.rememberEnablePinchToZoom
 import com.sosauce.cinnamon.core.datastore.rememberSendGroupAsMms
 import com.sosauce.cinnamon.core.datastore.rememberSendLongAsMms
 import com.sosauce.cinnamon.core.datastore.rememberShowCharCount
-import com.sosauce.cinnamon.settings.components.SettingsEmptyState
-import com.sosauce.cinnamon.settings.components.SettingsGroup
-import com.sosauce.cinnamon.settings.components.SettingsPicker
-import com.sosauce.cinnamon.settings.components.SettingsSwitch
 import com.sosauce.cinnamon.settings.components.SimSelector
+import com.sosauce.nekobites.components.settings.SettingsEmptyState
+import com.sosauce.nekobites.components.settings.SettingsGroup
+import com.sosauce.nekobites.components.settings.SettingsPicker
+import com.sosauce.nekobites.components.settings.SettingsSwitch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable

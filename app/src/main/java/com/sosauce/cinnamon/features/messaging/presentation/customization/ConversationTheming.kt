@@ -9,10 +9,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -96,10 +96,10 @@ import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.C
 import com.sosauce.cinnamon.features.messaging.domain.MessageType
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bubble.SandwichPosition
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bubble.TextBubbleContent
-import com.sosauce.cinnamon.settings.components.SettingsGroup
-import com.sosauce.cinnamon.settings.components.SettingsItem
-import com.sosauce.cinnamon.settings.components.SettingsRowContent
 import com.sosauce.nekobites.components.ColorPickerDialog
+import com.sosauce.nekobites.components.settings.SettingsGroup
+import com.sosauce.nekobites.components.settings.SettingsItem
+import com.sosauce.nekobites.components.settings.SettingsRow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
@@ -223,7 +223,7 @@ fun ConversationTheming(
         ) {
             SettingsGroup(title = stringResource(R.string.wallpaper)) {
                 SettingsItem {
-                    SettingsRowContent(
+                    SettingsRow(
                         title = stringResource(R.string.blur_intensity),
                         icon = R.drawable.blur
                     ) {
@@ -259,7 +259,7 @@ fun ConversationTheming(
         }
         SettingsGroup(title = stringResource(R.string.chat_color)) {
             SettingsItem(onClick = { showColorPicker = true }) {
-                SettingsRowContent(
+                SettingsRow(
                     title = stringResource(R.string.chat_color),
                     description = stringResource(R.string.chat_color_desc),
                     icon = R.drawable.palette

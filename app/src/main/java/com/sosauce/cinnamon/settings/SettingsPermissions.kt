@@ -51,9 +51,9 @@ import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.createDefaultDialerIntent
 import com.sosauce.cinnamon.core.utils.createDefaultSmsIntent
-import com.sosauce.cinnamon.settings.components.SettingsGroup
-import com.sosauce.cinnamon.settings.components.SettingsIconBadge
-import com.sosauce.cinnamon.settings.components.SettingsItem
+import com.sosauce.nekobites.components.settings.SettingsGroup
+import com.sosauce.nekobites.components.settings.SettingsIconBadge
+import com.sosauce.nekobites.components.settings.SettingsItem
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 
@@ -202,8 +202,8 @@ private fun DefaultAppItem(
         ) {
             SettingsIconBadge(
                 icon = icon,
-                container = badgeContainer,
-                content = badgeContent,
+                containerColor = badgeContainer,
+                contentColor = badgeContent,
                 shape = badgeShape
             )
             Spacer(Modifier.width(16.dp))

@@ -29,7 +29,7 @@ fun DefaultGroupChatIcon(
         modifier = modifier
             .size(size)
             .background(
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.primaryContainer,
                 shape = shape
             ),
         contentAlignment = Alignment.Center
@@ -37,7 +37,7 @@ fun DefaultGroupChatIcon(
         Icon(
             painter = painterResource(R.drawable.contacts_filled),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onPrimary,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
             modifier = Modifier.size(size / 2)
         )
     }

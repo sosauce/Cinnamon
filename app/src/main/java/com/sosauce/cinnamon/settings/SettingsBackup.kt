@@ -21,10 +21,10 @@ import com.sosauce.cinnamon.settings.components.CallLogsBackupDialog
 import com.sosauce.cinnamon.settings.components.CallLogsImportDialog
 import com.sosauce.cinnamon.settings.components.ContactsBackupDialog
 import com.sosauce.cinnamon.settings.components.ContactsImportDialog
-import com.sosauce.cinnamon.settings.components.SettingsClickable
-import com.sosauce.cinnamon.settings.components.SettingsGroup
 import com.sosauce.cinnamon.settings.components.SmsBackupDialog
 import com.sosauce.cinnamon.settings.components.SmsImportDialog
+import com.sosauce.nekobites.components.settings.SettingsClickable
+import com.sosauce.nekobites.components.settings.SettingsGroup
 import com.sosauce.nekobites.helpers.ObserveAsEvents
 import org.koin.androidx.compose.koinViewModel
 

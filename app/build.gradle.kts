@@ -135,6 +135,6 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
     implementation(libs.haze.blur)
-    implementation("io.github.sosauce:nekobites:1.0.0")
+    implementation("io.github.sosauce:nekobites:1.1.2")
 
 }

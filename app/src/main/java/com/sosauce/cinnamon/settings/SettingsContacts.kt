@@ -34,8 +34,8 @@ import androidx.compose.ui.util.fastForEachIndexed
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.copyMutate
 import com.sosauce.cinnamon.core.utils.getItemShape
-import com.sosauce.cinnamon.settings.components.SettingsClickable
-import com.sosauce.cinnamon.settings.components.SettingsGroup
+import com.sosauce.nekobites.components.settings.SettingsClickable
+import com.sosauce.nekobites.components.settings.SettingsGroup
 import org.koin.androidx.compose.koinViewModel
 
 @Composable

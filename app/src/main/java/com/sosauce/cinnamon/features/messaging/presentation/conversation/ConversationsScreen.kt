@@ -71,6 +71,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.itemKey
 import com.skydoves.cloudy.cloudy
 import com.skydoves.cloudy.rememberSky
 import com.skydoves.cloudy.sky
@@ -87,6 +90,7 @@ import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.Conversation
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.PinnedConversation
 import com.sosauce.nekobites.animations.AnimatedFab
+import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
 import com.sosauce.nekobites.components.Spacer
 import com.sosauce.sweetselect.SweetSelectState
@@ -100,6 +104,7 @@ import dev.chrisbanes.haze.hazeSource
 @Composable
 fun SharedTransitionScope.ConversationsScreen(
     state: ConversationsState,
+    conversations: LazyPagingItems<CuteConversation>,
     textFieldState: TextFieldState,
     onNavigate: (Screen) -> Unit,
     onHandleConversationsAction: (ConversationsAction) -> Unit
@@ -108,70 +113,66 @@ fun SharedTransitionScope.ConversationsScreen(
     val sweetSelectState = rememberSweetSelectState<CuteConversation>()
     var sortConversationsAscending by rememberSortConversationsAscending()
 
-    if (state.isLoading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            ContainedLoadingIndicator()
-        }
-    } else {
-        Scaffold(
-            bottomBar = {
-                AnimatedContent(
-                    targetState = sweetSelectState.isInSelectionMode,
-                    transitionSpec = { barsContentTransform }
-                ) {
-                    if (!it) {
-                        CuteSearchbar(
-                            modifier = Modifier.selfAlignHorizontally(),
-                            sortingMenu = {},
-                            textFieldState = textFieldState,
-                            fab = {
-                                AnimatedFab(
-                                    onClick = { onNavigate(Screen.StartConversation) },
-                                    icon = R.drawable.add
+    Scaffold(
+        bottomBar = {
+            AnimatedContent(
+                targetState = sweetSelectState.isInSelectionMode,
+                transitionSpec = { barsContentTransform }
+            ) {
+                if (!it) {
+                    CuteSearchbar(
+                        modifier = Modifier.selfAlignHorizontally(),
+                        sortingMenu = {},
+                        textFieldState = textFieldState,
+                        fab = {
+                            AnimatedFab(
+                                onClick = { onNavigate(Screen.StartConversation) },
+                                icon = R.drawable.add
+                            )
+                        },
+                        onNavigate = onNavigate
+                    )
+                } else {
+                    ConversationsSelectedBar(
+                        modifier = Modifier.selfAlignHorizontally(),
+                        items = conversations.itemSnapshotList.items,
+                        multiSelectState = sweetSelectState,
+                        onDeleteConversations = {
+                            val threadIds = sweetSelectState.selectedItems.map { it.threadId }
+                            onHandleConversationsAction(
+                                ConversationsAction.DeleteConversations(
+                                    threadIds
                                 )
-                            },
-                            onNavigate = onNavigate
-                        )
-                    } else {
-                        ConversationsSelectedBar(
-                            modifier = Modifier.selfAlignHorizontally(),
-                            items = state.conversations,
-                            multiSelectState = sweetSelectState,
-                            onDeleteConversations = {
-                                val threadIds = sweetSelectState.selectedItems.map { it.threadId }
-                                onHandleConversationsAction(
-                                    ConversationsAction.DeleteConversations(
-                                        threadIds
-                                    )
+                            )
+                            sweetSelectState.clearSelected()
+                        },
+                        onArchiveThreads = {
+                            val threadIds = sweetSelectState.selectedItems.map { it.threadId }
+                            onHandleConversationsAction(
+                                ConversationsAction.ArchiveConversations(
+                                    threadIds
                                 )
-                                sweetSelectState.clearSelected()
-                            },
-                            onArchiveThreads = {
-                                val threadIds = sweetSelectState.selectedItems.map { it.threadId }
-                                onHandleConversationsAction(
-                                    ConversationsAction.ArchiveConversations(
-                                        threadIds
-                                    )
+                            )
+                            sweetSelectState.clearSelected()
+                        },
+                        onPinThreads = {
+                            val threadIds = sweetSelectState.selectedItems.map { it.threadId }
+                            onHandleConversationsAction(
+                                ConversationsAction.PinConversations(
+                                    threadIds
                                 )
-                                sweetSelectState.clearSelected()
-                            },
-                            onPinThreads = {
-                                val threadIds = sweetSelectState.selectedItems.map { it.threadId }
-                                onHandleConversationsAction(
-                                    ConversationsAction.PinConversations(
-                                        threadIds
-                                    )
-                                )
-                                sweetSelectState.clearSelected()
-                            }
-                        )
-                    }
+                            )
+                            sweetSelectState.clearSelected()
+                        }
+                    )
                 }
             }
-        ) { paddingValues ->
+        }
+    ) { paddingValues ->
+
+        LoadingBox(
+            isLoading = state.isLoading
+        ) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize(),
@@ -200,7 +201,7 @@ fun SharedTransitionScope.ConversationsScreen(
 
                 threadsList(
                     pinnedConversations = state.pinnedConversations,
-                    conversations = state.conversations,
+                    conversations = conversations,
                     sweetSelectState = sweetSelectState,
                     onNavigate = onNavigate,
                     sharedTransitionScope = this@ConversationsScreen,
@@ -226,6 +227,52 @@ fun LazyListScope.threadsList(
     sharedTransitionScope: SharedTransitionScope,
     emptyState: @Composable () -> Unit,
     onHandleConversationsAction: (ConversationsAction) -> Unit
+) {
+    threadsList(
+        pinnedConversations = pinnedConversations,
+        conversationCount = conversations.size,
+        conversationKey = { conversations[it].threadId },
+        conversationAt = { conversations[it] },
+        isEmpty = conversations.isEmpty(),
+        sweetSelectState = sweetSelectState,
+        onNavigate = onNavigate,
+        sharedTransitionScope = sharedTransitionScope,
+        emptyState = emptyState
+    )
+}
+
+fun LazyListScope.threadsList(
+    pinnedConversations: List<CuteConversation>,
+    conversations: LazyPagingItems<CuteConversation>,
+    sweetSelectState: SweetSelectState<CuteConversation>,
+    onNavigate: (Screen) -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    emptyState: @Composable () -> Unit,
+    onHandleConversationsAction: (ConversationsAction) -> Unit
+) {
+    threadsList(
+        pinnedConversations = pinnedConversations,
+        conversationCount = conversations.itemCount,
+        conversationKey = conversations.itemKey { it.threadId },
+        conversationAt = { conversations[it] },
+        isEmpty = conversations.itemCount == 0 && conversations.loadState.refresh !is LoadState.Loading,
+        sweetSelectState = sweetSelectState,
+        onNavigate = onNavigate,
+        sharedTransitionScope = sharedTransitionScope,
+        emptyState = emptyState
+    )
+}
+
+private fun LazyListScope.threadsList(
+    pinnedConversations: List<CuteConversation>,
+    conversationCount: Int,
+    conversationKey: (Int) -> Any,
+    conversationAt: (Int) -> CuteConversation?,
+    isEmpty: Boolean,
+    sweetSelectState: SweetSelectState<CuteConversation>,
+    onNavigate: (Screen) -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    emptyState: @Composable () -> Unit
 ) {
     item(LazyListKeys.PINNED_CONVERSATIONS) {
         LazyRow(
@@ -261,10 +308,10 @@ fun LazyListScope.threadsList(
 
     with(sharedTransitionScope) {
         items(
-            items = conversations,
-            key = { conversation -> conversation.threadId }
-        ) { conversation ->
-
+            count = conversationCount,
+            key = conversationKey
+        ) { index ->
+            val conversation = conversationAt(index) ?: return@items
 
             val isSelected by sweetSelectState.isSelectedAsState(conversation)
 
@@ -283,9 +330,7 @@ fun LazyListScope.threadsList(
             )
         }
     }
-    if (conversations.isEmpty() && pinnedConversations.isEmpty()) {
+    if (isEmpty && pinnedConversations.isEmpty()) {
         item { emptyState() }
     }
 }
-
-

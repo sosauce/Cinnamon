@@ -3,6 +3,7 @@
 package com.sosauce.cinnamon.features.messaging.data.repository
 
 import android.content.Context
+import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.provider.BlockedNumberContract
@@ -12,15 +13,20 @@ import android.provider.Telephony.Mms
 import android.provider.Telephony.MmsSms
 import androidx.compose.ui.util.fastMap
 import androidx.core.content.contentValuesOf
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.utils.observe
 import com.sosauce.cinnamon.features.messaging.data.model.CuteConversationEntity
+import com.sosauce.cinnamon.features.messaging.data.model.matches
 import com.sosauce.cinnamon.features.messaging.domain.Participant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
@@ -96,12 +102,63 @@ class ConversationsRepository(private val context: Context) {
     }
 
 
+    fun fetchLatestConversationsForThreadIds(threadIds: Set<Long>): Flow<List<CuteConversationEntity>> {
+        if (threadIds.isEmpty()) return flowOf(emptyList())
+        return fetchLatestConversations("${Telephony.Threads._ID} IN (${threadIds.joinToString()})")
+    }
+
+    fun pagedConversations(
+        query: String,
+        excludedThreadIds: Set<Long>
+    ): Flow<PagingData<CuteConversationEntity>> {
+        return Pager(PagingConfig(pageSize = PAGE_SIZE, enablePlaceholders = false)) {
+            ConversationsPagingSource(context, this, query, excludedThreadIds)
+        }.flow
+    }
+
     fun fetchConversations(
         extraSelection: String?,
         extraSelectionArgs: Array<String>
     ): List<CuteConversationEntity> {
         val conversations = mutableListOf<CuteConversationEntity>()
 
+        queryThreads(extraSelection, extraSelectionArgs)?.use { cursor ->
+            while (cursor.moveToNext()) {
+                conversations.add(cursor.readConversation())
+            }
+        }
+
+        return conversations
+    }
+
+    fun loadConversationsPage(
+        offset: Int,
+        limit: Int,
+        query: String,
+        excludedThreadIds: Set<Long>
+    ): Pair<List<CuteConversationEntity>, Int?> {
+        val conversations = mutableListOf<CuteConversationEntity>()
+        val extraSelection = excludedThreadIds.takeIf { it.isNotEmpty() }?.let {
+            "${Telephony.Threads._ID} NOT IN (${it.joinToString()})"
+        }
+
+        queryThreads(extraSelection, emptyArray())?.use { cursor ->
+            if (!cursor.moveToPosition(offset - 1) && offset > 0) return conversations to null
+            while (conversations.size < limit && cursor.moveToNext()) {
+                val conversation = cursor.readConversation()
+                if (conversation.matches(query)) conversations.add(conversation)
+            }
+            val nextOffset = (cursor.position + 1).takeIf { it < cursor.count }
+            return conversations to nextOffset
+        }
+
+        return conversations to null
+    }
+
+    private fun queryThreads(
+        extraSelection: String?,
+        extraSelectionArgs: Array<String>
+    ): Cursor? {
         val projection = arrayOf(
             Telephony.Threads._ID,
             Telephony.Threads.SNIPPET,
@@ -125,49 +182,36 @@ class ConversationsRepository(private val context: Context) {
             }
         }.toTypedArray()
 
-
-
-
-        context.contentResolver.query(
+        return context.contentResolver.query(
             "${Telephony.Threads.CONTENT_URI}?simple=true".toUri(),
             projection,
             selection,
             selectionArgs,
             "${Telephony.Threads.DATE} DESC",
-        )?.use { cursor ->
-            val idColumn = cursor.getColumnIndexOrThrow(Telephony.Threads._ID)
-            val snippetColumn = cursor.getColumnIndexOrThrow(Telephony.Threads.SNIPPET)
-            val recipientIdColumn = cursor.getColumnIndexOrThrow(Telephony.Threads.RECIPIENT_IDS)
-            val dateColumn = cursor.getColumnIndexOrThrow(Telephony.Threads.DATE)
-            val readColumn = cursor.getColumnIndexOrThrow(Telephony.Threads.READ)
+        )
+    }
 
-            while (cursor.moveToNext()) {
-                val threadId = cursor.getLong(idColumn)
-                val recipientIds = cursor.getString(recipientIdColumn).split(" ")
-                val date = cursor.getLong(dateColumn)
-                val read = cursor.getInt(readColumn) != 0
-                val rawRecipients = recipientIds.fastMap { it.getNumberForId() }
-                val systemSnippet = cursor.getString(snippetColumn)
-                val snippet = if (systemSnippet.isNullOrBlank()) {
-                    getMmsThreadSnippet(threadId)
-                } else {
-                    systemSnippet
-                }
-                val participants = rawRecipients.fastMap { getParticipantDetails(it) }
-
-                conversations.add(
-                    CuteConversationEntity(
-                        threadId = threadId,
-                        participants = participants,
-                        snippet = snippet,
-                        date = date,
-                        read = read
-                    )
-                )
-            }
+    private fun Cursor.readConversation(): CuteConversationEntity {
+        val threadId = getLong(getColumnIndexOrThrow(Telephony.Threads._ID))
+        val recipientIds = getString(getColumnIndexOrThrow(Telephony.Threads.RECIPIENT_IDS)).split(" ")
+        val date = getLong(getColumnIndexOrThrow(Telephony.Threads.DATE))
+        val read = getInt(getColumnIndexOrThrow(Telephony.Threads.READ)) != 0
+        val rawRecipients = recipientIds.fastMap { it.getNumberForId() }
+        val systemSnippet = getString(getColumnIndexOrThrow(Telephony.Threads.SNIPPET))
+        val snippet = if (systemSnippet.isNullOrBlank()) {
+            getMmsThreadSnippet(threadId)
+        } else {
+            systemSnippet
         }
+        val participants = rawRecipients.fastMap { getParticipantDetails(it) }
 
-        return conversations
+        return CuteConversationEntity(
+            threadId = threadId,
+            participants = participants,
+            snippet = snippet,
+            date = date,
+            read = read
+        )
     }
 
 
@@ -328,6 +372,7 @@ class ConversationsRepository(private val context: Context) {
     companion object {
         // extracted by logging an MMS selection query, hope it's correct and consistent across OEMs
         const val MMS_TABLE_NAME = "pdu"
+        const val PAGE_SIZE = 20
     }
 
 }
