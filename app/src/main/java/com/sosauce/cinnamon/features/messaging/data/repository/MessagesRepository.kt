@@ -31,6 +31,8 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
 
+private const val MMS_STATUS_RETRIEVED = 0x80
+
 class MessagesRepository(
     private val context: Context
 ) {
@@ -167,7 +169,8 @@ class MessagesRepository(
                 val rawDate = cursor.getLong(dateColumn)
                 val date = if (rawDate > 1_000L) rawDate * 1000 else System.currentTimeMillis()
                 val read = cursor.getInt(readColumn) == 1
-                val delivered = cursor.getInt(statusColumn) == Sms.STATUS_COMPLETE
+                val delivered = !cursor.isNull(statusColumn) &&
+                    cursor.getInt(statusColumn) == MMS_STATUS_RETRIEVED
 
                 rows.add(
                     Row(
