@@ -167,7 +167,7 @@ class CuteTelephonyManager(
             deliveryReports = userPreferences.enableDeliveryReports.first()
             sendLongAsMms = true
             sendLongAsMmsAfter = 1
-            group = true
+            group = addresses.size > 1
         }
         val transaction = Transaction(context, settings)
         val bodyText = message
@@ -177,8 +177,8 @@ class CuteTelephonyManager(
             context.contentResolver.openInputStream(attachment)?.use {
                 val mimeType = context.contentResolver.getType(attachment)
                 val name = attachment.getFileName(context) ?: context.getString(R.string.unknown)
-                // 20 kb is just a safety net here, technically not needed but better saf than sorry
-                val compressionThreshold = (maxMessageSize - bodyText.toByteArray().size - 20_000).coerceAtLeast(maxMessageSize / 2)
+                // 5 kb is just a safety net here, technically not needed but better saf than sorry
+                val compressionThreshold = (maxMessageSize - bodyText.toByteArray().size - 5_000).coerceAtLeast(maxMessageSize / 2)
                 val imageBytes = if (mimeType?.startsWith("image/") == true) {
                     compressImage(
                         image = attachment,
@@ -186,13 +186,15 @@ class CuteTelephonyManager(
                     )
                 } else null
                 val bytes = imageBytes ?: it.readBytes()
+
                 message.addMedia(bytes, if (imageBytes != null) "image/jpeg" else mimeType, name)
             }
         }
 
         val mmsSentIntent = Intent(context, CuteMmsSentReceiver::class.java)
         transaction.setExplicitBroadcastForSentMms(mmsSentIntent)
-        transaction.sendNewMessage(message, addresses.getThreadIdOrCreate(context))
+        //transaction.sendNewMessage(message, addresses.getThreadIdOrCreate(context))
+        transaction.sendNewMessage(message)
     }
 
     suspend fun compressImage(
@@ -200,13 +202,15 @@ class CuteTelephonyManager(
         compressionThreshold: Int
     ): ByteArray? {
         return withContext(Dispatchers.IO) {
-            val mimeType = context.contentResolver.getType(image)
             val inputBytes = context
                 .contentResolver
                 .openInputStream(image)
                 ?.use { inputStream ->
                     inputStream.readBytes()
                 } ?: return@withContext null
+
+            if (inputBytes.size < compressionThreshold) return@withContext inputBytes
+            val mimeType = context.contentResolver.getType(image)
 
             ensureActive()
 

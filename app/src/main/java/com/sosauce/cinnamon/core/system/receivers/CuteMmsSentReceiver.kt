@@ -3,6 +3,7 @@ package com.sosauce.cinnamon.core.system.receivers
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import android.provider.Telephony
 import android.telephony.SmsManager
 import androidx.core.content.contentValuesOf
@@ -10,18 +11,16 @@ import androidx.core.net.toUri
 import com.klinker.android.send_message.MmsSentReceiver
 import java.io.File
 
-// TODO: I just copied fossify for this one, don't forget to rewrite/cleanup for my needs
-
 class CuteMmsSentReceiver : MmsSentReceiver() {
 
 
     override fun onMessageStatusUpdated(context: Context?, intent: Intent?, resultCode: Int) {
         super.onMessageStatusUpdated(context, intent, resultCode)
 
-        println("I forgot: ${intent?.data}, $resultCode")
+        println("I forgot: resultCode $resultCode")
 
         updateMmsStatus(context!!, intent!!, resultCode)
-        SmsManager.MMS_CONFIG_MMS_ENABLED
+
     }
 
     private fun updateMmsStatus(context: Context, intent: Intent, resultCode: Int) {

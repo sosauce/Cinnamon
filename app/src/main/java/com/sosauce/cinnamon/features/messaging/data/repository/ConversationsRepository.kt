@@ -291,6 +291,16 @@ class ConversationsRepository(private val context: Context) {
 
 
     private fun getMmsThreadSnippet(threadId: Long): String {
+        val latestMmsId = context.contentResolver.query(
+            Mms.CONTENT_URI,
+            arrayOf(Mms._ID),
+            "${Mms.THREAD_ID} = ?",
+            arrayOf(threadId.toString()),
+            "${Mms.DATE} DESC"
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getLong(0) else null
+        } ?: return ""
+
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             Mms.Part.CONTENT_URI
         } else {
@@ -301,17 +311,12 @@ class ConversationsRepository(private val context: Context) {
             Mms.Part.CONTENT_TYPE,
             Mms.Part.TEXT,
         )
-        // today i learnt u can cross SQL select
-        val selection =
-            "${Mms.Part.MSG_ID} = (SELECT ${Mms._ID} FROM $MMS_TABLE_NAME WHERE ${Mms.THREAD_ID} = ? ORDER BY ${Mms.DATE} DESC LIMIT 1)"
-        val selectionArgs = arrayOf(threadId.toString())
-
         context.contentResolver.query(
             uri,
             projection,
-            selection,
-            selectionArgs,
-            null,
+            "${Mms.Part.MSG_ID} = ?",
+            arrayOf(latestMmsId.toString()),
+            "${Mms.Part.SEQ} ASC",
         )?.use { cursor ->
             var fallback = ""
             while (cursor.moveToNext()) {
@@ -375,7 +380,6 @@ class ConversationsRepository(private val context: Context) {
 
     companion object {
         // extracted by logging an MMS selection query, hope it's correct and consistent across OEMs
-        const val MMS_TABLE_NAME = "pdu"
         const val PAGE_SIZE = 20
     }
 

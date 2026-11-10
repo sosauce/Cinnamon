@@ -1,6 +1,7 @@
 [versions]
 agp = "9.5.1"
 androidSmsmms = "0.2.0"
+mmslib = "1.0.1"
 cloudy = "0.7.1"
 coilCompose = "3.6.3"
 coilVideo = "3.6.3"
@@ -46,6 +47,7 @@ nekobites = "2.0.0"
 
 [libraries]
 android-smsmms = { module = "com.github.kelvinlaw:android-smsmms", version.ref = "androidSmsmms" }
+mmslib = { module = "org.fossify:mmslib", version.ref = "mmslib" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-glance-appwidget = { module = "androidx.glance:glance-appwidget", version.ref = "glanceAppwidget" }
 androidx-glance-material3 = { module = "androidx.glance:glance-material3", version.ref = "glanceMaterial3" }
