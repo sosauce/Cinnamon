@@ -33,7 +33,7 @@ class SendMessageWorker(
                     scheduledMessagesDao.getScheduledMessageById(scheduledMessageId)
 
                 cuteTelephonyManager.sendMessage(
-                    addresses = listOf(scheduledMessage.address),
+                    addresses = scheduledMessage.addresses,
                     message = scheduledMessage.message,
                     attachments = emptyList()
                 )

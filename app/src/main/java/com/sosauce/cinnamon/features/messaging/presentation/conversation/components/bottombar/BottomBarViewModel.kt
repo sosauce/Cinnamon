@@ -48,7 +48,8 @@ class BottomBarViewModel(
     fun addAttachments(uris: List<Uri>) {
         _state.update {
             it.copy(
-                attachments = it.attachments + uris
+                attachments = it.attachments + uris,
+                scheduledTime = if (uris.isNotEmpty()) null else it.scheduledTime
             )
         }
     }

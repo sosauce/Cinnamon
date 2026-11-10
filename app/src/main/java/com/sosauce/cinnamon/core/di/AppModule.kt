@@ -34,6 +34,7 @@ import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.C
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.MIGRATION_1_2_CONVERSATION_SETTINGS
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.MIGRATION_2_3_CONVERSATION_SETTINGS
 import com.sosauce.cinnamon.features.messaging.data.local.scheduledMessages.MIGRATION_1_2_SCHEDULED_MESSAGE
+import com.sosauce.cinnamon.features.messaging.data.local.scheduledMessages.MIGRATION_2_3_SCHEDULED_MESSAGE
 import com.sosauce.cinnamon.features.messaging.data.local.scheduledMessages.ScheduledMessagesDao
 import com.sosauce.cinnamon.features.messaging.data.local.scheduledMessages.ScheduledMessagesDatabase
 import com.sosauce.cinnamon.features.messaging.data.repository.ConversationsRepository
@@ -77,7 +78,7 @@ val appModule = module {
             context = androidContext(),
             klass = ScheduledMessagesDatabase::class.java,
             name = "scheduledMessages.db"
-        ).addMigrations(MIGRATION_1_2_SCHEDULED_MESSAGE).build().dao
+        ).addMigrations(MIGRATION_1_2_SCHEDULED_MESSAGE, MIGRATION_2_3_SCHEDULED_MESSAGE).build().dao
     }
 
     single<ContactSettingsDao> {

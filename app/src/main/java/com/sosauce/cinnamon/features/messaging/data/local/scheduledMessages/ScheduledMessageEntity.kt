@@ -8,8 +8,7 @@ data class ScheduledMessageEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val threadId: Long = 0,
-    val address: String = "",
+    val addresses: List<String> = emptyList(),
     val message: String = "",
     val sendAt: Long = 0
 )
-

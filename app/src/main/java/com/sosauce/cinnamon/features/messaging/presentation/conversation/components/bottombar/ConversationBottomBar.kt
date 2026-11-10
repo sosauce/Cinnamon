@@ -170,7 +170,7 @@ fun ConversationBottomBar(
         ),
         MoreOptions(
             onClick = {
-                showSchedulerDialog = true
+                if (bottomBarState.attachments.isEmpty()) showSchedulerDialog = true
                 isActionPickerExpanded = false
             },
             icon = R.drawable.schedule,
@@ -240,12 +240,12 @@ fun ConversationBottomBar(
                     isScheduled = bottomBarState.scheduledTime != null,
                     enabled = (bottomBarState.message.isNotEmpty() && bottomBarState.message.isNotBlank()) || bottomBarState.attachments.isNotEmpty(),
                     onClick = send@{
-                        if (bottomBarState.scheduledTime != null) {
+                        if (bottomBarState.scheduledTime != null && bottomBarState.attachments.isEmpty()) {
                             onHandleConversationActions(
                                 ConversationActions.ScheduleMessage(
                                     ScheduledMessageEntity(
                                         threadId = state.conversation.threadId,
-                                        address = state.conversation.participants.firstOrNull()?.rawNumber ?: return@send,
+                                        addresses = state.conversation.participants.fastMap { it.rawNumber },
                                         message = bottomBarState.message,
                                         sendAt = bottomBarState.scheduledTime ?: return@send
                                     )
