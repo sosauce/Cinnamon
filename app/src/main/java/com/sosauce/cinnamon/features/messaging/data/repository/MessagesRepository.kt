@@ -351,11 +351,13 @@ class MessagesRepository(
 
         if (text.isBlank()) return emptyList()
 
-        val parser = Xml.newPullParser()
-        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
-        parser.setInput(text.reader())
-        parser.nextTag()
-        return readSmil(parser)
+        return runCatching {
+            val parser = Xml.newPullParser()
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+            parser.setInput(text.reader())
+            parser.nextTag()
+            readSmil(parser)
+        }.getOrDefault(emptyList())
     }
 
     private fun readSmil(parser: XmlPullParser): List<String> {
@@ -391,7 +393,7 @@ class MessagesRepository(
                     }
 
                     if (parser.name in listOf("img", "audio", "video", "vcard", "ref")) {
-                        names.add(parser.getAttributeValue(null, "src"))
+                        parser.getAttributeValue(null, "src")?.let(names::add)
                         skip(parser)
                     } else {
                         skip(parser)
