@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
 import androidx.compose.animation.animateColorAsState
 import android.net.Uri
+import android.telephony.SmsMessage
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -104,7 +105,6 @@ import com.sosauce.nekobites.animations.bouncySpec
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
-import kotlin.math.ceil
 
 
 @Composable
@@ -461,8 +461,7 @@ private fun MessageTextField(
 @Composable
 private fun CharCounter(message: String) {
     val charCount = message.length
-    val segmentCount =
-        if (charCount <= 160) 1 else ceil(charCount / 160.0).toInt()
+    val segmentCount = SmsMessage.calculateLength(message, false)[0]
     CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodySmallEmphasized) {
         Row {
            AnimatedCounter(count = charCount, textStyle = LocalTextStyle.current)

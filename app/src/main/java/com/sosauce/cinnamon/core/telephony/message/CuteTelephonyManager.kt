@@ -9,6 +9,7 @@ import android.os.Build
 import android.provider.BlockedNumberContract
 import android.provider.BlockedNumberContract.BlockedNumbers
 import android.provider.Telephony
+import android.telephony.SmsMessage
 import android.telephony.SmsManager
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
@@ -56,8 +57,9 @@ class CuteTelephonyManager(
             phoneNumberNormalizer.formatToE164(it)
         }
 
+        val smsPartCount = SmsMessage.calculateLength(message, false)[0]
         val isMms =
-            attachments.isNotEmpty() || (normalizedAddresses.size > 1 && userPreferences.groupAsMms.first()) || (message.length > 160 && userPreferences.longAsMms.first())
+            attachments.isNotEmpty() || (normalizedAddresses.size > 1 && userPreferences.groupAsMms.first()) || (smsPartCount > 1 && userPreferences.longAsMms.first())
 
         if (isMms) {
             if (attachments.isNotEmpty()) {
@@ -94,7 +96,7 @@ class CuteTelephonyManager(
             saveSmsToDevice(address, message, Telephony.Sms.MESSAGE_TYPE_OUTBOX, read = 1)
                 ?: return@withContext
 
-        val parts = if (message.length <= 160) arrayListOf(message) else smsManager.divideMessage(message)
+        val parts = smsManager.divideMessage(message)
         val sentIntents = List(parts.size) { index ->
             val sentIntent = Intent(context, SmsSentReceiver::class.java).apply {
                 data = Uri.withAppendedPath(messageUri, "sent/$index")
@@ -108,22 +110,30 @@ class CuteTelephonyManager(
             )
         }
 
-        val deliveryReportIntent = Intent(context, DeliveryReportsReceiver::class.java).apply {
-            data = messageUri
-        }
-        val deliveryReportPending = if (userPreferences.enableDeliveryReports.first()) {
-            PendingIntent.getBroadcast(
-                context,
-                0,
-                deliveryReportIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+        val deliveryReportPendings = if (userPreferences.enableDeliveryReports.first()) {
+            parts.indices.map { index ->
+                val deliveryReportIntent = Intent(context, DeliveryReportsReceiver::class.java).apply {
+                    data = messageUri
+                }
+                PendingIntent.getBroadcast(
+                    context,
+                    31 * messageUri.hashCode() + index,
+                    deliveryReportIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+            }.toCollection(ArrayList())
         } else null
 
-        if (message.length <= 160) {
-            smsManager.sendTextMessage(address, null, message, sentIntents.first(), deliveryReportPending)
+        if (parts.size == 1) {
+            smsManager.sendTextMessage(address, null, message, sentIntents.first(), deliveryReportPendings?.firstOrNull())
         } else {
-            smsManager.sendMultipartTextMessage(address, null, parts, sentIntents.toCollection(ArrayList()), null)
+            smsManager.sendMultipartTextMessage(
+                address,
+                null,
+                parts,
+                sentIntents.toCollection(ArrayList()),
+                deliveryReportPendings
+            )
         }
     }
 
