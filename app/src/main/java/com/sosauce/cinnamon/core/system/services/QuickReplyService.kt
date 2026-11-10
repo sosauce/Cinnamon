@@ -4,7 +4,6 @@ package com.sosauce.cinnamon.core.system.services
 
 import android.app.Service
 import android.content.Intent
-import android.net.Uri
 import android.os.IBinder
 import com.sosauce.cinnamon.core.telephony.message.CuteTelephonyManager
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -21,32 +20,30 @@ class QuickReplyService : Service(), KoinComponent {
 
         val telephonyManager by inject<CuteTelephonyManager>()
 
-        try {
-            if (intent == null) {
-                return START_NOT_STICKY
-            }
+        val addresses = intent?.data?.schemeSpecificPart
+            ?.split(Regex("[;,]"))
+            ?.map(String::trim)
+            ?.filter(String::isNotEmpty)
+            .orEmpty()
+        val text = intent?.getStringExtra(Intent.EXTRA_TEXT)
 
-            val number = Uri.decode(
-                intent.dataString!!.removePrefix("sms:").removePrefix("smsto:").removePrefix("mms")
-                    .removePrefix("mmsto:").trim()
-            )
-            val text = intent.getStringExtra(Intent.EXTRA_TEXT)
-            if (!text.isNullOrEmpty()) {
-                val addresses = listOf(number)
-
-                GlobalScope.launch(Dispatchers.IO) {
+        if (addresses.isNotEmpty() && !text.isNullOrEmpty()) {
+            GlobalScope.launch(Dispatchers.IO) {
+                try {
                     telephonyManager.sendMessage(
                         addresses = addresses,
                         message = text,
                         attachments = emptyList()
                     )
+                } finally {
+                    stopSelf(startId)
                 }
-
             }
-        } catch (_: Exception) {
+        } else {
+            stopSelf(startId)
         }
 
-        return super.onStartCommand(intent, flags, startId)
+        return START_NOT_STICKY
     }
 
 }
