@@ -4,6 +4,8 @@ import android.app.PendingIntent
 import android.content.ContentProviderOperation
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.provider.BlockedNumberContract
@@ -25,9 +27,15 @@ import com.sosauce.cinnamon.core.system.receivers.DeliveryReportsReceiver
 import com.sosauce.cinnamon.core.system.receivers.SmsSentReceiver
 import com.sosauce.cinnamon.core.telephony.PhoneNumberNormalizer
 import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
+import com.sosauce.cinnamon.core.utils.getFileName
+import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import androidx.core.graphics.scale
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
+import kotlin.math.roundToInt
 
 class CuteTelephonyManager(
     private val context: Context,
@@ -144,6 +152,12 @@ class CuteTelephonyManager(
         attachment: Uri?
     ) = withContext(Dispatchers.IO) {
 
+        val maxMessageSize = runCatching {
+            getSmsManager(userPreferences.defaultMessagesSim.first())
+                .carrierConfigValues
+                .getInt(SmsManager.MMS_CONFIG_MAX_MESSAGE_SIZE)
+        }.getOrDefault(300_000).coerceAtLeast(100_000)
+
         val settings = Settings().apply {
             subscriptionId = userPreferences.defaultMessagesSim.first()
             useSystemSending = true
@@ -153,20 +167,78 @@ class CuteTelephonyManager(
             group = true
         }
         val transaction = Transaction(context, settings)
+        val bodyText = message
         val message = Message(message, addresses.toTypedArray())
 
         if (attachment != null) {
             context.contentResolver.openInputStream(attachment)?.use {
-                val bytes = it.readBytes()
                 val mimeType = context.contentResolver.getType(attachment)
-                val name = context.getString(R.string.unknown) // TODO get filename
-                message.addMedia(bytes, mimeType, name)
+                val name = attachment.getFileName(context) ?: context.getString(R.string.unknown)
+                // 20 kb is just a safety net here, technically not needed but better saf than sorry
+                val compressionThreshold = (maxMessageSize - bodyText.toByteArray().size - 20_000).coerceAtLeast(maxMessageSize / 2)
+                val imageBytes = if (mimeType?.startsWith("image/") == true) {
+                    compressImage(
+                        image = attachment,
+                        compressionThreshold = compressionThreshold
+                    )
+                } else null
+                val bytes = imageBytes ?: it.readBytes()
+                message.addMedia(bytes, if (imageBytes != null) "image/jpeg" else mimeType, name)
             }
         }
 
         val mmsSentIntent = Intent(context, CuteMmsSentReceiver::class.java)
         transaction.setExplicitBroadcastForSentMms(mmsSentIntent)
         transaction.sendNewMessage(message, addresses.getThreadIdOrCreate(context))
+    }
+
+    suspend fun compressImage(
+        image: Uri,
+        compressionThreshold: Int
+    ): ByteArray? {
+        return withContext(Dispatchers.IO) {
+            val mimeType = context.contentResolver.getType(image)
+            val inputBytes = context
+                .contentResolver
+                .openInputStream(image)
+                ?.use { inputStream ->
+                    inputStream.readBytes()
+                } ?: return@withContext null
+
+            ensureActive()
+
+            withContext(Dispatchers.Default) {
+                val bitmap = BitmapFactory.decodeByteArray(inputBytes, 0, inputBytes.size)
+
+                ensureActive()
+
+                val compressFormat = when(mimeType) {
+                    "image/png" -> Bitmap.CompressFormat.PNG
+                    "image/jpeg" -> Bitmap.CompressFormat.JPEG
+                    "image/webp" -> if(Build.VERSION.SDK_INT >= 30) {
+                        Bitmap.CompressFormat.WEBP_LOSSLESS
+                    } else Bitmap.CompressFormat.WEBP
+                    else -> Bitmap.CompressFormat.JPEG
+                }
+
+                var outputBytes: ByteArray
+                var quality = 90
+
+                do {
+                    ByteArrayOutputStream().use { outputStream ->
+                        bitmap.compress(compressFormat, quality, outputStream)
+                        outputBytes = outputStream.toByteArray()
+                        quality -= (quality * 0.1).roundToInt()
+                    }
+                } while(isActive &&
+                    outputBytes.size > compressionThreshold &&
+                    quality > 5 &&
+                    compressFormat != Bitmap.CompressFormat.PNG
+                )
+
+                outputBytes
+            }
+        }
     }
 
     suspend fun saveSmsToDevice(
