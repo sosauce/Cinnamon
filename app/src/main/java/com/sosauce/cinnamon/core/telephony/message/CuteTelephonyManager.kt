@@ -21,6 +21,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.core.system.receivers.CuteMmsSentReceiver
 import com.sosauce.cinnamon.core.system.receivers.DeliveryReportsReceiver
+import com.sosauce.cinnamon.core.system.receivers.SmsSentReceiver
 import com.sosauce.cinnamon.core.telephony.PhoneNumberNormalizer
 import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
 import kotlinx.coroutines.Dispatchers
@@ -90,7 +91,22 @@ class CuteTelephonyManager(
     ) = withContext(Dispatchers.IO) {
         val smsManager = getSmsManager(userPreferences.defaultMessagesSim.first())
         val messageUri =
-            saveSmsToDevice(address, message, Telephony.Sms.MESSAGE_TYPE_SENT, read = 1)
+            saveSmsToDevice(address, message, Telephony.Sms.MESSAGE_TYPE_OUTBOX, read = 1)
+                ?: return@withContext
+
+        val parts = if (message.length <= 160) arrayListOf(message) else smsManager.divideMessage(message)
+        val sentIntents = List(parts.size) { index ->
+            val sentIntent = Intent(context, SmsSentReceiver::class.java).apply {
+                data = Uri.withAppendedPath(messageUri, "sent/$index")
+                putExtra(SmsSentReceiver.MESSAGE_URI, messageUri.toString())
+            }
+            PendingIntent.getBroadcast(
+                context,
+                0,
+                sentIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
 
         val deliveryReportIntent = Intent(context, DeliveryReportsReceiver::class.java).apply {
             data = messageUri
@@ -105,10 +121,9 @@ class CuteTelephonyManager(
         } else null
 
         if (message.length <= 160) {
-            smsManager.sendTextMessage(address, null, message, null, deliveryReportPending)
+            smsManager.sendTextMessage(address, null, message, sentIntents.first(), deliveryReportPending)
         } else {
-            val messages = smsManager.divideMessage(message)
-            smsManager.sendMultipartTextMessage(address, null, messages, null, null)
+            smsManager.sendMultipartTextMessage(address, null, parts, sentIntents.toCollection(ArrayList()), null)
         }
     }
 

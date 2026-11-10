@@ -153,6 +153,9 @@
 
         <receiver android:name=".core.system.receivers.MessageReplyReceiver" />
         <receiver android:name=".core.system.receivers.MarkAsReadReceiver" />
+        <receiver
+            android:name=".core.system.receivers.SmsSentReceiver"
+            android:exported="false" />
 
         <activity
             android:name=".features.phone.presentation.call.CallActivity"
