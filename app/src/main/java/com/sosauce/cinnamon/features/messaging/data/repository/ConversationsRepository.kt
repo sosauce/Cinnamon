@@ -356,15 +356,19 @@ class ConversationsRepository(private val context: Context) {
     }
 
     suspend fun markConversationAsRead(threadId: Long) = withContext(Dispatchers.IO) {
-        val contentValues = contentValuesOf(
-            Telephony.Sms.READ to 1
-        )
-        val selection = "${Telephony.Sms.THREAD_ID} = ?"
-
+        val smsValues = contentValuesOf(Telephony.Sms.READ to 1)
         context.contentResolver.update(
             Telephony.Sms.CONTENT_URI,
-            contentValues,
-            selection,
+            smsValues,
+            "${Telephony.Sms.THREAD_ID} = ? AND ${Telephony.Sms.READ} = 0",
+            arrayOf(threadId.toString())
+        )
+
+        val mmsValues = contentValuesOf(Mms.READ to 1)
+        context.contentResolver.update(
+            Mms.CONTENT_URI,
+            mmsValues,
+            "${Mms.THREAD_ID} = ? AND ${Mms.READ} = 0",
             arrayOf(threadId.toString())
         )
     }

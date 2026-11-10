@@ -245,7 +245,8 @@ class CuteTelephonyManager(
         address: String,
         message: String,
         messageType: Int,
-        read: Int
+        read: Int,
+        subscriptionId: Int? = null
     ): Uri? = withContext(Dispatchers.IO) {
 
         val values = contentValuesOf(
@@ -255,7 +256,11 @@ class CuteTelephonyManager(
             Telephony.Sms.BODY to message,
             Telephony.Sms.TYPE to messageType,
             Telephony.Sms.READ to read
-        )
+        ).apply {
+            if (subscriptionId != null) {
+                put(Telephony.Sms.SUBSCRIPTION_ID, subscriptionId)
+            }
+        }
 
         context.contentResolver.insert(Telephony.Sms.CONTENT_URI, values)
     }

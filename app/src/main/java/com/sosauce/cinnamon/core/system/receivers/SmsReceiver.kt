@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony.Sms
+import android.telephony.SubscriptionManager
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.core.telephony.message.CuteTelephonyManager
 import com.sosauce.cinnamon.core.telephony.message.MessageNotificationManager
@@ -29,7 +30,12 @@ class SmsReceiver : BroadcastReceiver(), KoinComponent {
         val scope = CoroutineScope(Dispatchers.IO)
         val parts = Sms.Intents.getMessagesFromIntent(intent) ?: return
         val message = buildString { parts.forEach { append(it.messageBody.orEmpty()) } }
-        val address = parts.firstOrNull()?.originatingAddress ?: return
+        val firstPart = parts.firstOrNull() ?: return
+        val address = firstPart.originatingAddress ?: return
+        val subscriptionId = intent.getIntExtra(
+            SubscriptionManager.EXTRA_SUBSCRIPTION_INDEX,
+            SubscriptionManager.INVALID_SUBSCRIPTION_ID
+        ).takeIf { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
         val pending = goAsync()
 
         scope.launch {
@@ -40,7 +46,8 @@ class SmsReceiver : BroadcastReceiver(), KoinComponent {
                     address = address,
                     message = message,
                     messageType = Sms.MESSAGE_TYPE_INBOX,
-                    read = 0
+                    read = 0,
+                    subscriptionId = subscriptionId
                 )
                 if (threadId.toString() in archived) return@launch
                 messagesNotificationManager.sendOrAppendMessageNotification(
