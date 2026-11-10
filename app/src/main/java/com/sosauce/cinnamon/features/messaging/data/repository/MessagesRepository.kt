@@ -263,7 +263,7 @@ class MessagesRepository(
                     RawPart(
                         partId = partId,
                         mimeType = mimeType,
-                        text = text,
+                        text = text
                     )
                 )
 
