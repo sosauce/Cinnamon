@@ -68,6 +68,7 @@
     <string name="image">Image</string>
     <string name="video">Video</string>
     <string name="attachment">Attachment</string>
+    <string name="remove_attachment">Remove attachment</string>
     <string name="no_convo_found">No conversation found!</string>
     <string name="no_convo_found_desc">Not a single soul checking on you, that\'s sad…</string>
     <string name="behavior">Behavior</string>

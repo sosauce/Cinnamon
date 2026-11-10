@@ -46,7 +46,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <uses-permission android:name="android.hardware.sensor.proximity" />
-    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
 
@@ -135,16 +134,6 @@
             </intent-filter>
         </receiver>
 
-        <receiver
-            android:name=".core.system.receivers.TestReceiver"
-            android:permission="android.permission.BROADCAST_WAP_PUSH"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
-                <data android:mimeType="application/vnd.wap.mms-message" />
-            </intent-filter>
-        </receiver>
-
 
         <!-- Service that delivers messages from the phone "quick response" -->
         <service
@@ -229,12 +218,20 @@
             android:exported="true" />
 
         <receiver
-            android:name=".core.system.receivers.MmsReceiver"
+            android:name="com.android.mms.transaction.PushReceiver"
             android:exported="true"
             android:permission="android.permission.BROADCAST_WAP_PUSH">
             <intent-filter>
                 <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
                 <data android:mimeType="application/vnd.wap.mms-message" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".core.system.receivers.MmsReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.klinker.android.messaging.MMS_RECEIVED" />
             </intent-filter>
         </receiver>
 

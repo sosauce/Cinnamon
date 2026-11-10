@@ -177,7 +177,7 @@ class MessageNotificationManager(
         val replyIntent = Intent(context, MessageReplyReceiver::class.java).apply {
             putExtra(THREAD_ID, threadId)
         }
-        val replyPendingIntent = PendingIntent.getBroadcast(context, 1, replyIntent, flag)
+        val replyPendingIntent = PendingIntent.getBroadcast(context, threadId.toInt(), replyIntent, flag)
 
         val remoteInput = RemoteInput.Builder(RESULT_KEY)
             .setLabel(context.getString(R.string.type_here))
@@ -196,7 +196,7 @@ class MessageNotificationManager(
         val readIntent = Intent(context, MarkAsReadReceiver::class.java).apply {
             putExtra(THREAD_ID, threadId)
         }
-        val readPendingIntent = PendingIntent.getBroadcast(context, 1, readIntent, flag)
+        val readPendingIntent = PendingIntent.getBroadcast(context, threadId.toInt(), readIntent, flag)
 
         return NotificationCompat.Action.Builder(
             0,

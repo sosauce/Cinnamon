@@ -43,7 +43,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -83,6 +83,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.window.Popup
@@ -111,7 +114,6 @@ fun ConversationBottomBar(
     prefilledMessage: String,
     onHandleConversationActions: (ConversationActions) -> Unit
 ) {
-    println("forward - bottom bar: $prefilledMessage")
     val viewModel = koinViewModel<BottomBarViewModel>(
         parameters = { parametersOf(state.conversation.threadId, prefilledMessage) }
     )
@@ -139,9 +141,6 @@ fun ConversationBottomBar(
         rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
             viewModel.addAttachments(uris)
         }
-    val attachmentRotation by animateFloatAsState(
-        targetValue = if (isActionPickerExpanded) 45f else 0f
-    )
     val attachmentOptions = listOf(
         MoreOptions(
             onClick = {
@@ -195,104 +194,15 @@ fun ConversationBottomBar(
             .selfAlignHorizontally()
             .fillMaxWidth(0.95f)
     ) {
-        Popup(
-            popupPositionProvider = MenuDefaults.rememberDropdownMenuPopupPositionProvider(
-                MenuAnchorPosition.Below
-            )
-        ) {
-            FloatingActionButtonMenu(
-                expanded = isActionPickerExpanded,
-                button = {},
-                horizontalAlignment = Alignment.Start
-            ) {
-                attachmentOptions.fastForEach { option ->
-                    FloatingActionButtonMenuItem(
-                        onClick = option.onClick,
-                        text = { Text(stringResource(option.text)) },
-                        icon = {
-                            Icon(
-                                painter = painterResource(option.icon),
-                                contentDescription = null
-                            )
-                        }
-                    )
-                }
+        ScheduledTimeBanner(
+            scheduledTime = bottomBarState.scheduledTime,
+            onRemoveScheduledTime = viewModel::removeScheduledTime
+        )
+        AttachmentsBox(
+            attachments = bottomBarState.attachments,
+            onRemoveAttachment = viewModel::removeAttachment
+        )
 
-            }
-        }
-
-        AnimatedVisibility(
-            visible = bottomBarState.scheduledTime != null,
-            enter = slideInVertically(bouncySpec()) { it } + fadeIn(),
-            exit = slideOutVertically(bouncySpec()) { it } + fadeOut(),
-            modifier = Modifier
-                .padding(horizontal = 10.dp, vertical = 5.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .animateContentSize()
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.tertiaryContainer)
-                    .padding(start = 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.schedule),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = bottomBarState.scheduledTime?.toDateAndTime() ?: "",
-                    style = MaterialTheme.typography.labelLargeEmphasized,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                )
-                Spacer(Modifier.weight(1f))
-                IconButton(
-                    onClick = viewModel::removeScheduledTime,
-                    shapes = IconButtonDefaults.shapes()
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.close),
-                        contentDescription = null
-                    )
-                }
-            }
-        }
-        AnimatedVisibility(
-            visible = bottomBarState.attachments.isNotEmpty(),
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-            enter = slideInVertically(bouncySpec()) { it } + fadeIn(),
-            exit = slideOutVertically(bouncySpec()) { it } + fadeOut()
-        ) {
-            Box(
-                modifier = Modifier
-                    .animateContentSize()
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        shape = RoundedCornerShape(24.dp)
-                    )
-            ) {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(15.dp)
-                ) {
-                    items(
-                        items = bottomBarState.attachments,
-                        key = { it }
-                    ) { attachment ->
-                        ReadyToSendAttachment(
-                            modifier = Modifier.animateItem(),
-                            attachment = attachment,
-                            onRemoveAttachment = { viewModel.removeAttachment(attachment) }
-                        )
-                    }
-                }
-            }
-        }
         val density = LocalDensity.current
         var barHeight by remember { mutableStateOf(0.dp) }
         val cornerRadius = (barHeight / 2).coerceAtMost(28.dp)
@@ -312,76 +222,32 @@ fun ConversationBottomBar(
                 modifier = Modifier.animateContentSize(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val attachContainer by animateColorAsState(
-                    if (isActionPickerExpanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest
+                AttachmentPicker(
+                    expanded = isActionPickerExpanded,
+                    options = attachmentOptions,
+                    onToggle = { isActionPickerExpanded = !isActionPickerExpanded }
                 )
-                val attachShape = rememberAnimatedShape(
-                    condition = isActionPickerExpanded,
-                    shapeA = MaterialShapes.Circle,
-                    shapeB = MaterialShapes.Cookie9Sided
+                MessageTextField(
+                    textFieldState = viewModel.textFieldState,
+                    message = bottomBarState.message,
+                    cornerRadius = cornerRadius,
+                    showCharCount = showCharCount,
+                    modifier = Modifier.weight(1f)
                 )
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(attachShape)
-                        .background(attachContainer)
-                        .clickable { isActionPickerExpanded = !isActionPickerExpanded }
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.add),
-                        contentDescription = null,
-                        tint = contentColorFor(attachContainer),
-                        modifier = Modifier.rotate(attachmentRotation)
-                    )
-                }
-                TextField(
-                    state = viewModel.textFieldState,
-                    shape = RoundedCornerShape(cornerRadius),
-                    lineLimits = TextFieldLineLimits.MultiLine(
-                        minHeightInLines = 1,
-                        maxHeightInLines = 6
-                    ),
-                    modifier = Modifier.weight(1f),
-                    colors = TextFieldDefaults.colors(
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedContainerColor = Color.Transparent
-                    ),
-                    placeholder = {
-                        Text(
-                            text = stringResource(R.string.type_a_message),
-                            maxLines = 1
-                        )
-                    },
-                    trailingIcon =
-                        if (showCharCount) {
-                            {
-                                val charCount = bottomBarState.message.length
-                                val segmentCount =
-                                    if (charCount <= 160) 1 else ceil(charCount / 160.0).toInt()
-                                CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodySmallEmphasized) {
-                                    Row {
-                                       AnimatedCounter(count = charCount, textStyle = LocalTextStyle.current)
-                                        Text("/")
-                                       AnimatedCounter(count = segmentCount, textStyle = LocalTextStyle.current)
-                                    }
-                                }
-                            }
 
-                        } else null
-                )
-                FilledIconButton(
-                    onClick = {
+
+                SendButton(
+                    isScheduled = bottomBarState.scheduledTime != null,
+                    enabled = (bottomBarState.message.isNotEmpty() && bottomBarState.message.isNotBlank()) || bottomBarState.attachments.isNotEmpty(),
+                    onClick = send@{
                         if (bottomBarState.scheduledTime != null) {
                             onHandleConversationActions(
                                 ConversationActions.ScheduleMessage(
                                     ScheduledMessageEntity(
                                         threadId = state.conversation.threadId,
-                                        address = state.conversation.participants.firstOrNull()?.rawNumber ?: return@FilledIconButton,
+                                        address = state.conversation.participants.firstOrNull()?.rawNumber ?: return@send,
                                         message = bottomBarState.message,
-                                        sendAt = bottomBarState.scheduledTime ?: return@FilledIconButton
+                                        sendAt = bottomBarState.scheduledTime ?: return@send
                                     )
                                 )
                             )
@@ -395,31 +261,246 @@ fun ConversationBottomBar(
                             )
                         }
                         viewModel.resetState()
-                    },
-                    shapes = IconButtonDefaults.shapes(),
-                    enabled = (bottomBarState.message.isNotEmpty() && bottomBarState.message.isNotBlank()) || bottomBarState.attachments.isNotEmpty(),
-                    modifier = Modifier.size(48.dp)
-                ) {
-
-                    AnimatedContent(
-                        targetState = bottomBarState.scheduledTime != null,
-                        transitionSpec = { slideInHorizontally { -it } togetherWith slideOutHorizontally { it } }
-                    ) {
-                        if (it) {
-                            Icon(
-                                painter = painterResource(R.drawable.schedule_send),
-                                contentDescription = "send scheduled message"
-                            )
-                        } else {
-                            Icon(
-                                painter = painterResource(R.drawable.send_filled),
-                                contentDescription = "send message"
-                            )
-                        }
-
                     }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.ScheduledTimeBanner(
+    scheduledTime: Long?,
+    onRemoveScheduledTime: () -> Unit
+) {
+    AnimatedVisibility(
+        visible = scheduledTime != null,
+        enter = slideInVertically(bouncySpec()) { it } + fadeIn(),
+        exit = slideOutVertically(bouncySpec()) { it } + fadeOut(),
+        modifier = Modifier
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+            .animateContentSize()
+
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.background)
+                .dashedBorder(CircleShape)
+                .padding(start = 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.schedule),
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = scheduledTime?.toDateAndTime() ?: "",
+                style = MaterialTheme.typography.labelLargeEmphasized
+            )
+            Spacer(Modifier.weight(1f))
+            IconButton(
+                onClick = onRemoveScheduledTime,
+                shapes = IconButtonDefaults.shapes()
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.close),
+                    contentDescription = null
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.AttachmentsBox(
+    attachments: List<Uri>,
+    onRemoveAttachment: (Uri) -> Unit
+) {
+    AnimatedVisibility(
+        visible = attachments.isNotEmpty(),
+        enter = slideInVertically(bouncySpec()) { it } + fadeIn(),
+        exit = slideOutVertically(bouncySpec()) { it } + fadeOut(),
+        modifier = Modifier
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+            .animateContentSize()
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .padding(4.dp)
+        ) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                itemsIndexed(
+                    items = attachments,
+                    key = { _, attachment -> attachment }
+                ) { index, attachment ->
+                    ReadyToSendAttachment(
+                        modifier = Modifier.animateItem(
+                            fadeInSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+                            placementSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+                            fadeOutSpec = MaterialTheme.motionScheme.defaultEffectsSpec()
+                        ),
+                        attachment = attachment,
+                        shape = animatedAttachmentShape(
+                            isFirst = index == 0,
+                            isLast = index == attachments.lastIndex
+                        ),
+                        onRemoveAttachment = { onRemoveAttachment(attachment) }
+                    )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AttachmentPicker(
+    expanded: Boolean,
+    options: List<MoreOptions>,
+    onToggle: () -> Unit
+) {
+    val attachmentRotation by animateFloatAsState(
+        targetValue = if (expanded) 45f else 0f
+    )
+    val attachContainer by animateColorAsState(
+        if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest
+    )
+    val attachShape = rememberAnimatedShape(
+        condition = expanded,
+        shapeA = MaterialShapes.Circle,
+        shapeB = MaterialShapes.Cookie9Sided
+    )
+
+    Column {
+        Popup(
+            popupPositionProvider = MenuDefaults.rememberDropdownMenuPopupPositionProvider(
+                MenuAnchorPosition.Below
+            )
+        ) {
+            FloatingActionButtonMenu(
+                expanded = expanded,
+                button = {},
+                horizontalAlignment = Alignment.Start
+            ) {
+                options.fastForEach { option ->
+                    FloatingActionButtonMenuItem(
+                        onClick = option.onClick,
+                        text = { Text(stringResource(option.text)) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(option.icon),
+                                contentDescription = null
+                            )
+                        }
+                    )
+                }
+
+            }
+        }
+
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(48.dp)
+                .clip(attachShape)
+                .background(attachContainer)
+                .clickable(onClick = onToggle)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.add),
+                contentDescription = null,
+                tint = contentColorFor(attachContainer),
+                modifier = Modifier.rotate(attachmentRotation)
+            )
+        }
+    }
+}
+
+@Composable
+private fun MessageTextField(
+    textFieldState: TextFieldState,
+    message: String,
+    cornerRadius: Dp,
+    showCharCount: Boolean,
+    modifier: Modifier = Modifier
+) {
+    TextField(
+        state = textFieldState,
+        shape = RoundedCornerShape(cornerRadius),
+        lineLimits = TextFieldLineLimits.MultiLine(
+            minHeightInLines = 1,
+            maxHeightInLines = 6
+        ),
+        modifier = modifier,
+        colors = TextFieldDefaults.colors(
+            unfocusedIndicatorColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            focusedContainerColor = Color.Transparent
+        ),
+        placeholder = {
+            Text(
+                text = stringResource(R.string.type_a_message),
+                maxLines = 1
+            )
+        },
+        trailingIcon =
+            if (showCharCount) {
+                { CharCounter(message) }
+            } else null
+    )
+}
+
+@Composable
+private fun CharCounter(message: String) {
+    val charCount = message.length
+    val segmentCount =
+        if (charCount <= 160) 1 else ceil(charCount / 160.0).toInt()
+    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodySmallEmphasized) {
+        Row {
+           AnimatedCounter(count = charCount, textStyle = LocalTextStyle.current)
+            Text("/")
+           AnimatedCounter(count = segmentCount, textStyle = LocalTextStyle.current)
+        }
+    }
+}
+
+@Composable
+private fun SendButton(
+    isScheduled: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    FilledIconButton(
+        onClick = onClick,
+        shapes = IconButtonDefaults.shapes(),
+        enabled = enabled,
+        modifier = Modifier.size(48.dp)
+    ) {
+
+        AnimatedContent(
+            targetState = isScheduled,
+            transitionSpec = { slideInHorizontally { -it } togetherWith slideOutHorizontally { it } }
+        ) {
+            if (it) {
+                Icon(
+                    painter = painterResource(R.drawable.schedule_send),
+                    contentDescription = "send scheduled message"
+                )
+            } else {
+                Icon(
+                    painter = painterResource(R.drawable.send_filled),
+                    contentDescription = "send message"
+                )
+            }
+
         }
     }
 }
