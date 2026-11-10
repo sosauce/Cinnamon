@@ -27,26 +27,25 @@ class SmsReceiver : BroadcastReceiver(), KoinComponent {
         val cuteTelephonyManager by inject<CuteTelephonyManager>()
         val userPreferences by inject<UserPreferences>()
         val scope = CoroutineScope(Dispatchers.IO)
+        val parts = Sms.Intents.getMessagesFromIntent(intent) ?: return
+        val message = buildString { parts.forEach { append(it.messageBody.orEmpty()) } }
+        val address = parts.firstOrNull()?.originatingAddress ?: return
 
         scope.launch {
             val archived = userPreferences.archivedConversations.first()
-
-
-            Sms.Intents.getMessagesFromIntent(intent).forEach { message ->
-                val threadId = message.displayOriginatingAddress?.getThreadIdOrCreate(context) ?: 0
-                cuteTelephonyManager.saveSmsToDevice(
-                    address = message.displayOriginatingAddress ?: "",
-                    message = message.messageBody,
-                    messageType = Sms.MESSAGE_TYPE_INBOX,
-                    read = 0
-                )
-                if (threadId.toString() in archived) return@forEach
-                messagesNotificationManager.sendOrAppendMessageNotification(
-                    threadId = threadId,
-                    message = message.messageBody,
-                    number = message.displayOriginatingAddress
-                )
-            }
+            val threadId = address.getThreadIdOrCreate(context)
+            cuteTelephonyManager.saveSmsToDevice(
+                address = address,
+                message = message,
+                messageType = Sms.MESSAGE_TYPE_INBOX,
+                read = 0
+            )
+            if (threadId.toString() in archived) return@launch
+            messagesNotificationManager.sendOrAppendMessageNotification(
+                threadId = threadId,
+                message = message,
+                number = address
+            )
         }
 
     }
