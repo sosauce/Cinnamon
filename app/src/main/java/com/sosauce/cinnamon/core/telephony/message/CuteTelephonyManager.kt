@@ -145,6 +145,7 @@ class CuteTelephonyManager(
     ) = withContext(Dispatchers.IO) {
 
         val settings = Settings().apply {
+            subscriptionId = userPreferences.defaultMessagesSim.first()
             useSystemSending = true
             deliveryReports = userPreferences.enableDeliveryReports.first()
             sendLongAsMms = true

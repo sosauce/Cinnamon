@@ -218,7 +218,7 @@
 
         <receiver
             android:name=".core.system.receivers.DeliveryReportsReceiver"
-            android:exported="true" />
+            android:exported="false" />
 
         <receiver
             android:name="com.android.mms.transaction.PushReceiver"
@@ -245,7 +245,7 @@
         <!-- Your custom receiver which is child of com.klinker.android.send_message.MmsSentReceiver -->
         <receiver
             android:name=".core.system.receivers.CuteMmsSentReceiver"
-            android:exported="true">
+            android:exported="false">
             <intent-filter>
                 <action android:name="com.klinker.android.messaging.MMS_SENT" />
             </intent-filter>
