@@ -118,6 +118,7 @@ fun SharedTransitionScope.ConversationDetailsScreen(
         )
     }
 
+
     RetainedEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {

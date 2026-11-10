@@ -62,7 +62,6 @@ class MessageNotificationManager(
             NotificationCompat.MessagingStyle.Message(message, System.currentTimeMillis(), person)
 
         threadIdAsNotif?.let { notification ->
-
             val activeStyle = NotificationCompat.MessagingStyle
                 .extractMessagingStyleFromNotification(notification.notification)
                 ?.addMessage(messageStyle)
@@ -78,13 +77,13 @@ class MessageNotificationManager(
                     .addAction(replyAction(threadId))
                     .build()
             )
-            scope.launch {
-                cuteTelephonyManager.sendMessage(
-                    addresses = listOf(threadId.getAddressFromThreadId(context)),
-                    message = message,
-                    attachments = emptyList()
-                )
-            }
+        }
+        scope.launch {
+            cuteTelephonyManager.sendMessage(
+                addresses = listOf(threadId.getAddressFromThreadId(context)),
+                message = message,
+                attachments = emptyList()
+            )
         }
     }
 

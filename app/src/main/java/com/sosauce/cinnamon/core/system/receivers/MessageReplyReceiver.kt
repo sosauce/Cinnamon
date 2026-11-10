@@ -19,7 +19,7 @@ class MessageReplyReceiver : BroadcastReceiver(), KoinComponent {
         if (threadId == Long.MIN_VALUE) return
 
         val remoteInput = RemoteInput.getResultsFromIntent(intent)
-        val input = remoteInput?.getCharSequence(RESULT_KEY).toString()
+        val input = remoteInput?.getCharSequence(RESULT_KEY)?.toString() ?: return
         val person = Person.Builder()
             .setName(context.getString(R.string.me))
             .build()
