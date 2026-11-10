@@ -21,6 +21,8 @@ import androidx.compose.runtime.retain.RetainedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -207,6 +209,8 @@ fun Nav(
                             parameters = { parametersOf(key.threadId) }
                         )
                         val state by viewModel.state.collectAsStateWithLifecycle()
+                        val lifecycleOwner = LocalLifecycleOwner.current
+                        val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
 
                         ObserveAsEvents(viewModel.events) { event ->
                             when(event) {
@@ -252,9 +256,11 @@ fun Nav(
                         }
 
                         // when new messages, block notifs for thread and remark it as read
-                        LaunchedEffect(state.messages) {
-                            viewModel.handleConversationActions(ConversationActions.MarkAsRead)
-                            viewModel.handleConversationActions(ConversationActions.ClearThreadNotifications)
+                        LaunchedEffect(state.messages, lifecycleState) {
+                            if (lifecycleState == Lifecycle.State.RESUMED) {
+                                viewModel.handleConversationActions(ConversationActions.MarkAsRead)
+                                viewModel.handleConversationActions(ConversationActions.ClearThreadNotifications)
+                            }
                         }
 
                         RetainedEffect(state.settings.color) {
@@ -395,4 +401,3 @@ fun Nav(
         }
     }
 }
-

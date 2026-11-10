@@ -32,6 +32,7 @@ import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicInteger
 import androidx.core.graphics.scale
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
@@ -42,6 +43,8 @@ class CuteTelephonyManager(
     private val userPreferences: UserPreferences,
     private val phoneNumberNormalizer: PhoneNumberNormalizer
 ) {
+
+    private val pendingIntentRequestCodes = AtomicInteger(System.currentTimeMillis().toInt())
 
 
     private fun getSmsManager(subId: Int): SmsManager {
@@ -119,13 +122,13 @@ class CuteTelephonyManager(
         }
 
         val deliveryReportPendings = if (userPreferences.enableDeliveryReports.first()) {
-            parts.indices.map { index ->
+            parts.map {
                 val deliveryReportIntent = Intent(context, DeliveryReportsReceiver::class.java).apply {
                     data = messageUri
                 }
                 PendingIntent.getBroadcast(
                     context,
-                    31 * messageUri.hashCode() + index,
+                    pendingIntentRequestCodes.getAndIncrement(),
                     deliveryReportIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
