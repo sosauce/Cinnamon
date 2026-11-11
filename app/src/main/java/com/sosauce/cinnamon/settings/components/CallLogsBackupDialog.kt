@@ -31,12 +31,12 @@ import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.ValidFileNameTransformation
 import com.sosauce.cinnamon.core.utils.PermissionUtils
-import com.sosauce.cinnamon.features.phone.domain.CuteCallLog2
+import com.sosauce.cinnamon.features.phone.domain.CuteCallLog
 import com.sosauce.cinnamon.settings.CallLogsBackupUiState
 
 @Composable
 fun CallLogsBackupDialog(
-    logs: List<CuteCallLog2>,
+    logs: List<CuteCallLog>,
     uiState: CallLogsBackupUiState,
     fileNameState: TextFieldState,
     onToggleLog: (logId: Long, selected: Boolean) -> Unit,

@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.core.ui.components.CuteAvatar
+import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
@@ -62,9 +62,9 @@ fun SharedTransitionScope.ContactListItem(
             AnimatedSelectedIcon(
                 isSelected = isSelected
             ) {
-                CuteAvatar(
-                    name = contact.displayName,
-                    photo = contact.thumbnail
+                DefaultContactIcon(
+                    firstLetter = contact.displayName.firstOrNull(),
+                    contactPfp = contact.thumbnail
                 )
             }
         }

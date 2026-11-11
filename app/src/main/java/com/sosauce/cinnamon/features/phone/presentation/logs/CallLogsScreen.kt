@@ -42,7 +42,7 @@ import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar
 import com.sosauce.cinnamon.core.utils.LazyListKeys
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.phone.domain.CallPresentation
-import com.sosauce.cinnamon.features.phone.domain.CuteCallLog2
+import com.sosauce.cinnamon.features.phone.domain.CuteCallLog
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.nekobites.animations.AnimatedFab
 import com.sosauce.nekobites.components.LoadingBox
@@ -57,7 +57,7 @@ fun CallLogsScreen(
     onHandleCallActions: (CallAction) -> Unit,
     onHandleDialerActions: (DialerAction) -> Unit
 ) {
-    val sweetSelectState = rememberSweetSelectState<CuteCallLog2>()
+    val sweetSelectState = rememberSweetSelectState<CuteCallLog>()
     var sortLogsAscending by rememberSortLogsAscending()
 
     Scaffold(

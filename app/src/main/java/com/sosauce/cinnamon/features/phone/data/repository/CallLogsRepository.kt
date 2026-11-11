@@ -13,7 +13,7 @@ import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.utils.observe
 import com.sosauce.cinnamon.features.phone.data.model.CuteCallLogEntity
 import com.sosauce.cinnamon.features.phone.data.model.toDomain
-import com.sosauce.cinnamon.features.phone.domain.CuteCallLog2
+import com.sosauce.cinnamon.features.phone.domain.CuteCallLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -27,7 +27,7 @@ class CallLogsRepository(
     private val numberLookup: NumberLookup
 ) {
 
-    fun fetchLatestCallLog(): Flow<List<CuteCallLog2>> {
+    fun fetchLatestCallLog(): Flow<List<CuteCallLog>> {
         return context.contentResolver.observe(CallLog.Calls.CONTENT_URI).mapLatest {
             fetchCallLogs().fastMap { it.toDomain(context) }
         }.flowOn(Dispatchers.IO)
@@ -70,7 +70,7 @@ class CallLogsRepository(
     }
 
     // Memo of PhoneLookup results keyed by the raw number string.
-    // Same number across rows is queried once; negative (null) results
+    // Same number across rows is queried once, negative (null) results
     // are cached too so unknown numbers don't re-query per row.
     private suspend fun Cursor.readCallLog(
         lookupCache: MutableMap<String, Pair<String?, String?>>

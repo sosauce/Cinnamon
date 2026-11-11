@@ -23,7 +23,7 @@ import com.sosauce.cinnamon.features.phone.data.backup.CallLogsBackupRepository
 import com.sosauce.cinnamon.features.phone.data.backup.CallLogsImportRepository
 import com.sosauce.cinnamon.features.phone.data.backup.ImportableCallLog
 import com.sosauce.cinnamon.features.phone.data.repository.CallLogsRepository
-import com.sosauce.cinnamon.features.phone.domain.CuteCallLog2
+import com.sosauce.cinnamon.features.phone.domain.CuteCallLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -90,7 +90,7 @@ class BackupViewModel(
                 emptyList()
             )
 
-    val backupCallLogs: StateFlow<List<CuteCallLog2>> =
+    val backupCallLogs: StateFlow<List<CuteCallLog>> =
         callLogsRepository.fetchLatestCallLog()
             .catch { emit(emptyList()) }
             .stateIn(

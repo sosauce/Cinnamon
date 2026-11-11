@@ -12,7 +12,7 @@ import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.core.utils.groupSubsequentlyBy
 import com.sosauce.cinnamon.features.phone.data.repository.CallLogsRepository
 import com.sosauce.cinnamon.features.phone.domain.CallType
-import com.sosauce.cinnamon.features.phone.domain.CuteCallLog2
+import com.sosauce.cinnamon.features.phone.domain.CuteCallLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -103,7 +103,7 @@ data class CallLogsState(
 
 sealed interface CallLogsListItem {
     data class Header(val date: String, val beforeLogId: Long) : CallLogsListItem
-    data class Log(val log: CuteCallLog2, val count: Int) : CallLogsListItem
+    data class Log(val log: CuteCallLog, val count: Int) : CallLogsListItem
 }
 
 sealed interface DialerAction {

@@ -1,6 +1,9 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.sosauce.cinnamon.features.phone.presentation.call
 
 import android.content.res.Configuration
+import android.net.Uri
 import android.text.format.DateUtils
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -50,9 +53,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -65,13 +71,14 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.glance.color.DynamicThemeColorProviders.primaryContainer
 import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.rememberIsLandscape
 import com.sosauce.cinnamon.core.ui.CinnamonTheme
 import com.sosauce.cinnamon.core.ui.barsContentTransform
-import com.sosauce.cinnamon.core.ui.components.CuteAvatar
+import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
 import com.sosauce.cinnamon.features.phone.domain.AudioRoute
 import com.sosauce.cinnamon.features.phone.presentation.call.components.CallBottomBar
 import com.sosauce.cinnamon.features.phone.presentation.call.components.IncomingBottomBar
@@ -225,13 +232,16 @@ private fun CallerInfo(
         ) {
             Box(
                 Modifier
-                    .size(avatarSize * 1.2f)
+                    .size(avatarSize * 1.25f)
                     .graphicsLayer {
                         scaleX = pulseScale2()
                         scaleY = pulseScale2()
                         rotationZ = -spin
                     }
-                    .background(colors.tertiaryContainer.copy(alpha = 0.5f), MaterialShapes.Cookie9Sided.toShape())
+                    .background(
+                        colors.surfaceContainerHighest.copy(alpha = 0.55f),
+                        MaterialShapes.Cookie9Sided.toShape()
+                    )
             )
             Box(
                 Modifier
@@ -241,15 +251,13 @@ private fun CallerInfo(
                         scaleY = pulseScale1()
                         rotationZ = spin
                     }
-                    .background(colors.primaryContainer, MaterialShapes.Cookie12Sided.toShape())
+                    .background(colors.primaryContainer.copy(alpha = 0.09f), MaterialShapes.Cookie12Sided.toShape())
             )
             Box {
-                CuteAvatar(
-                    name = callUiState.displayName,
+                Avatar(
+                    firstLetter = callUiState.displayName.firstOrNull(),
                     photo = callUiState.photo,
-                    size = avatarSize,
-                    containerColor = colors.surfaceContainerHighest,
-                    contentColor = colors.onSurface
+                    size = avatarSize
                 )
                 val statusColor by animateColorAsState(
                     if (callUiState.isHolding) colors.error else colors.tertiary
@@ -309,7 +317,23 @@ private fun CallerInfo(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun Avatar(
+    modifier: Modifier = Modifier,
+    firstLetter: Char?,
+    photo: Uri?,
+    size: Dp
+) {
+    DefaultContactIcon(
+        firstLetter = firstLetter,
+        size = size,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = MaterialShapes.Cookie9Sided.toShape(),
+        contactPfp = photo,
+        modifier = modifier
+    )
+}
+
 @Composable
 private fun CallStatusPill(callUiState: CallingState) {
     val colors = MaterialTheme.colorScheme
@@ -361,21 +385,17 @@ private fun CallStatusPill(callUiState: CallingState) {
                 )
             }
             Spacer(Modifier.width(8.dp))
-            AnimatedContent(
-                targetState = label,
-                transitionSpec = { fadeIn() togetherWith fadeOut() }
-            ) {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.labelLargeEmphasized
-                )
-            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLargeEmphasized
+            )
         }
     }
 }
 
 @Preview(
-    uiMode = Configuration.UI_MODE_NIGHT_YES
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+
 )
 @Composable
 private fun CallScreenPreviewRinging() {

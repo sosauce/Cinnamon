@@ -79,6 +79,9 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
                     }
 
                     Call.STATE_ACTIVE -> {
+                        handler.removeCallbacks(runnable)
+                        runnable.i = 0L
+                        callManager.updateTimeSpent(0L)
                         handler.post(runnable)
                         callManager.updateCallState(CallState.ONGOING)
                         callNotificationManager.createOngoingNotification(call.details)
@@ -172,6 +175,8 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
             call.state
         }
 
+        handler.removeCallbacks(runnable)
+        runnable.i = 0L
         val subscriptionManager = getSystemService(SubscriptionManager::class.java)
 
 
@@ -224,6 +229,9 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
                 }
 
                 Call.STATE_ACTIVE -> {
+                    handler.removeCallbacks(runnable)
+                    runnable.i = 0L
+                    callManager.updateTimeSpent(0L)
                     handler.post(runnable)
                     callManager.updateCallState(CallState.ONGOING)
                     callNotificationManager.createOngoingNotification(call.details)
@@ -274,6 +282,8 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         callManager.unregisterCallServiceCallback()
         callManager.unregisterAndroidCallCallback()
         handler.removeCallbacks(runnable)
+        runnable.i = 0L
+        callManager.updateTimeSpent(0L)
         job.cancelChildren()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()

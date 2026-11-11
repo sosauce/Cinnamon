@@ -8,10 +8,10 @@ import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.utils.toTime
 import com.sosauce.cinnamon.features.phone.domain.CallPresentation
 import com.sosauce.cinnamon.features.phone.domain.CallType
-import com.sosauce.cinnamon.features.phone.domain.CuteCallLog2
+import com.sosauce.cinnamon.features.phone.domain.CuteCallLog
 import com.sosauce.cinnamon.features.phone.domain.CuteVoicemail
 
-fun CuteCallLogEntity.toDomain(context: Context): CuteCallLog2 {
+fun CuteCallLogEntity.toDomain(context: Context): CuteCallLog {
 
 
     val callType = when(type) {
@@ -34,7 +34,7 @@ fun CuteCallLogEntity.toDomain(context: Context): CuteCallLog2 {
     val formattedDate = DateUtils.formatDateTime(context, date, DateUtils.FORMAT_ABBREV_MONTH)
     val duration = if (duration <= 0) null else DateUtils.formatElapsedTime(duration)
 
-    return CuteCallLog2(
+    return CuteCallLog(
         id = id,
         number = number,
         displayName = cachedName?.ifEmpty { null } ?: number.beautifyNumber(),

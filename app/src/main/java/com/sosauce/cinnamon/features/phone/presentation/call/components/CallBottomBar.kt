@@ -203,13 +203,13 @@ fun CallBottomBar(
                                             contentDescription = null,
                                             modifier = Modifier.size(24.dp)
                                         )
-                                        Spacer(Modifier.height(4.dp))
-                                        Text(
-                                            text = stringResource(action.label),
-                                            style = MaterialTheme.typography.labelMediumEmphasized,
-                                            maxLines = 1,
-                                            modifier = Modifier.basicMarquee()
-                                        )
+//                                        Spacer(Modifier.height(4.dp))
+//                                        Text(
+//                                            text = stringResource(action.label),
+//                                            style = MaterialTheme.typography.labelMediumEmphasized,
+//                                            maxLines = 1,
+//                                            modifier = Modifier.basicMarquee()
+//                                        )
                                     }
                                 }
                             },

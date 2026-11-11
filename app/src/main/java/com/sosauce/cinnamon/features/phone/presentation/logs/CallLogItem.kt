@@ -49,13 +49,13 @@ import androidx.compose.ui.util.fastForEachIndexed
 import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
-import com.sosauce.cinnamon.core.ui.components.CuteAvatar
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.utils.getItemShape
 import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
+import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.features.phone.domain.CallPresentation
 import com.sosauce.cinnamon.features.phone.domain.CallType
-import com.sosauce.cinnamon.features.phone.domain.CuteCallLog2
+import com.sosauce.cinnamon.features.phone.domain.CuteCallLog
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.nekobites.animations.AnimatedDrawable
 import com.sosauce.nekobites.animations.AnimatedDrawableFile
@@ -67,7 +67,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun CallLogItem(
     modifier: Modifier = Modifier,
-    callLog: CuteCallLog2,
+    callLog: CuteCallLog,
     isSelected: Boolean,
     numberOfAppearance: Int,
     onClick: () -> Unit,
@@ -137,6 +137,24 @@ fun CallLogItem(
                     text = R.string.copy_number
                 )
             )
+            if (!callLog.hasContactAssociated) {
+                add(
+                    index = 1,
+                    element = CallLogAction(
+                        onClick = {
+                            onNavigate(
+                                Screen.ContactEditor(
+                                    rawContactId = null,
+                                    prefilledNumber = callLog.number
+                                )
+                            )
+                            showMoreOptions = false
+                        },
+                        icon = R.drawable.add_contact,
+                        text = R.string.add_contact
+                    )
+                )
+            }
         }
         add(
             CallLogAction(
@@ -161,10 +179,37 @@ fun CallLogItem(
             AnimatedSelectedIcon(
                 isSelected = isSelected
             ) {
-                CuteAvatar(
-                    name = callLog.displayName,
-                    photo = callLog.photo
-                )
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(MaterialShapes.Circle.toShape())
+                        .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center
+                ) {
+
+                    val firstChar = callLog.displayName.firstOrNull() ?: '?'
+
+                    if (firstChar.isLetter()) {
+                        Text(
+                            text = firstChar.uppercase(),
+                            style = MaterialTheme.typography.titleLargeEmphasized.copy(
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(R.drawable.person_filled),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                    AsyncImage(
+                        model = callLog.photo,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
             }
         },
         trailingContent = {

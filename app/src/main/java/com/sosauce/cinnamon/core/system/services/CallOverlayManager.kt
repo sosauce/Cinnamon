@@ -20,10 +20,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import androidx.core.net.toUri
+import com.sosauce.cinnamon.app.CinnamonApplication
+import kotlinx.coroutines.flow.combine
 
 /**
  * Manages system overlay bubble shown over other apps during a call.
- * M3 Expressive blur background via tonal surface + WindowManager TYPE_APPLICATION_OVERLAY
  */
 class CallOverlayManager(
     private val context: Context,
@@ -45,11 +46,15 @@ class CallOverlayManager(
         }
     }
 
-    fun observe(scope: CoroutineScope, onToggleMute: () -> Unit = {}, onEndCall: () -> Unit = {}) {
+    fun observe(
+        scope: CoroutineScope,
+        onToggleMute: () -> Unit = {},
+        onEndCall: () -> Unit = {}
+    ) {
         // Combine call state + CallActivity visibility so bubble reacts to both
-        kotlinx.coroutines.flow.combine(
+        combine(
             callManager._callingState,
-            com.sosauce.cinnamon.app.CinnamonApplication.isCallActivityVisibleFlow
+            CinnamonApplication.isCallActivityVisibleFlow
         ) { state, isCallUiVisible -> state to isCallUiVisible }
             .onEach { (state, isCallUiVisible) ->
                 when (state.callState) {
@@ -82,10 +87,7 @@ class CallOverlayManager(
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                else
-                    @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or

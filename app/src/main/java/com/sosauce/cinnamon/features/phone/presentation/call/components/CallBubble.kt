@@ -37,24 +37,23 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.core.ui.CinnamonTheme
 import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
 import com.sosauce.cinnamon.features.phone.presentation.call.CallState
 import com.sosauce.cinnamon.features.phone.presentation.call.CallingState
 
-/**
- * M3 Expressive call bubble — shown over other apps when call is ongoing/dialing/ringing
- * Blur background via tonal surface + semi-transparent scrim, pill shape extraLargeIncreased
- */
+
 @Composable
 fun CallBubble(
+    modifier: Modifier = Modifier,
     state: CallingState,
     onExpand: () -> Unit,
     onEndCall: () -> Unit,
     onToggleMute: () -> Unit = {},
-    onToggleSpeaker: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onToggleSpeaker: () -> Unit = {}
 ) {
     val isRinging = state.callState == CallState.RINGING
     val isOngoing = state.callState == CallState.ONGOING
@@ -129,7 +128,6 @@ fun CallBubble(
                     }
                 }
 
-                // Caller info — emphasized typography
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -149,7 +147,6 @@ fun CallBubble(
                             CallState.DIALING -> "Calling…"
                             CallState.ONGOING -> formatDuration(state.timeSpentInCall)
                             CallState.ENDED -> "Ended"
-                            else -> state.number
                         },
                         transitionSpec = { (scaleIn() + fadeIn()) togetherWith (scaleOut() + fadeOut()) },
                         label = "bubbleStatus"
@@ -170,12 +167,10 @@ fun CallBubble(
                     }
                 }
 
-                // Actions — expressive tonal buttons
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Mute — only when ongoing
                     if (isOngoing) {
                         FilledTonalIconButton(
                             onClick = onToggleMute,
@@ -222,4 +217,22 @@ private fun formatDuration(seconds: Long): String {
     val m = seconds / 60
     val s = seconds % 60
     return String.format("%02d:%02d", m, s)
+}
+
+@Preview
+@Composable
+private fun CallBubblePreview() {
+    CinnamonTheme {
+        CallBubble(
+            state = CallingState(
+                callState = CallState.RINGING,
+                number = "0707070707",
+                displayName = "sosauce",
+                isMuted = true,
+            ),
+            onExpand = {},
+            onEndCall = {}
+        )
+    }
+
 }

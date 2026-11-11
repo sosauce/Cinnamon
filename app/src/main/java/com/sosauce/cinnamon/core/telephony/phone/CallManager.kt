@@ -173,8 +173,17 @@ class CallManager(
     }
 
     fun updateCallState(callState: CallState) {
-        _callingState.update {
-            it.copy(callState = callState)
+
+        if (callState == CallState.ENDED) {
+            _callingState.update {
+                CallingState(
+                    callState = CallState.ENDED
+                )
+            }
+        } else {
+            _callingState.update {
+                it.copy(callState = callState)
+            }
         }
     }
 

@@ -40,7 +40,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.core.ui.components.CuteAvatar
 import com.sosauce.cinnamon.core.ui.components.DefaultGroupChatIcon
 import com.sosauce.cinnamon.core.ui.components.SelectionCheckbox
 import com.sosauce.cinnamon.core.utils.rememberInteractionSource
@@ -91,9 +90,8 @@ fun PinnedConversation(
                 if (conversation.isGroupChat) {
                     DefaultGroupChatIcon(size = 90.dp)
                 } else {
-                    CuteAvatar(
-                        name = conversation.name,
-                        photo = conversation.photo,
+                    ConversationIcon(
+                        conversation = conversation,
                         size = 90.dp
                     )
                 }

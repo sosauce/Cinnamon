@@ -1,7 +1,10 @@
 package com.sosauce.cinnamon.features.phone.domain
 
 import android.net.Uri
-data class CuteCallLog2(
+import androidx.compose.runtime.Stable
+
+@Stable
+data class CuteCallLog(
     val id: Long,
     val number: String,
     val displayName: String,
@@ -12,7 +15,11 @@ data class CuteCallLog2(
     val location: String?,
     val presentation: CallPresentation,
     val photo: Uri?
-)
+) {
+    // in most case this should do it
+    val hasContactAssociated: Boolean
+        get() = displayName.any { it.isLetter() }
+}
 
 
 enum class CallPresentation {
