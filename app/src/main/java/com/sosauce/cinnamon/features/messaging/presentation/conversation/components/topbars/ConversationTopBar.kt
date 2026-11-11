@@ -48,6 +48,7 @@ import androidx.compose.ui.util.fastForEachIndexed
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.DefaultGroupChatIcon
+import com.sosauce.cinnamon.core.ui.components.dialogs.BlockUnblockDialog
 import com.sosauce.cinnamon.core.ui.components.toolbars.ToolbarSkeleton
 import com.sosauce.cinnamon.core.utils.getItemShape
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions
@@ -91,41 +92,14 @@ fun ConversationTopBar(
     )
 
     if (showBlockDialog) {
-        AlertDialog(
+        val participant = state.conversation.participants.firstOrNull()
+        if (participant != null) BlockUnblockDialog(
+            displayName = participant.displayName,
+            isBlocked = state.conversation.isSoloParticipantBlocked,
             onDismissRequest = { showBlockDialog = false },
-            icon = {
-                Icon(
-                    painter = painterResource(R.drawable.block),
-                    contentDescription = null
-                )
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showBlockDialog = false },
-                    shapes = ButtonDefaults.shapes()
-                ) { Text(stringResource(R.string.cancel)) }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onHandleConversationActions(ConversationActions.ToggleBlock)
-                        showBlockDialog = false
-                    },
-                    shapes = ButtonDefaults.shapes()
-                ) {
-                    val text =
-                        if (state.conversation.isSoloParticipantBlocked) R.string.unblock else R.string.block
-                    Text(stringResource(text))
-                }
-            },
-            text = {
-                val text =
-                    if (state.conversation.isSoloParticipantBlocked) R.string.unblock_no_u_sure else R.string.block_are_u_sure
-                Text(stringResource(text, state.conversation.participants.first().displayName))
-            },
-            title = {
-                val text = if (state.conversation.isSoloParticipantBlocked) R.string.unblock else R.string.block
-                Text(stringResource(text))
+            onConfirm = {
+                onHandleConversationActions(ConversationActions.ToggleBlock)
+                showBlockDialog = false
             }
         )
     }

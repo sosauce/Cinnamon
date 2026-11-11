@@ -34,7 +34,7 @@ fun SettingsNavigation() {
             title = stringResource(R.string.default_launch_screen),
             description = stringResource(R.string.default_tab)
         ) {
-            items(screens) { screen ->
+            items(screens, key = { it.value }) { screen ->
                 val selected = initialScreen == screen.value
                 SelectableTile(
                     selected = selected,

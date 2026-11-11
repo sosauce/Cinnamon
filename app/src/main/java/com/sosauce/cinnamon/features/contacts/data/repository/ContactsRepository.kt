@@ -582,6 +582,16 @@ class ContactsRepository(
                     )
                 }
 
+                if (!rawContact.company.isNullOrEmpty()) {
+                    operations.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Organization.COMPANY, rawContact.company)
+                            .build()
+                    )
+                }
+
                 if (pfpByteArray != null) {
                     operations.add(
                         ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)

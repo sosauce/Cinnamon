@@ -78,7 +78,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.ConversationsSelectedBar
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
-import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar
+import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar2
 import com.sosauce.cinnamon.core.utils.LazyListKeys
 import com.sosauce.cinnamon.core.utils.rememberHazeState
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
@@ -114,7 +114,7 @@ fun SharedTransitionScope.ConversationsScreen(
                 transitionSpec = { barsContentTransform }
             ) {
                 if (!it) {
-                    CuteSearchbar(
+                    CuteSearchbar2(
                         modifier = Modifier.selfAlignHorizontally(),
                         sortingMenu = {},
                         textFieldState = textFieldState,
@@ -256,7 +256,7 @@ private fun LazyListScope.threadsList(
                 key = { it.threadId }
             ) { conversation ->
 
-                val isSelected by remember {
+                val isSelected by remember(conversation) {
                     derivedStateOf { sweetSelectState.isSelected(conversation) }
                 }
 

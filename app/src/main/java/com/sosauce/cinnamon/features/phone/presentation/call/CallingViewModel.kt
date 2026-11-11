@@ -5,7 +5,6 @@ package com.sosauce.cinnamon.features.phone.presentation.call
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.runtime.Stable
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -96,7 +95,6 @@ class CallingViewModel(
 /**
  * @param activeSim Sim used for the ongoing call, for incoming calls for example, it's the sim that's getting called + is gonna get used for the call
  */
-@Stable
 data class CallingState(
     val callState: CallState = CallState.DIALING,
     val number: String = "",

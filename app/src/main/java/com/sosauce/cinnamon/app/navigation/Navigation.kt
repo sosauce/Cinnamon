@@ -21,6 +21,7 @@ import androidx.compose.runtime.retain.RetainedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -376,7 +377,11 @@ fun Nav(
                         ObserveAsEvents(viewModel.events) { event ->
                             when (event) {
                                 is EditContactEvent.Error -> {
-                                    // error toast brrr
+                                    Toast.makeText(
+                                        context,
+                                        resources.getString(R.string.generic_error),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                                 is EditContactEvent.Success -> backStack.navigateBack()
                             }

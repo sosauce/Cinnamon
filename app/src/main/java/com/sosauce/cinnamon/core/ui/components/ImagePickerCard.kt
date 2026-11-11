@@ -19,6 +19,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
@@ -32,13 +35,17 @@ fun ImagePickerCard(
     image: Uri?,
     blur: Int = 0
 ) {
+    val chooseImageDescription = stringResource(R.string.choose_image)
     Box(modifier = modifier) {
         Card(
             onClick = onClick,
             colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceContainer),
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 12.dp, end = 12.dp),
+                .padding(top = 12.dp, end = 12.dp)
+                .semantics {
+                    contentDescription = chooseImageDescription
+                },
             shape = RoundedCornerShape(24.dp),
 
             ) {
@@ -73,7 +80,7 @@ fun ImagePickerCard(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.close),
-                    contentDescription = null
+                    contentDescription = stringResource(R.string.remove_image)
                 )
             }
         }

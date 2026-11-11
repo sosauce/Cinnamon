@@ -148,7 +148,7 @@ fun SharedTransitionScope.DialpadScreen(
                             ) {
                                 Icon(
                                     painter = painterResource(R.drawable.back),
-                                    contentDescription = null
+                                    contentDescription = stringResource(R.string.back)
                                 )
                             }
                         },
@@ -165,7 +165,7 @@ fun SharedTransitionScope.DialpadScreen(
                             ) {
                                 Icon(
                                     painter = painterResource(R.drawable.backspace),
-                                    contentDescription = null
+                                    contentDescription = stringResource(R.string.backspace)
                                 )
                             }
                         }
@@ -238,7 +238,7 @@ fun SharedTransitionScope.DialpadScreen(
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.call),
-                                contentDescription = null
+                                contentDescription = stringResource(R.string.call)
                             )
                         }
                     }
@@ -362,7 +362,7 @@ fun SharedTransitionScope.DialpadScreen(
 
                     nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }
                         .toSortedMap().forEach { (letter, contacts) ->
-                            item {
+                            item(key = "contact_header_$letter") {
                                 Text(
                                     text = letter.toString(),
                                     style = MaterialTheme.typography.bodyLargeEmphasized.copy(

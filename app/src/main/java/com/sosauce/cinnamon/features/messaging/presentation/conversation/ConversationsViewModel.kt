@@ -3,7 +3,6 @@
 package com.sosauce.cinnamon.features.messaging.presentation.conversation
 
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastMap
@@ -91,7 +90,6 @@ class ConversationsViewModel(
 
 }
 
-@Stable
 data class ConversationsState(
     val isLoading: Boolean = false,
     val hasArchivedThreads: Boolean = false,

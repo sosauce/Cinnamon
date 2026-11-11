@@ -3,7 +3,6 @@
 package com.sosauce.cinnamon.features.contacts.presentation
 
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.ViewModel
@@ -86,7 +85,6 @@ class ContactsViewModel(
     }
 }
 
-@Stable
 data class ContactsState(
     val isLoading: Boolean = false,
     val contacts: List<CuteContact> = emptyList(),

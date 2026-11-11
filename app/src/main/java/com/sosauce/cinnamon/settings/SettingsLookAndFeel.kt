@@ -84,7 +84,7 @@ fun SettingsLookAndFeel() {
 
     SettingsGroup(title = stringResource(R.string.appearance)) {
         SettingsPicker(title = stringResource(R.string.theme)) {
-            items(themes) { option ->
+            items(themes, key = { it.value }) { option ->
                 SelectableTile(
                     selected = theme == option.value,
                     onClick = { theme = option.value },
@@ -100,7 +100,7 @@ fun SettingsLookAndFeel() {
             }
         }
         SettingsPicker(title = stringResource(R.string.palette)) {
-            items(palettes) { palette ->
+            items(palettes, key = { it }) { palette ->
                 PaletteTile(
                     paletteStyle = palette,
                     selected = palette == paletteStyle,

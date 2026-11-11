@@ -8,16 +8,13 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +35,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.DefaultGroupChatIcon
+import com.sosauce.cinnamon.core.ui.components.dialogs.BlockUnblockDialog
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.nekobites.components.AnimatedSelectedIcon
@@ -63,52 +61,13 @@ fun Conversation(
         // Can only block individual chats, not group chats
         val blockedParticipant = conversation.participants.firstOrNull() ?: return
 
-        AlertDialog(
+        BlockUnblockDialog(
+            displayName = blockedParticipant.displayName,
+            isBlocked = true,
             onDismissRequest = { showUnblockDialog = false },
-            icon = {
-                Icon(
-                    painter = painterResource(R.drawable.block),
-                    contentDescription = null
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        BlockedNumberContract.unblock(
-                            context,
-                            blockedParticipant.rawNumber
-                        )
-                        showUnblockDialog = false
-                    },
-                    shapes = ButtonDefaults.shapes()
-                ) {
-                    Text(
-                        text = stringResource(R.string.unblock)
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showUnblockDialog = false },
-                    shapes = ButtonDefaults.shapes()
-                ) {
-                    Text(
-                        text = stringResource(R.string.cancel)
-                    )
-                }
-            },
-            text = {
-                Text(
-                    text = stringResource(
-                        R.string.unblock_no_u_sure,
-                        blockedParticipant.displayName
-                    )
-                )
-            },
-            title = {
-                Text(
-                    text = stringResource(R.string.unblock_no)
-                )
+            onConfirm = {
+                BlockedNumberContract.unblock(context, blockedParticipant.rawNumber)
+                showUnblockDialog = false
             }
         )
     }
@@ -145,7 +104,7 @@ fun Conversation(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.block),
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.unblock),
                         )
                     }
                 } else {
@@ -216,8 +175,6 @@ fun Conversation(
     }
 
 }
-
-
 
 
 

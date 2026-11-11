@@ -255,7 +255,7 @@ fun SharedTransitionScope.StartConversation(
                                 key = { contact -> contact.id }
                             ) { contact ->
 
-                                val isSelected = remember(state.selectedNumbers) {
+                                val isSelected = remember(contact, state.selectedNumbers) {
                                     contact.phoneNumbers.fastAny {
                                         state.selectedNumbers.contains(
                                             it.number
@@ -294,7 +294,7 @@ fun SharedTransitionScope.StartConversation(
 
                     nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }
                         .toSortedMap().forEach { (letter, contacts) ->
-                            item {
+                            item(key = "contact_header_$letter") {
                                 Text(
                                     text = letter.toString(),
                                     style = MaterialTheme.typography.bodyLargeEmphasized.copy(
@@ -311,7 +311,7 @@ fun SharedTransitionScope.StartConversation(
                                     key = { contact -> contact.id }
                                 ) { contact ->
 
-                                    val isSelected = remember(state.selectedNumbers) {
+                                    val isSelected = remember(contact, state.selectedNumbers) {
                                         contact.phoneNumbers.fastAny {
                                             state.selectedNumbers.contains(
                                                 it.number

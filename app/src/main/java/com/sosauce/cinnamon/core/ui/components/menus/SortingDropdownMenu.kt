@@ -28,6 +28,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.rememberInteractionSource
@@ -44,11 +47,15 @@ fun SortingDropdownMenu(
 
     var expanded by remember { mutableStateOf(false) }
     val interactionSources = List(2) { rememberInteractionSource() }
+    val sortDescription = stringResource(R.string.sort)
 
     Box {
         IconButton(
             onClick = { expanded = !expanded },
-            shapes = IconButtonDefaults.shapes()
+            shapes = IconButtonDefaults.shapes(),
+            modifier = Modifier.semantics {
+                contentDescription = sortDescription
+            }
         ) {
             AnimatedDrawable(
                 drawable = AnimatedDrawableFile.SORT,
@@ -95,7 +102,7 @@ fun SortingDropdownMenu(
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.up),
-                                contentDescription = null,
+                                contentDescription = stringResource(R.string.sort_ascending),
                                 modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
                             )
                         }
@@ -124,7 +131,7 @@ fun SortingDropdownMenu(
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.down),
-                                contentDescription = null,
+                                contentDescription = stringResource(R.string.sort_descending),
                                 modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
                             )
                         }

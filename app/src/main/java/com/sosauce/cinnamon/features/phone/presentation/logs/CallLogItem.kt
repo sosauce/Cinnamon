@@ -49,6 +49,8 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import coil3.compose.AsyncImage
@@ -67,6 +69,7 @@ import com.sosauce.nekobites.animations.AnimatedDrawableFile
 import com.sosauce.nekobites.components.AnimatedSelectedIcon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 @Composable
@@ -84,6 +87,7 @@ fun CallLogItem(
 
 
     val context = LocalContext.current
+    val moreOptionsDescription = stringResource(R.string.more_options)
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     var showMoreOptions by remember { mutableStateOf(false) }
@@ -115,8 +119,10 @@ fun CallLogItem(
             add(
                 CallLogAction(
                     onClick = {
-                        scope.launch(Dispatchers.IO) {
-                            val threadId = callLog.number.getThreadIdOrCreate(context)
+                        scope.launch {
+                            val threadId = withContext(Dispatchers.IO) {
+                                callLog.number.getThreadIdOrCreate(context)
+                            }
                             onNavigate(Screen.ConversationDetails(threadId))
                             showMoreOptions = false
                         }
@@ -221,7 +227,10 @@ fun CallLogItem(
             Row {
                 IconButton(
                     onClick = { showMoreOptions = true },
-                    shapes = IconButtonDefaults.shapes()
+                    shapes = IconButtonDefaults.shapes(),
+                    modifier = Modifier.semantics {
+                        contentDescription = moreOptionsDescription
+                    }
                 ) {
                     AnimatedDrawable(
                         drawable = AnimatedDrawableFile.MORE_VERT,

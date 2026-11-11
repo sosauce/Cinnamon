@@ -77,6 +77,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
@@ -96,6 +98,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
+import com.sosauce.cinnamon.core.ui.components.dialogs.BlockUnblockDialog
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItemDefaults
 import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
@@ -119,10 +122,12 @@ fun SharedTransitionScope.ContactDetailsScreen(
 
     var showMoreOptions by remember { mutableStateOf(false) }
     var showBlockDialog by remember { mutableStateOf(false) }
+    var blockEmailsToo by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     var playFavoriteAnimation by remember { mutableStateOf(false) }
     val cookie9Sided = MaterialShapes.Cookie9Sided.toShape()
     val context = LocalContext.current
+    val moreOptionsDescription = stringResource(R.string.more_options)
     var showAccountPicker by remember { mutableStateOf(false) }
 
     val moreOptions = listOf(
@@ -193,73 +198,50 @@ fun SharedTransitionScope.ContactDetailsScreen(
 
 
     if (showBlockDialog) {
-
-        var blockEmailsToo by remember { mutableStateOf(false) }
-
-        AlertDialog(
-            onDismissRequest = { showBlockDialog = false },
-            icon = {
-                Icon(
-                    painter = painterResource(R.drawable.block),
-                    contentDescription = null
+        BlockUnblockDialog(
+            displayName = state.contact.displayName,
+            isBlocked = false,
+            onDismissRequest = {
+                showBlockDialog = false
+                blockEmailsToo = false
+            },
+            onConfirm = {
+                onHandleContactDetailsAction(
+                    ContactDetailsAction.BlockContact(blockEmailsToo)
                 )
+                showBlockDialog = false
+                blockEmailsToo = false
             },
-            dismissButton = {
-                TextButton(
-                    onClick = { showBlockDialog = false },
-                    shapes = ButtonDefaults.shapes()
-                ) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onHandleContactDetailsAction(
-                            ContactDetailsAction.BlockContact(
-                                blockEmailsToo
-                            )
-                        )
-                        showBlockDialog = false
-                    },
-                    shapes = ButtonDefaults.shapes()
-                ) {
-                    Text(stringResource(R.string.block))
-                }
-            },
-            text = {
-                Column {
-                    Text(stringResource(R.string.block_contact_u_sure, state.contact.displayName))
+            confirmationText = stringResource(
+                R.string.block_contact_u_sure,
+                state.contact.displayName
+            ),
+            additionalContent = {
+                val corners by animateDpAsState(if (blockEmailsToo) 50.dp else 12.dp)
+                val color by animateColorAsState(
+                    if (blockEmailsToo) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.surfaceContainerHighest
+                )
 
-                    val corners by animateDpAsState(
-                        if (blockEmailsToo) 50.dp else 12.dp
+                Button(
+                    onClick = { blockEmailsToo = !blockEmailsToo },
+                    modifier = Modifier.align(Alignment.End),
+                    shape = RoundedCornerShape(corners),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = color,
+                        contentColor = contentColorFor(color)
                     )
-                    val color by animateColorAsState(
-                        if (blockEmailsToo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest
-                    )
-
-                    Button(
-                        onClick = { blockEmailsToo = !blockEmailsToo },
-                        modifier = Modifier.align(Alignment.End),
-                        shape = RoundedCornerShape(corners),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = color,
-                            contentColor = contentColorFor(color)
-                        )
+                ) {
+                    AnimatedVisibility(
+                        visible = blockEmailsToo,
+                        modifier = Modifier.padding(end = 5.dp)
                     ) {
-                        AnimatedVisibility(
-                            visible = blockEmailsToo,
-                            modifier = Modifier.padding(end = 5.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.check),
-                                contentDescription = null
-                            )
-                        }
-                        Text(
-                            text = stringResource(id = R.string.block_emails)
+                        Icon(
+                            painter = painterResource(R.drawable.check),
+                            contentDescription = null
                         )
                     }
+                    Text(stringResource(R.string.block_emails))
                 }
             }
         )
@@ -332,12 +314,15 @@ fun SharedTransitionScope.ContactDetailsScreen(
                             ) {
                                 Icon(
                                     painter = painterResource(R.drawable.edit_filled),
-                                    contentDescription = null
+                                    contentDescription = stringResource(R.string.edit_contact)
                                 )
                             }
                             IconButton(
                                 onClick = { showMoreOptions = true },
-                                shapes = IconButtonDefaults.shapes()
+                                shapes = IconButtonDefaults.shapes(),
+                                modifier = Modifier.semantics {
+                                    contentDescription = moreOptionsDescription
+                                }
                             ) {
                                 AnimatedDrawable(
                                     atEnd = showMoreOptions,
@@ -450,12 +435,29 @@ fun SharedTransitionScope.ContactDetailsScreen(
                                 style = MaterialTheme.typography.headlineLargeEmphasized
                             )
                             state.details.company?.let { company ->
-                                Text(
-                                    text = company,
-                                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                Spacer(Modifier.height(5.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                    modifier = Modifier
+                                        .background(
+                                            color = MaterialTheme.colorScheme.secondaryContainer,
+                                            shape = CircleShape
+                                        )
+                                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.company),
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
-                                )
+                                    Text(
+                                        text = company,
+                                        style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    )
+                                }
                             }
                             Spacer(Modifier.height(15.dp))
                             ContactActionsRow(

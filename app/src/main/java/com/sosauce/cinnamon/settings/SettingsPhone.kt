@@ -3,6 +3,7 @@ package com.sosauce.cinnamon.settings
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,10 +23,12 @@ fun SettingsPhone() {
     var groupSubCalls by rememberGroupSubsequentCalls()
     var t9Dialing by rememberEnableT9Dialing()
     val simsViewModel = koinViewModel<SimsViewModel>()
-    val allHandles = try {
-        simsViewModel.fetchPhoneHandles()
-    } catch (_: Exception) {
-        emptyMap()
+    val allHandles = remember(simsViewModel) {
+        try {
+            simsViewModel.fetchPhoneHandles()
+        } catch (_: Exception) {
+            emptyMap()
+        }
     }
     val defaultPhoneHandle by simsViewModel.fetchLatestDefaultPhoneHandle().collectAsStateWithLifecycle(null)
 
@@ -40,7 +43,10 @@ fun SettingsPhone() {
                 title = stringResource(R.string.default_sim),
                 description = stringResource(R.string.default_sim_phone)
             ) {
-                items(allHandles.keys.toList()) { account ->
+                items(
+                    items = allHandles.keys.toList(),
+                    key = { it.accountHandle }
+                ) { account ->
                     val handle = allHandles[account] ?: return@items
                     PhoneAccountHandleSelector(
                         account = account,

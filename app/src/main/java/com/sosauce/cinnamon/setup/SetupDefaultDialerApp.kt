@@ -19,13 +19,14 @@ fun SetupDefaultDialerScreen(
     onNext: () -> Unit
 ) {
     val context = LocalContext.current
+    val grantPermissionMessage = stringResource(R.string.grant_me)
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             onNext()
         } else {
-            Toast.makeText(context, context.getString(R.string.grant_me), Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, grantPermissionMessage, Toast.LENGTH_SHORT).show()
         }
     }
 

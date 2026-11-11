@@ -115,7 +115,6 @@ class EditContactViewModel(
 
 }
 
-
 data class EditContactState(
     val isLoading: Boolean = false,
     val rawContact: RawContactEdit = RawContactEdit(),

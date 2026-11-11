@@ -146,8 +146,12 @@ fun CallScreen(
 
     Scaffold(
         bottomBar = { if (!isLandscape) bottomControls() }
-    ) { _ ->
-        Box(Modifier.fillMaxSize()) {
+    ) { paddingValues ->
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
             AsyncImage(
                 model = callUiState.poster,
                 contentDescription = null,

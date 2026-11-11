@@ -21,9 +21,9 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalGridApi
 import androidx.compose.foundation.layout.FlowRow
@@ -65,7 +65,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.retain.retain
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,13 +77,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.core.net.toUri
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.core.ui.components.ImagePickerCard
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
 import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.core.utils.copyMutate
@@ -93,6 +95,8 @@ import com.sosauce.nekobites.animations.AnimatedFab
 import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.nekobites.components.LoadingBox
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -141,6 +145,9 @@ fun SharedTransitionScope.EditContactScreen(
     ) {
 
         var rawContact by retain { mutableStateOf(state.rawContact) }
+        val pfpPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            uri?.let { rawContact = rawContact.copy(photoString = it.toString()) }
+        }
 
         Scaffold(
             bottomBar = {
@@ -178,82 +185,114 @@ fun SharedTransitionScope.EditContactScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                Surface(
+                    shape = RoundedCornerShape(32.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-
-                    EditContactPfp(
-                        pfp = rawContact.photo,
-                        onPfpSelected = { newPhoto ->
-                            rawContact = rawContact.copy(photoString = newPhoto.toString())
-                        },
-                        onRemoveImage = {
-                            rawContact = rawContact.copy(photoString = null)
+                    BoxWithConstraints(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        val availableWidth = maxWidth - 20.dp
+                        val profileWidth = if (state.isCreateInsteadOfEdit) {
+                            minOf(maxWidth, 180.dp)
+                        } else {
+                            availableWidth * 0.57f
                         }
-                    )
-
-                    if (!state.isCreateInsteadOfEdit) {
-                        ImagePickerCard(
-                            onClick = {
-                                imagePicker.launch(
-                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                )
-                            },
-                            onRemoveImage = {
-                                scope.launch(Dispatchers.IO) {
-                                    File(context.filesDir, state.settings.poster).delete()
-                                    onHandleContactSettingsAction(
-                                        ContactSettingsActions.UpsertContactSettings(
-                                            state.settings.copy(poster = "")
-                                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            ContactImagePickerTile(
+                                image = rawContact.photo,
+                                label = stringResource(R.string.contact_photo),
+                                isPoster = false,
+                                tileWidth = profileWidth,
+                                onClick = {
+                                    pfpPicker.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                                     )
+                                },
+                                onRemoveImage = {
+                                    rawContact = rawContact.copy(photoString = null)
                                 }
-                            },
-                            image = state.settings.poster.ifEmpty { null }?.toUri(),
-                            modifier = Modifier
-                                .height(250.dp)
-                                .width(150.dp)
-                        )
+                            )
+
+                            if (!state.isCreateInsteadOfEdit) {
+                                ContactImagePickerTile(
+                                    image = state.settings.poster.ifEmpty { null }?.toUri(),
+                                    label = stringResource(R.string.call_poster),
+                                    isPoster = true,
+                                    tileWidth = availableWidth * 0.43f,
+                                    onClick = {
+                                        imagePicker.launch(
+                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                        )
+                                    },
+                                    onRemoveImage = {
+                                        scope.launch(Dispatchers.IO) {
+                                            File(context.filesDir, state.settings.poster).delete()
+                                            onHandleContactSettingsAction(
+                                                ContactSettingsActions.UpsertContactSettings(
+                                                    state.settings.copy(poster = "")
+                                                )
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
 
                 Spacer(Modifier.height(25.dp))
 
                 FieldGroup {
-                ContactEditTextField(
-                    value = rawContact.firstName ?: "",
-                    label = R.string.first_name,
-                    leadingIcon = R.drawable.contact,
-                    onValueChange = {
-                        rawContact = rawContact.copy(firstName = it)
-                    },
-                    onClickRemove = null
-                )
-                ContactEditTextField(
-                    value = rawContact.lastName ?: "",
-                    label = R.string.last_name,
-                    leadingIcon = R.drawable.contact,
-                    onValueChange = {
-                        rawContact = rawContact.copy(lastName = it)
-                    },
-                    onClickRemove = null
-                )
-
-
-                if (!rawContact.company.isNullOrEmpty()) {
+                    ContactEditTextField(
+                        value = rawContact.firstName ?: "",
+                        label = R.string.first_name,
+                        leadingIcon = R.drawable.contact,
+                        onValueChange = {
+                            rawContact = rawContact.copy(firstName = it)
+                        },
+                        onClickRemove = null
+                    )
+                    ContactEditTextField(
+                        value = rawContact.lastName ?: "",
+                        label = R.string.last_name,
+                        leadingIcon = R.drawable.contact,
+                        onValueChange = {
+                            rawContact = rawContact.copy(lastName = it)
+                        },
+                        onClickRemove = null
+                    )
                     ContactEditTextField(
                         value = rawContact.company ?: "",
                         label = R.string.company,
-                        leadingIcon = R.drawable.business,
+                        leadingIcon = R.drawable.company,
                         onValueChange = {
                             rawContact = rawContact.copy(company = it)
                         },
-                        onClickRemove = {
-                            rawContact = rawContact.copy(company = "")
-                        }
+                        onClickRemove = null
                     )
-                }
+
+
+                    if (!rawContact.company.isNullOrEmpty()) {
+                        ContactEditTextField(
+                            value = rawContact.company ?: "",
+                            label = R.string.company,
+                            leadingIcon = R.drawable.business,
+                            onValueChange = {
+                                rawContact = rawContact.copy(company = it)
+                            },
+                            onClickRemove = {
+                                rawContact = rawContact.copy(company = "")
+                            }
+                        )
+                    }
                 }
 
                 Spacer(Modifier.height(25.dp))
@@ -540,8 +579,13 @@ private fun ContactEditTextField(
 ) {
 
     val state = rememberTextFieldState(initialText = value)
+    val currentOnValueChange by rememberUpdatedState(onValueChange)
 
-    LaunchedEffect(state.text) { onValueChange(state.text.toString()) }
+    LaunchedEffect(state) {
+        snapshotFlow { state.text.toString() }
+            .distinctUntilChanged()
+            .collect(currentOnValueChange)
+    }
 
 
     val colors = MaterialTheme.colorScheme
@@ -564,20 +608,10 @@ private fun ContactEditTextField(
             state = state,
             label = { Text(text = stringResource(label), maxLines = 1, modifier = Modifier.basicMarquee()) },
             leadingIcon = {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                        .size(36.dp)
-                        .background(colors.secondaryContainer, MaterialShapes.Cookie9Sided.toShape())
-                ) {
-                    Icon(
-                        painter = painterResource(leadingIcon),
-                        contentDescription = null,
-                        tint = colors.onSecondaryContainer,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                Icon(
+                    painter = painterResource(leadingIcon),
+                    contentDescription = null
+                )
             },
             lineLimits = TextFieldLineLimits.SingleLine,
             keyboardOptions = KeyboardOptions(
@@ -600,7 +634,7 @@ private fun ContactEditTextField(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.remove_all_filled),
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.remove_field),
                             tint = colors.error
                         )
                     }
@@ -628,60 +662,100 @@ private fun FieldGroup(
 }
 
 @Composable
-private fun EditContactPfp(
+private fun ContactImagePickerTile(
     modifier: Modifier = Modifier,
-    pfp: Uri?,
-    onPfpSelected: (Uri) -> Unit,
+    image: Uri?,
+    label: String,
+    isPoster: Boolean,
+    tileWidth: Dp,
+    onClick: () -> Unit,
     onRemoveImage: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
+    val shape = if (isPoster) RoundedCornerShape(28.dp) else MaterialShapes.Cookie9Sided.toShape()
+    val tileModifier = Modifier
+        .width(tileWidth)
+        .height(if (isPoster) tileWidth * 1.46f else tileWidth)
 
-    val imagePicker =
-        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-            uri?.let { onPfpSelected(it) }
-        }
-    Box(
-        modifier
-            .size(170.dp)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 12.dp, end = 12.dp)
-                .clip(MaterialShapes.Cookie9Sided.toShape())
-                .background(MaterialTheme.colorScheme.primary)
-                .clickable {
-                    imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.add),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.contentColorFor(MaterialTheme.colorScheme.primary),
-                modifier = Modifier.size(170.dp / 2)
-            )
-            AsyncImage(
-                model = pfp,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-        }
-        AnimatedVisibility(
-            visible = pfp != null && pfp != Uri.EMPTY,
-            enter = scaleIn(bouncySpec()),
-            exit = scaleOut(bouncySpec()),
-            modifier = Modifier.align(Alignment.TopEnd)
-        ) {
+        Box(tileModifier) {
+            Surface(
+                onClick = onClick,
+                shape = shape,
+                color = colors.surfaceContainerHigh,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    if (image != null && image != Uri.EMPTY) {
+                        AsyncImage(
+                            model = image,
+                            contentDescription = label,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(if (isPoster) 52.dp else 66.dp)
+                                .background(colors.primaryContainer, MaterialShapes.Cookie9Sided.toShape())
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.add_photo),
+                                contentDescription = null,
+                                tint = colors.onPrimaryContainer,
+                                modifier = Modifier.size(if (isPoster) 26.dp else 32.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
             FilledIconButton(
-                onClick = onRemoveImage
+                onClick = onClick,
+                shapes = IconButtonDefaults.shapes(),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = colors.primary,
+                    contentColor = colors.onPrimary
+                ),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(6.dp)
+                    .size(40.dp)
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.close),
-                    contentDescription = null
+                    painter = painterResource(if (image == null || image == Uri.EMPTY) R.drawable.add else R.drawable.edit_filled),
+                    contentDescription = stringResource(R.string.choose_image),
+                    modifier = Modifier.size(20.dp)
                 )
             }
+
+            if (image != null && image != Uri.EMPTY) {
+                FilledIconButton(
+                    onClick = onRemoveImage,
+                    shapes = IconButtonDefaults.shapes(),
+                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = colors.error,
+                        contentColor = colors.onError
+                    ),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.close),
+                        contentDescription = stringResource(R.string.remove_image),
+                    )
+                }
+            }
         }
+
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLargeEmphasized,
+            color = colors.onSurface
+        )
     }
 }
 

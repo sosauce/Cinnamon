@@ -43,7 +43,7 @@ fun SettingsMessages() {
                 title = stringResource(R.string.default_sim),
                 description = stringResource(R.string.default_sim_messages)
             ) {
-                items(sims) { sim ->
+                items(sims, key = { it.subId }) { sim ->
                     SimSelector(
                         simCard = sim,
                         isDefaultSim = defaultMessagesSims == sim.subId,
