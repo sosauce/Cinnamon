@@ -9,6 +9,7 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.core.ui.CinnamonTheme
@@ -24,19 +25,16 @@ class CallActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
+            val callViewModel = koinViewModel<CallingViewModel>()
 
-//            SenseProximity {
-//                if (it == 0f) // turn off screen, my phone is broken so I can't reliably test this D:
-//            }
-
-            CinnamonTheme {
-                val callViewModel = koinViewModel<CallingViewModel>()
-
+            LaunchedEffect(intent) {
                 if (intent.action == Intent.ACTION_CALL) {
                     val number = intent.data.toString().removePrefix("tel:")
                     callViewModel.handleCallAction(CallAction.LaunchCall(number))
                 }
+            }
 
+            CinnamonTheme {
 
                 val callUiState by callViewModel.state.collectAsStateWithLifecycle()
 

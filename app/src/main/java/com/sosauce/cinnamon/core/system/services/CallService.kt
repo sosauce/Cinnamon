@@ -327,18 +327,16 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         // Try primary call first, then any call in InCallService's call list
         // Fixes "end call button not working" when cuteCall is null (optimistic UI)
         // or when Telecom hasn't yet delivered the call to cuteCall.
-        val target = cuteCall ?: try { calls.firstOrNull() } catch (_: Exception) { null }
+        val target = cuteCall ?: calls.firstOrNull()
         if (target != null) {
-            try { target.disconnect() } catch (_: Exception) {}
+            target.disconnect()
         } else {
             // No Telecom call to disconnect — force UI to ENDED so CallActivity finishes
             callManager.updateCallState(CallState.ENDED)
         }
         // Always ensure state moves to ENDED for immediate UI feedback
         // (CallService will also get STATE_DISCONNECTED callback)
-        try {
-            if (cuteCall == null) callManager.updateCallState(CallState.ENDED)
-        } catch (_: Exception) {}
+        if (cuteCall == null) callManager.updateCallState(CallState.ENDED)
     }
 
     override suspend fun startTone(char: Char) {
