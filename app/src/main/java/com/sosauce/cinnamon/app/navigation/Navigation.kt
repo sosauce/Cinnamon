@@ -25,7 +25,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
@@ -121,11 +120,9 @@ fun Nav(
                     entry<Screen.Contacts> {
                         val viewModel = koinViewModel<ContactsViewModel>()
                         val state by viewModel.state.collectAsStateWithLifecycle()
-                        val contacts = viewModel.contacts.collectAsLazyPagingItems()
 
                         ContactsScreen(
                             state = state,
-                            contacts = contacts,
                             textFieldState = viewModel.textFieldState,
                             onNavigate = backStack::navigate,
                             onHandleContactsAction = viewModel::handleContactsAction
@@ -164,11 +161,9 @@ fun Nav(
                         val viewModel = koinViewModel<CallLogsViewModel>()
                         val callViewModel = koinViewModel<CallingViewModel>()
                         val state by viewModel.state.collectAsStateWithLifecycle()
-                        val callLogs = viewModel.callLogs.collectAsLazyPagingItems()
 
                         CallLogsScreen(
                             state = state,
-                            callLogs = callLogs,
                             textFieldState = viewModel.textFieldState,
                             onNavigate = backStack::navigate,
                             onHandleCallActions = callViewModel::handleCallAction,
@@ -193,11 +188,9 @@ fun Nav(
 
                         val viewModel = koinViewModel<ConversationsViewModel>()
                         val state by viewModel.state.collectAsStateWithLifecycle()
-                        val conversations = viewModel.conversations.collectAsLazyPagingItems()
 
                         ConversationsScreen(
                             state = state,
-                            conversations = conversations,
                             textFieldState = viewModel.textFieldState,
                             onNavigate = backStack::navigate,
                             onHandleConversationsAction = viewModel::handleThreadsAction

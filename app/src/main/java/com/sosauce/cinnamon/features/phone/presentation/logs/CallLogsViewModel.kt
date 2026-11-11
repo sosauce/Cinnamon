@@ -4,18 +4,12 @@ package com.sosauce.cinnamon.features.phone.presentation.logs
 
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.util.fastFilter
+import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.paging.PagingData
-import androidx.paging.cachedIn
-import androidx.paging.insertSeparators
-import androidx.paging.map
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import com.sosauce.cinnamon.core.datastore.UserPreferences
+import com.sosauce.cinnamon.core.utils.groupSubsequentlyBy
 import com.sosauce.cinnamon.features.phone.data.repository.CallLogsRepository
 import com.sosauce.cinnamon.features.phone.domain.CallType
 import com.sosauce.cinnamon.features.phone.domain.CuteCallLog2
@@ -23,9 +17,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -36,79 +33,70 @@ class CallLogsViewModel(
 ) : ViewModel() {
 
     val textFieldState = TextFieldState()
+    private val _state = MutableStateFlow(CallLogsState(isLoading = true))
 
-    private val searchQuery = snapshotFlow { textFieldState.text.toString() }
-        .debounce(250.milliseconds)
-        .distinctUntilChanged()
-
-    private val _state = MutableStateFlow(CallLogsState())
-
-    val state = combine(_state, searchQuery) { state, query ->
-        state.copy(isSearching = query.isNotEmpty())
-    }.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(5000),
-        CallLogsState()
-    )
-
-    val callLogs: Flow<PagingData<CallLogsListItem>> = combine(
-        _state.map { it.filter }.distinctUntilChanged(),
+    val state = combine(
+        _state,
+        callLogsRepository.fetchLatestCallLog(),
         userPreferences.sortLogsAscending,
         userPreferences.groupSubsequentCalls,
-        searchQuery
-    ) { filter, asc, groupSub, query -> CallLogsParams(filter, asc, groupSub, query) }
-        .distinctUntilChanged()
-        .flatMapLatest { params ->
-            callLogsRepository.pagedCallLogs(
-                ascending = params.ascending,
-                groupSubsequent = params.groupSubsequent,
-                isFiltered = params.query.isNotEmpty() || params.filter != CallLogsFilter.ALL,
-                filter = logFilter(params.query, params.filter)
-            )
-        }
-        .map { pagingData ->
-            pagingData
-                .map<Pair<CuteCallLog2, Int>, CallLogsListItem> { (log, count) -> CallLogsListItem.Log(log, count) }
-                .insertSeparators { before, after ->
-                    val next = (after as? CallLogsListItem.Log)?.log ?: return@insertSeparators null
-                    val previous = (before as? CallLogsListItem.Log)?.log
-                    if (previous?.date != next.date) CallLogsListItem.Header(next.date, next.id) else null
+        snapshotFlow { textFieldState.text.toString() }.debounce(250.milliseconds).distinctUntilChanged()
+    ) { current, logs, ascending, groupSubsequent, query ->
+        val sortedLogs = logs
+            .fastFilter { it.displayName.contains(query, true) }
+            .fastFilter { log ->
+                when (current.filter) {
+                    CallLogsFilter.ALL -> true
+                    CallLogsFilter.CONTACTS -> log.displayName != log.number
+                    CallLogsFilter.INCOMING -> log.callType == CallType.INCOMING || log.callType == CallType.REJECTED
+                    CallLogsFilter.OUTGOING -> log.callType == CallType.OUTGOING
+                    CallLogsFilter.MISSED -> log.callType == CallType.MISSED
                 }
-        }
-        .cachedIn(viewModelScope)
+            }
+            .let { if (ascending) it else it.reversed() }
 
-    private fun logFilter(query: String, filter: CallLogsFilter): (CuteCallLog2) -> Boolean = { log ->
-        log.displayName.contains(query, true) && when (filter) {
-            CallLogsFilter.ALL -> true
-            CallLogsFilter.CONTACTS -> log.displayName != log.number // I don't know if that's the best way to filter contacts
-            CallLogsFilter.INCOMING -> log.callType == CallType.INCOMING || log.callType == CallType.REJECTED
-            CallLogsFilter.OUTGOING -> log.callType == CallType.OUTGOING
-            CallLogsFilter.MISSED -> log.callType == CallType.MISSED
+        val groupedLogs = if (groupSubsequent) {
+            sortedLogs.groupSubsequentlyBy { it.number }
+        } else {
+            sortedLogs.fastMap { it to 1 }
         }
-    }
+
+        val items = buildList {
+            var currentDate: String? = null
+            groupedLogs.forEach { (log, count) ->
+                if (log.date != currentDate) {
+                    add(CallLogsListItem.Header(log.date, log.id))
+                    currentDate = log.date
+                }
+                add(CallLogsListItem.Log(log, count))
+            }
+        }
+
+        current.copy(
+            isLoading = false,
+            callLogs = items,
+            isSearching = query.isNotEmpty()
+        )
+    }.flowOn(Dispatchers.Default).stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        CallLogsState(isLoading = true)
+    )
 
     fun handleDialerAction(action: DialerAction) {
         when (action) {
-            is DialerAction.ChangeFilter -> {
-                _state.update {
-                    it.copy(
-                        filter = action.filter
-                    )
-                }
-            }
-
-            is DialerAction.ChangeSort -> {}
-            is DialerAction.DeleteLogs -> {
-                viewModelScope.launch(Dispatchers.IO) {
-                    callLogsRepository.deleteCallLog(action.ids)
-                }
+            is DialerAction.ChangeFilter -> _state.update { it.copy(filter = action.filter) }
+            is DialerAction.ChangeSort -> Unit
+            is DialerAction.DeleteLogs -> viewModelScope.launch(Dispatchers.IO) {
+                callLogsRepository.deleteCallLog(action.ids)
             }
         }
     }
-
 }
 
 data class CallLogsState(
+    val isLoading: Boolean = false,
+    val callLogs: List<CallLogsListItem> = emptyList(),
     val filter: CallLogsFilter = CallLogsFilter.ALL,
     val isSearching: Boolean = false
 )
@@ -118,20 +106,11 @@ sealed interface CallLogsListItem {
     data class Log(val log: CuteCallLog2, val count: Int) : CallLogsListItem
 }
 
-private data class CallLogsParams(
-    val filter: CallLogsFilter,
-    val ascending: Boolean,
-    val groupSubsequent: Boolean,
-    val query: String
-)
-
 sealed interface DialerAction {
     data class ChangeFilter(val filter: CallLogsFilter) : DialerAction
     data object ChangeSort : DialerAction
-
     data class DeleteLogs(val ids: List<Long>) : DialerAction
 }
-
 
 enum class CallLogsFilter {
     ALL,

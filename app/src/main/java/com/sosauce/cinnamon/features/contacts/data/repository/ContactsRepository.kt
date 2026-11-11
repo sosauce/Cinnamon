@@ -13,9 +13,6 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.core.content.contentValuesOf
 import androidx.core.net.toUri
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
 import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.utils.observe
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContactEntity
@@ -31,7 +28,6 @@ import com.sosauce.cinnamon.features.contacts.domain.CuteRawContact
 import com.sosauce.cinnamon.features.contacts.domain.RawContactEdit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
@@ -46,95 +42,6 @@ class ContactsRepository(
                 fetchContacts().fastMap { it.toDomain() }
             }
             .flowOn(Dispatchers.IO)
-
-    fun fetchLatestFavoriteContacts() =
-        context.contentResolver
-            .observe(ContactsContract.Contacts.CONTENT_URI)
-            .mapLatest {
-                fetchContacts(
-                    extraSelection = "${ContactsContract.Contacts.STARRED} = ?",
-                    extraSelectionArgs = arrayOf("1")
-                ).fastMap { it.toDomain() }
-            }
-            .flowOn(Dispatchers.IO)
-
-    fun fetchLatestAccountsToCount() =
-        context.contentResolver
-            .observe(ContactsContract.Contacts.CONTENT_URI)
-            .mapLatest {
-                val accountNames = fetchAccountNames()
-                val contactIds = mutableListOf<Long>()
-                context.contentResolver.query(
-                    ContactsContract.Contacts.CONTENT_URI,
-                    arrayOf(ContactsContract.Contacts._ID),
-                    null,
-                    null,
-                    null
-                )?.use { cursor ->
-                    while (cursor.moveToNext()) contactIds.add(cursor.getLong(0))
-                }
-                mapOf("All" to contactIds.size) + contactIds.groupingBy { (accountNames[it] ?: "Device").ifEmpty { "Device" } }.eachCount()
-            }
-            .flowOn(Dispatchers.IO)
-
-    fun pagedContacts(
-        ascending: Boolean,
-        isFiltered: Boolean,
-        filter: (CuteContact) -> Boolean
-    ): Flow<PagingData<CuteContact>> {
-        return Pager(PagingConfig(pageSize = PAGE_SIZE, enablePlaceholders = false)) {
-            ContactsPagingSource(context, this, ascending, isFiltered, filter)
-        }.flow
-    }
-
-    fun loadContactsPage(
-        offset: Int,
-        limit: Int,
-        ascending: Boolean,
-        filter: (CuteContact) -> Boolean
-    ): Pair<List<CuteContact>, Int?> {
-        val contacts = mutableListOf<CuteContact>()
-
-        context.contentResolver.query(
-            ContactsContract.Contacts.CONTENT_URI,
-            CONTACT_PROJECTION,
-            "${ContactsContract.Contacts.STARRED} = ?",
-            arrayOf("0"),
-            "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} ${if (ascending) "ASC" else "DESC"}"
-        )?.use { cursor ->
-            if (!cursor.moveToPosition(offset - 1) && offset > 0) return contacts to null
-            while (contacts.size < limit) {
-                val chunk = mutableListOf<CuteContactEntity>()
-                while (chunk.size < limit && cursor.moveToNext()) {
-                    chunk.add(
-                        CuteContactEntity(
-                            id = cursor.getLong(0),
-                            displayName = cursor.getString(1) ?: "<unknown>",
-                            thumbnail = cursor.getString(2),
-                            isFavorite = cursor.getInt(3) == 1,
-                            accountName = "Device",
-                            phoneNumbers = emptyList()
-                        )
-                    )
-                }
-                if (chunk.isEmpty()) break
-                val ids = chunk.fastMap { it.id }
-                val phones = fetchAllPhoneNumbers(ids)
-                val accountNames = fetchAccountNames(ids)
-                chunk.fastForEach { entity ->
-                    val contact = entity.copy(
-                        accountName = accountNames[entity.id] ?: "Device",
-                        phoneNumbers = phones[entity.id] ?: emptyList()
-                    ).toDomain()
-                    if (filter(contact)) contacts.add(contact)
-                }
-            }
-            val nextOffset = (cursor.position + 1).takeIf { it < cursor.count }
-            return contacts to nextOffset
-        }
-
-        return contacts to null
-    }
 
     fun fetchLatestContactsDetails(contactId: Long) =
         context.contentResolver
@@ -215,7 +122,7 @@ class ContactsRepository(
         return contacts
     }
 
-    private fun fetchAllPhoneNumbers(contactIds: List<Long>? = null): Map<Long, List<ContactPhone>> {
+    private fun fetchAllPhoneNumbers(): Map<Long, List<ContactPhone>> {
         val map = mutableMapOf<Long, MutableList<ContactPhone>>()
 
 
@@ -227,7 +134,7 @@ class ContactsRepository(
                 ContactsContract.Data.MIMETYPE,
                 ContactsContract.CommonDataKinds.Phone.IS_PRIMARY,
             ),
-            contactIds?.let { "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} IN (${it.joinToString()})" },
+            null,
             null,
             null
         )?.use { cursor ->
@@ -520,7 +427,7 @@ class ContactsRepository(
 
 
 
-    private fun fetchAccountNames(contactIds: List<Long>? = null): Map<Long, String> {
+    private fun fetchAccountNames(): Map<Long, String> {
         val map = mutableMapOf<Long, String>()
         context.contentResolver.query(
             ContactsContract.RawContacts.CONTENT_URI,
@@ -528,7 +435,7 @@ class ContactsRepository(
                 ContactsContract.RawContacts.CONTACT_ID,
                 ContactsContract.RawContacts.ACCOUNT_NAME
             ),
-            contactIds?.let { "${ContactsContract.RawContacts.CONTACT_ID} IN (${it.joinToString()})" },
+            null,
             null,
             null
         )?.use { cursor ->
@@ -872,7 +779,6 @@ class ContactsRepository(
     }
 
     companion object {
-        const val PAGE_SIZE = 30
         private val CONTACT_PROJECTION = arrayOf(
             ContactsContract.Contacts._ID,
             ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,

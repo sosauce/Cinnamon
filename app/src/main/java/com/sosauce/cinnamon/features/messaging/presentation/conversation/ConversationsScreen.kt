@@ -71,15 +71,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.paging.LoadState
-import androidx.paging.compose.LazyPagingItems
-import androidx.paging.compose.itemKey
 import com.skydoves.cloudy.cloudy
 import com.skydoves.cloudy.rememberSky
 import com.skydoves.cloudy.sky
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
-import com.sosauce.cinnamon.core.datastore.rememberSortConversationsAscending
 import com.sosauce.cinnamon.core.ui.components.ConversationsSelectedBar
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
 import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar
@@ -104,14 +100,12 @@ import dev.chrisbanes.haze.hazeSource
 @Composable
 fun SharedTransitionScope.ConversationsScreen(
     state: ConversationsState,
-    conversations: LazyPagingItems<CuteConversation>,
     textFieldState: TextFieldState,
     onNavigate: (Screen) -> Unit,
     onHandleConversationsAction: (ConversationsAction) -> Unit
 ) {
     val listState = rememberLazyListState()
     val sweetSelectState = rememberSweetSelectState<CuteConversation>()
-    var sortConversationsAscending by rememberSortConversationsAscending()
 
     Scaffold(
         bottomBar = {
@@ -135,7 +129,7 @@ fun SharedTransitionScope.ConversationsScreen(
                 } else {
                     ConversationsSelectedBar(
                         modifier = Modifier.selfAlignHorizontally(),
-                        items = conversations.itemSnapshotList.items,
+                        items = state.pinnedConversations + state.conversations,
                         multiSelectState = sweetSelectState,
                         onDeleteConversations = {
                             val threadIds = sweetSelectState.selectedItems.map { it.threadId }
@@ -201,7 +195,7 @@ fun SharedTransitionScope.ConversationsScreen(
 
                 threadsList(
                     pinnedConversations = state.pinnedConversations,
-                    conversations = conversations,
+                    conversations = state.conversations,
                     sweetSelectState = sweetSelectState,
                     onNavigate = onNavigate,
                     sharedTransitionScope = this@ConversationsScreen,
@@ -234,28 +228,6 @@ fun LazyListScope.threadsList(
         conversationKey = { conversations[it].threadId },
         conversationAt = { conversations[it] },
         isEmpty = conversations.isEmpty(),
-        sweetSelectState = sweetSelectState,
-        onNavigate = onNavigate,
-        sharedTransitionScope = sharedTransitionScope,
-        emptyState = emptyState
-    )
-}
-
-fun LazyListScope.threadsList(
-    pinnedConversations: List<CuteConversation>,
-    conversations: LazyPagingItems<CuteConversation>,
-    sweetSelectState: SweetSelectState<CuteConversation>,
-    onNavigate: (Screen) -> Unit,
-    sharedTransitionScope: SharedTransitionScope,
-    emptyState: @Composable () -> Unit,
-    onHandleConversationsAction: (ConversationsAction) -> Unit
-) {
-    threadsList(
-        pinnedConversations = pinnedConversations,
-        conversationCount = conversations.itemCount,
-        conversationKey = conversations.itemKey { it.threadId },
-        conversationAt = { conversations[it] },
-        isEmpty = conversations.itemCount == 0 && conversations.loadState.refresh !is LoadState.Loading,
         sweetSelectState = sweetSelectState,
         onNavigate = onNavigate,
         sharedTransitionScope = sharedTransitionScope,

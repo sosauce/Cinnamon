@@ -82,6 +82,7 @@ fun CrashScreen(
                         }
 
                         context.startActivity(Intent.createChooser(emailIntent,"Choose an Email client : "))
+                        onClose()
 
 
                     },

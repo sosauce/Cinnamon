@@ -8,12 +8,8 @@ import android.database.Cursor
 import android.provider.CallLog
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.NumberLookup
-import com.sosauce.cinnamon.core.utils.groupSubsequentlyBy
 import com.sosauce.cinnamon.core.utils.observe
 import com.sosauce.cinnamon.features.phone.data.model.CuteCallLogEntity
 import com.sosauce.cinnamon.features.phone.data.model.toDomain
@@ -38,17 +34,6 @@ class CallLogsRepository(
     }
 
 
-    fun pagedCallLogs(
-        ascending: Boolean,
-        groupSubsequent: Boolean,
-        isFiltered: Boolean,
-        filter: (CuteCallLog2) -> Boolean
-    ): Flow<PagingData<Pair<CuteCallLog2, Int>>> {
-        return Pager(PagingConfig(pageSize = PAGE_SIZE, enablePlaceholders = false)) {
-            CallLogsPagingSource(context, this, ascending, groupSubsequent, isFiltered, filter)
-        }.flow
-    }
-
     suspend fun fetchCallLogs(): List<CuteCallLogEntity> {
 
         val logs = mutableListOf<CuteCallLogEntity>()
@@ -60,35 +45,6 @@ class CallLogsRepository(
             }
         }
         return logs
-    }
-
-    suspend fun loadCallLogsPage(
-        offset: Int,
-        limit: Int,
-        ascending: Boolean,
-        groupSubsequent: Boolean,
-        filter: (CuteCallLog2) -> Boolean
-    ): Pair<List<Pair<CuteCallLog2, Int>>, Int?> {
-        val logs = mutableListOf<CuteCallLog2>()
-        val lookupCache = mutableMapOf<String, Pair<String?, String?>>()
-
-        queryCallLogs(newestFirst = ascending)?.use { cursor ->
-            if (!cursor.moveToPosition(offset - 1) && offset > 0) return emptyList<Pair<CuteCallLog2, Int>>() to null
-            while (cursor.moveToNext()) {
-                val log = cursor.readCallLog(lookupCache).toDomain(context)
-                if (!filter(log)) continue
-                if (logs.size >= limit && !(groupSubsequent && log.number == logs.last().number)) {
-                    cursor.moveToPrevious()
-                    break
-                }
-                logs.add(log)
-            }
-            val grouped = if (groupSubsequent) logs.groupSubsequentlyBy { it.number } else logs.fastMap { it to 1 }
-            val nextOffset = (cursor.position + 1).takeIf { it < cursor.count }
-            return grouped to nextOffset
-        }
-
-        return emptyList<Pair<CuteCallLog2, Int>>() to null
     }
 
     private fun queryCallLogs(newestFirst: Boolean): Cursor? {
@@ -175,7 +131,4 @@ class CallLogsRepository(
         context.contentResolver.applyBatch(CallLog.AUTHORITY, ops)
     }
 
-    companion object {
-        const val PAGE_SIZE = 30
-    }
 }

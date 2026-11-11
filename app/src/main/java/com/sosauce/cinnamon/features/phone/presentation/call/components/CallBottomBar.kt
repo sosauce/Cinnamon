@@ -96,7 +96,7 @@ fun CallBottomBar(
             label = R.string.audio
         ),
         CallAction(
-            onClick = { onCallAction(CallAction.ToggleMute(isMuted)) },
+            onClick = { onCallAction(CallAction.ToggleHold) },
             isActive = isHolding,
             icon = R.drawable.pause_filled,
             label = R.string.hold

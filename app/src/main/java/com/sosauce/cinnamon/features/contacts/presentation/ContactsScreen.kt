@@ -5,7 +5,6 @@ package com.sosauce.cinnamon.features.contacts.presentation
 import com.sosauce.cinnamon.core.ui.barsContentTransform
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,10 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
-import androidx.paging.LoadState
-import androidx.paging.compose.LazyPagingItems
-import androidx.paging.compose.itemContentType
-import androidx.paging.compose.itemKey
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.datastore.rememberSortContactsAscending
@@ -55,7 +50,6 @@ import kotlin.uuid.ExperimentalUuidApi
 @Composable
 fun SharedTransitionScope.ContactsScreen(
     state: ContactsState,
-    contacts: LazyPagingItems<ContactsListItem>,
     textFieldState: TextFieldState,
     onNavigate: (Screen) -> Unit,
     onHandleContactsAction: (ContactsAction) -> Unit
@@ -74,7 +68,7 @@ fun SharedTransitionScope.ContactsScreen(
                 if (it) {
                     ContactsSelectedBar(
                         modifier = Modifier.selfAlignHorizontally(),
-                        items = state.favorites + contacts.itemSnapshotList.items.mapNotNull { (it as? ContactsListItem.Contact)?.contact },
+                        items = state.contacts,
                         multiSelectState = sweetSelectState,
                         onDeleteContacts = {
                             val ids = sweetSelectState.selectedItems.map { it.id }
@@ -143,8 +137,7 @@ fun SharedTransitionScope.ContactsScreen(
                 contentPadding = paddingValues
             ) {
                 contactsList(
-                    favorites = state.favorites,
-                    contacts = contacts,
+                    contacts = state.contacts,
                     emptyState = {
                         NoXFound(
                             headlineText = R.string.no_contacts_found,
@@ -178,11 +171,12 @@ fun SharedTransitionScope.ContactsScreen(
 }
 
 fun LazyListScope.contactsList(
-    favorites: List<CuteContact>,
-    contacts: LazyPagingItems<ContactsListItem>,
+    contacts: List<CuteContact>,
     emptyState: @Composable () -> Unit,
     contactItem: @Composable LazyItemScope.(CuteContact) -> Unit
 ) {
+    val favorites = contacts.filter { it.isFavorite }
+    val nonFavorites = contacts.filterNot { it.isFavorite }
     if (favorites.isNotEmpty()) {
         item(LazyListKeys.FAVORITE_CONTACTS) {
             Row(
@@ -215,38 +209,25 @@ fun LazyListScope.contactsList(
         ) { contact -> contactItem(contact) }
     }
 
-    items(
-        count = contacts.itemCount,
-        key = contacts.itemKey {
-            when (it) {
-                is ContactsListItem.Header -> "header_${it.beforeContactId}"
-                is ContactsListItem.Contact -> it.contact.id
-            }
-        },
-        contentType = contacts.itemContentType { it::class }
-    ) { index ->
-        when (val item = contacts[index]) {
-            is ContactsListItem.Header -> {
+    nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }
+        .forEach { (letter, groupedContacts) ->
+            item(key = "header_$letter") {
                 Text(
-                    text = item.letter.toString(),
+                    text = letter.toString(),
                     style = MaterialTheme.typography.bodyLargeEmphasized.copy(
                         color = MaterialTheme.colorScheme.primary
                     ),
                     modifier = Modifier
-                        .padding(
-                            horizontal = 20.dp,
-                            vertical = 10.dp
-                        )
+                        .padding(horizontal = 20.dp, vertical = 10.dp)
                         .animateItem()
                 )
             }
-
-            is ContactsListItem.Contact -> contactItem(item.contact)
-            null -> {}
+            items(items = groupedContacts, key = { it.id }) { contact ->
+                contactItem(contact)
+            }
         }
-    }
 
-    if (favorites.isEmpty() && contacts.itemCount == 0 && contacts.loadState.refresh !is LoadState.Loading) {
+    if (contacts.isEmpty()) {
         item { emptyState() }
     }
 }

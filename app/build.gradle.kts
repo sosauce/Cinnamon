@@ -123,8 +123,6 @@ dependencies {
     implementation(libs.androidx.media3.ui.compose)
     implementation(libs.coil.video)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
-    implementation(libs.androidx.paging.compose)
-    implementation(libs.androidx.paging.runtime)
     implementation(libs.sweetselect.compose)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.ez.vcard)

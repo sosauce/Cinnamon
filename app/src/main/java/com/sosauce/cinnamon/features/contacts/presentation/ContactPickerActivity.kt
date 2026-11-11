@@ -9,7 +9,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.paging.compose.collectAsLazyPagingItems
 import com.sosauce.cinnamon.R
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
@@ -26,7 +25,6 @@ class ContactPickerActivity : ComponentActivity() {
 
             val contactsViewModel = koinViewModel<ContactsViewModel>()
             val state by contactsViewModel.state.collectAsStateWithLifecycle()
-            val contacts = contactsViewModel.contacts.collectAsLazyPagingItems()
 
 
             SharedTransitionLayout {
@@ -38,8 +36,7 @@ class ContactPickerActivity : ComponentActivity() {
                             contentPadding = paddingValues
                         ) {
                             contactsList(
-                                favorites = state.favorites,
-                                contacts = contacts,
+                                contacts = state.contacts,
                                 emptyState = {
                                     NoXFound(
                                         headlineText = R.string.no_contacts_found,

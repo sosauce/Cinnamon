@@ -13,20 +13,15 @@ import android.provider.Telephony.Mms
 import android.provider.Telephony.MmsSms
 import androidx.compose.ui.util.fastMap
 import androidx.core.content.contentValuesOf
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.utils.observe
 import com.sosauce.cinnamon.features.messaging.data.model.CuteConversationEntity
-import com.sosauce.cinnamon.features.messaging.data.model.matches
 import com.sosauce.cinnamon.features.messaging.domain.Participant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
@@ -102,20 +97,6 @@ class ConversationsRepository(private val context: Context) {
     }
 
 
-    fun fetchLatestConversationsForThreadIds(threadIds: Set<Long>): Flow<List<CuteConversationEntity>> {
-        if (threadIds.isEmpty()) return flowOf(emptyList())
-        return fetchLatestConversations("${Telephony.Threads._ID} IN (${threadIds.joinToString()})")
-    }
-
-    fun pagedConversations(
-        query: String,
-        excludedThreadIds: Set<Long>
-    ): Flow<PagingData<CuteConversationEntity>> {
-        return Pager(PagingConfig(pageSize = PAGE_SIZE, enablePlaceholders = false)) {
-            ConversationsPagingSource(context, this, query, excludedThreadIds)
-        }.flow
-    }
-
     fun fetchConversations(
         extraSelection: String?,
         extraSelectionArgs: Array<String>
@@ -129,30 +110,6 @@ class ConversationsRepository(private val context: Context) {
         }
 
         return conversations
-    }
-
-    fun loadConversationsPage(
-        offset: Int,
-        limit: Int,
-        query: String,
-        excludedThreadIds: Set<Long>
-    ): Pair<List<CuteConversationEntity>, Int?> {
-        val conversations = mutableListOf<CuteConversationEntity>()
-        val extraSelection = excludedThreadIds.takeIf { it.isNotEmpty() }?.let {
-            "${Telephony.Threads._ID} NOT IN (${it.joinToString()})"
-        }
-
-        queryThreads(extraSelection, emptyArray())?.use { cursor ->
-            if (!cursor.moveToPosition(offset - 1) && offset > 0) return conversations to null
-            while (conversations.size < limit && cursor.moveToNext()) {
-                val conversation = cursor.readConversation()
-                if (conversation.matches(query)) conversations.add(conversation)
-            }
-            val nextOffset = (cursor.position + 1).takeIf { it < cursor.count }
-            return conversations to nextOffset
-        }
-
-        return conversations to null
     }
 
     private fun queryThreads(
@@ -380,7 +337,6 @@ class ConversationsRepository(private val context: Context) {
 
     companion object {
         // extracted by logging an MMS selection query, hope it's correct and consistent across OEMs
-        const val PAGE_SIZE = 20
     }
 
 }
