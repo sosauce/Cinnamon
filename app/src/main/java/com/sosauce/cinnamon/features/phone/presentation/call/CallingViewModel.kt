@@ -79,7 +79,11 @@ class CallingViewModel(
             is CallAction.AnswerCall -> callManager.answerCall()
             is CallAction.DeclineCall -> callManager.declineCall()
             is CallAction.HangUp -> callManager.hangupOngoingCall()
-            is CallAction.StartTone -> callManager.startTone(action.char)
+            is CallAction.StartTone -> {
+                viewModelScope.launch {
+                    callManager.startTone(action.char)
+                }
+            }
             is CallAction.SwitchAudioTarget -> callManager.switchAudioRoute(action.route)
             is CallAction.ToggleHold -> callManager.toggleHold()
             is CallAction.ToggleMute -> callManager.toggleMute(action.mute)

@@ -142,7 +142,7 @@ class CallManager(
 
     fun toggleMute(mute: Boolean) = callServiceCallback?.toggleMute(mute)
 
-    fun startTone(char: Char) = androidCallCallback?.startTone(char)
+    suspend fun startTone(char: Char) = androidCallCallback?.startTone(char)
 
     fun toggleHold() = androidCallCallback?.toggleHold()
 
@@ -205,7 +205,7 @@ interface AndroidCallCallback {
     fun answerCall()
     fun declineCall()
     fun hangupOngoingCall()
-    fun startTone(char: Char)
+    suspend fun startTone(char: Char)
     fun toggleHold()
 }
 

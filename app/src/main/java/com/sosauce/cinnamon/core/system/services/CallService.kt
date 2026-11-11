@@ -29,11 +29,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.ExperimentalUuidApi
 
 class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, KoinComponent {
@@ -339,8 +341,9 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         } catch (_: Exception) {}
     }
 
-    override fun startTone(char: Char) {
+    override suspend fun startTone(char: Char) {
         cuteCall?.playDtmfTone(char)
+        delay(DTMF_TONE_DURATION_MILLIS.milliseconds)
         cuteCall?.stopDtmfTone()
     }
 
@@ -354,5 +357,9 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         } else {
             cuteCall?.hold()
         }
+    }
+
+    companion object {
+        private const val DTMF_TONE_DURATION_MILLIS = 150
     }
 }
