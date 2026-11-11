@@ -7,12 +7,15 @@ import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.DropdownMenuPopup
@@ -25,6 +28,7 @@ import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -38,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
@@ -281,17 +286,54 @@ fun CallLogItem(
                             append(callLog.duration)
                         }
                     },
-                    modifier = Modifier.basicMarquee(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .basicMarquee(),
                     style = MaterialTheme.typography.bodyMediumEmphasized
                 )
             }
             callLog.location?.let { location ->
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.width(2.dp))
                 Text(
                     text = location,
                     style = MaterialTheme.typography.bodySmallEmphasized.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                )
+            }
+        }
+        callLog.sim?.let { sim ->
+            val simColor = Color(sim.color)
+            val contentColor = if (simColor.luminance() > 0.5f) Color.Black else Color.White
+
+            Row(
+                modifier = Modifier
+                    .padding(
+                        vertical = 5.dp
+                    )
+                    .background(
+                        color = simColor,
+                        shape = CircleShape
+                    )
+                    .padding(
+                        horizontal = 10.dp,
+                        vertical = 7.dp
+                    ),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.sim_card),
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(17.dp)
+                )
+                Text(
+                    text = sim.name,
+                    style = MaterialTheme.typography.labelMediumEmphasized.copy(
+                        color = contentColor
+                    ),
+                    modifier = Modifier.basicMarquee()
                 )
             }
         }

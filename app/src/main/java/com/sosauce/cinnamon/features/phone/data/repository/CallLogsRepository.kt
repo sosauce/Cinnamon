@@ -2,14 +2,21 @@
 
 package com.sosauce.cinnamon.features.phone.data.repository
 
+import android.Manifest
 import android.content.ContentProviderOperation
 import android.content.Context
+import android.content.pm.PackageManager
 import android.database.Cursor
 import android.provider.CallLog
+import android.telephony.SubscriptionManager
+import androidx.compose.ui.util.fastFirst
+import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
+import androidx.core.app.ActivityCompat
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.NumberLookup
+import com.sosauce.cinnamon.core.repository.SimsRepository
 import com.sosauce.cinnamon.core.utils.observe
 import com.sosauce.cinnamon.features.phone.data.model.CuteCallLogEntity
 import com.sosauce.cinnamon.features.phone.data.model.toDomain
@@ -20,11 +27,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
+import kotlin.text.ifEmpty
 
 
 class CallLogsRepository(
     private val context: Context,
-    private val numberLookup: NumberLookup
+    private val numberLookup: NumberLookup,
+    private val simsRepository: SimsRepository
 ) {
 
     fun fetchLatestCallLog(): Flow<List<CuteCallLog>> {
@@ -37,17 +46,11 @@ class CallLogsRepository(
     suspend fun fetchCallLogs(): List<CuteCallLogEntity> {
 
         val logs = mutableListOf<CuteCallLogEntity>()
+
+        // key = raw number, value = pair of display name to photo uri
         val lookupCache = mutableMapOf<String, Pair<String?, String?>>()
 
-        queryCallLogs(newestFirst = true)?.use { cursor ->
-            while (cursor.moveToNext()) {
-                logs.add(cursor.readCallLog(lookupCache))
-            }
-        }
-        return logs
-    }
 
-    private fun queryCallLogs(newestFirst: Boolean): Cursor? {
         val projection = arrayOf(
             CallLog.Calls._ID,
             CallLog.Calls.NUMBER,
@@ -57,62 +60,91 @@ class CallLogsRepository(
             CallLog.Calls.NUMBER_PRESENTATION,
             CallLog.Calls.CACHED_NAME,
             CallLog.Calls.GEOCODED_LOCATION,
-            CallLog.Calls.CACHED_PHOTO_URI
+            CallLog.Calls.CACHED_PHOTO_URI,
+            CallLog.Calls.PHONE_ACCOUNT_ID
         )
 
-        return context.contentResolver.query(
+        val shouldBotherWithSims = simsRepository.hasMultipleSims()
+
+
+        val sims = if (shouldBotherWithSims) {
+            simsRepository.simLookup()
+        } else emptyMap()
+
+        context.contentResolver.query(
             CallLog.Calls.CONTENT_URI,
             projection,
             null,
             null,
-            "${CallLog.Calls.DATE} ${if (newestFirst) "DESC" else "ASC"}"
-        )
-    }
+            "${CallLog.Calls.DATE} DESC"
+        )?.use { cursor ->
 
-    // Memo of PhoneLookup results keyed by the raw number string.
-    // Same number across rows is queried once, negative (null) results
-    // are cached too so unknown numbers don't re-query per row.
-    private suspend fun Cursor.readCallLog(
-        lookupCache: MutableMap<String, Pair<String?, String?>>
-    ): CuteCallLogEntity {
-        val id = getLong(getColumnIndexOrThrow(CallLog.Calls._ID))
-        val number = getString(getColumnIndexOrThrow(CallLog.Calls.NUMBER))
-        val callType = getInt(getColumnIndexOrThrow(CallLog.Calls.TYPE))
-        val date = getLong(getColumnIndexOrThrow(CallLog.Calls.DATE))
-        val duration = getLong(getColumnIndexOrThrow(CallLog.Calls.DURATION))
-        val presentation = getInt(getColumnIndexOrThrow(CallLog.Calls.NUMBER_PRESENTATION))
-        val cachedName = getString(getColumnIndexOrThrow(CallLog.Calls.CACHED_NAME)) ?: ""
-        val location = getString(getColumnIndexOrThrow(CallLog.Calls.GEOCODED_LOCATION))
-        val photo = getString(getColumnIndexOrThrow(CallLog.Calls.CACHED_PHOTO_URI))
+            val idColumnIndex = cursor.getColumnIndexOrThrow(CallLog.Calls._ID)
+            val numberColumnIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.NUMBER)
+            val callTypeColumnIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.TYPE)
+            val dateColumnIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DATE)
+            val durationColumnIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DURATION)
+            val presentationColumnIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.NUMBER_PRESENTATION)
+            val cachedNameColumnIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.CACHED_NAME)
+            val locationColumnIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.GEOCODED_LOCATION)
+            val photoColumnIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.CACHED_PHOTO_URI)
+            val subIdColumnIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.PHONE_ACCOUNT_ID)
 
-        val needsName = cachedName.isEmpty()
-        val needsPhoto = photo.isNullOrEmpty()
+            while (cursor.moveToNext()) {
 
-        var resolvedName: String? = null
-        var resolvedPhoto: String? = null
-        if ((needsName || needsPhoto) && number.isNotEmpty()) {
-            val cached = lookupCache.getOrPut(number) {
-                numberLookup.fetchContactInfo(
-                    number = number,
-                    fullQuality = false
+
+                val id = cursor.getLong(idColumnIndex)
+                val number = cursor.getString(numberColumnIndex).orEmpty()
+                val callType = cursor.getInt(callTypeColumnIndex)
+                val date = cursor.getLong(dateColumnIndex)
+                val duration = cursor.getLong(durationColumnIndex)
+                val presentation = cursor.getInt(presentationColumnIndex)
+                val cachedName = cursor.getString(cachedNameColumnIndex).orEmpty()
+                val location = cursor.getString(locationColumnIndex)
+                val photo = cursor.getString(photoColumnIndex)
+                val subId = cursor.getString(subIdColumnIndex)?.toIntOrNull() ?: 0
+
+                val needsName = cachedName.isEmpty()
+                val needsPhoto = photo.isNullOrEmpty()
+
+                var resolvedName: String? = null
+                var resolvedPhoto: String? = null
+                val fetchContactInfo = (needsName || needsPhoto) && number.isNotEmpty()
+
+                if (fetchContactInfo) {
+                    val cached = lookupCache.getOrPut(number) {
+                        numberLookup.fetchContactInfo(
+                            number = number,
+                            fullQuality = false
+                        )
+                    }
+
+                    val (lookupName, lookupPhoto) = cached
+
+                    if (needsName) resolvedName = lookupName
+                    if (needsPhoto) resolvedPhoto = lookupPhoto
+                }
+                val sim = sims[subId]
+
+                val callLog = CuteCallLogEntity(
+                    id = id,
+                    number = number.ifEmpty { context.getString(R.string.private_number) },
+                    cachedName = cachedName.ifEmpty { resolvedName },
+                    date = date,
+                    duration = duration,
+                    location = location,
+                    presentation = presentation,
+                    type = callType,
+                    photo = if (!photo.isNullOrEmpty()) photo else resolvedPhoto,
+                    sim = sim
                 )
-            }
-            if (needsName) resolvedName = cached.first
-            if (needsPhoto) resolvedPhoto = cached.second
-        }
 
-        return CuteCallLogEntity(
-            id = id,
-            number = number.ifEmpty { context.getString(R.string.private_number) },
-            cachedName = cachedName.ifEmpty { resolvedName },
-            date = date,
-            duration = duration,
-            location = location,
-            presentation = presentation,
-            type = callType,
-            photo = if (!photo.isNullOrEmpty()) photo else resolvedPhoto
-        )
+                logs.add(callLog)
+            }
+        }
+        return logs
     }
+
 
     suspend fun deleteCallLog(ids: List<Long>) = withContext(Dispatchers.IO) {
 
@@ -130,5 +162,6 @@ class CallLogsRepository(
 
         context.contentResolver.applyBatch(CallLog.AUTHORITY, ops)
     }
+
 
 }

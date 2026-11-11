@@ -44,7 +44,8 @@ fun CuteCallLogEntity.toDomain(context: Context): CuteCallLog {
         duration = duration,
         location = location,
         presentation = presentation,
-        photo = photo?.toUri()
+        photo = photo?.toUri(),
+        sim = sim
     )
 }
 

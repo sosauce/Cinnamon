@@ -1,5 +1,7 @@
 package com.sosauce.cinnamon.features.phone.data.model
 
+import com.sosauce.cinnamon.features.phone.domain.CuteSimCard
+
 data class CuteCallLogEntity(
     val id: Long,
     val number: String,
@@ -9,5 +11,6 @@ data class CuteCallLogEntity(
     val location: String?,
     val presentation: Int,
     val type: Int,
-    val photo: String?
+    val photo: String?,
+    val sim: CuteSimCard?
 )

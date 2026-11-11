@@ -4,6 +4,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Context.NOTIFICATION_SERVICE
 import android.telecom.TelecomManager
+import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import androidx.room.Room
 import androidx.work.WorkManager
@@ -93,14 +94,18 @@ val appModule = module {
     single { WorkManager.getInstance(androidContext()) }
 
     single<TelecomManager> {
-        androidContext().getSystemService(Context.TELECOM_SERVICE) as TelecomManager
+        androidContext().getSystemService(TelecomManager::class.java)
     }
     single<TelephonyManager> {
-        androidContext().getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        androidContext().getSystemService(TelephonyManager::class.java)
     }
 
     single<NotificationManager> {
-        androidContext().getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        androidContext().getSystemService(NotificationManager::class.java)
+    }
+
+    single<SubscriptionManager> {
+        androidContext().getSystemService(SubscriptionManager::class.java)
     }
 
     single {

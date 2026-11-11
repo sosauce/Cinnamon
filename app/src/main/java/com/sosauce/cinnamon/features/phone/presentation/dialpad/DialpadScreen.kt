@@ -70,6 +70,7 @@ import com.sosauce.cinnamon.features.contacts.presentation.ContactListItem
 import com.sosauce.cinnamon.features.contacts.presentation.components.dialogs.NumberPickerDialog
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.features.phone.presentation.call.components.DisableSoftKeyboard
+import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
 
 @Composable
@@ -245,14 +246,9 @@ fun SharedTransitionScope.DialpadScreen(
             }
         }
     ) { paddingValues ->
-        if (state.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                ContainedLoadingIndicator()
-            }
-        } else {
+        LoadingBox(
+            isLoading = state.isLoading
+        ) {
             LazyColumn(
                 contentPadding = paddingValues,
                 modifier = Modifier.padding(horizontal = 10.dp)
