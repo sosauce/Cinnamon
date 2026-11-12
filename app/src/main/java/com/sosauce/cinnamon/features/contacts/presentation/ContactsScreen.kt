@@ -2,7 +2,7 @@
 
 package com.sosauce.cinnamon.features.contacts.presentation
 
-import com.sosauce.cinnamon.core.ui.components.searchbars.MainSearchbarEntry
+import com.sosauce.cinnamon.core.ui.components.searchbars.MainSearchbar
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,9 +36,7 @@ import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.datastore.rememberSortContactsAscending
 import com.sosauce.cinnamon.core.ui.components.ContactsSelectedBar
 import com.sosauce.cinnamon.core.ui.components.menus.SortingDropdownMenu
-import com.sosauce.cinnamon.core.ui.components.searchbars.MainSearchbarContent
 import com.sosauce.cinnamon.core.utils.LazyListKeys
-import com.sosauce.cinnamon.core.utils.LocalSearchbarPadding
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.nekobites.animations.AnimatedFab
@@ -57,103 +55,107 @@ fun SharedTransitionScope.ContactsScreen(
 
     var sortContactsAscending by rememberSortContactsAscending()
     val sweetSelectState = rememberSweetSelectState<CuteContact>()
-    val searchbarPadding = LocalSearchbarPadding.current
 
 
 
-    MainSearchbarEntry(
-        screen = Screen.Contacts,
-        textFieldState = textFieldState,
-        isInSelectionMode = sweetSelectState.isInSelectionMode,
-        sortingMenu = {
-            SortingDropdownMenu(
-                isSortedAscending = sortContactsAscending,
-                onChangeSorting = { sortContactsAscending = it }
-            ) {
-                state.accountsToCount.onEachIndexed { index, (account, count) ->
-                    SelectableDropdownMenuItem(
-                        selected = state.accountFilter == account,
-                        onClick = {
-                            onHandleContactsAction(
-                                ContactsAction.ChangeAccountFiltering(
-                                    account
-                                )
+    Scaffold(
+        bottomBar = {
+            MainSearchbar(
+                textFieldState = textFieldState,
+                isInSelectionMode = sweetSelectState.isInSelectionMode,
+                sortingMenu = {
+                    SortingDropdownMenu(
+                        isSortedAscending = sortContactsAscending,
+                        onChangeSorting = { sortContactsAscending = it }
+                    ) {
+                        state.accountsToCount.onEachIndexed { index, (account, count) ->
+                            SelectableDropdownMenuItem(
+                                selected = state.accountFilter == account,
+                                onClick = {
+                                    onHandleContactsAction(
+                                        ContactsAction.ChangeAccountFiltering(
+                                            account
+                                        )
+                                    )
+                                },
+                                shapes = MenuDefaults.itemShape(
+                                    index,
+                                    state.accountsToCount.size
+                                ),
+                                leadingIcon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.contact),
+                                        contentDescription = null
+                                    )
+                                },
+                                text = { Text(account) },
+                                trailingContent = { Text(count.toString()) }
                             )
-                        },
-                        shapes = MenuDefaults.itemShape(
-                            index,
-                            state.accountsToCount.size
-                        ),
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.contact),
-                                contentDescription = null
-                            )
-                        },
-                        text = { Text(account) },
-                        trailingContent = { Text(count.toString()) }
-                    )
-                }
-            }
-        },
-        fab = {
-            AnimatedFab(
-                onClick = { onNavigate(Screen.ContactEditor(null)) },
-                icon = R.drawable.add
-            )
-        },
-        selectedBar = {
-            ContactsSelectedBar(
-                modifier = Modifier.selfAlignHorizontally(),
-                items = state.contacts,
-                multiSelectState = sweetSelectState,
-                onDeleteContacts = {
-                    val ids = sweetSelectState.selectedItems.map { it.id }
-                    onHandleContactsAction(ContactsAction.DeleteContacts(ids))
-                    sweetSelectState.clearSelected()
+                        }
+                    }
                 },
-                onToggleFavorite = {
-                    val contacts = sweetSelectState.selectedItems.toList()
-                    onHandleContactsAction(ContactsAction.ToggleFavorite(contacts))
-                    sweetSelectState.clearSelected()
-                }
+                fab = {
+                    AnimatedFab(
+                        onClick = { onNavigate(Screen.ContactEditor(null)) },
+                        icon = R.drawable.add
+                    )
+                },
+                selectedBar = {
+                    ContactsSelectedBar(
+                        modifier = Modifier.selfAlignHorizontally(),
+                        items = state.contacts,
+                        multiSelectState = sweetSelectState,
+                        onDeleteContacts = {
+                            val ids = sweetSelectState.selectedItems.map { it.id }
+                            onHandleContactsAction(ContactsAction.DeleteContacts(ids))
+                            sweetSelectState.clearSelected()
+                        },
+                        onToggleFavorite = {
+                            val contacts = sweetSelectState.selectedItems.toList()
+                            onHandleContactsAction(ContactsAction.ToggleFavorite(contacts))
+                            sweetSelectState.clearSelected()
+                        }
+                    )
+                },
+                onNavigate = onNavigate
             )
         }
-    )
+    ) { paddingValues ->
 
-    LoadingBox(
-        isLoading = state.isLoading
-    ) {
-        LazyColumn(
-            contentPadding = searchbarPadding
+        LoadingBox(
+            isLoading = state.isLoading
         ) {
-            contactsList(
-                contacts = state.contacts,
-                emptyState = {
-                    NoXFound(
-                        headlineText = R.string.no_contacts_found,
-                        bodyText = R.string.no_contacts_found_desc,
-                        icon = R.drawable.contacts
+            LazyColumn(
+                contentPadding = paddingValues
+            ) {
+                contactsList(
+                    contacts = state.contacts,
+                    emptyState = {
+                        NoXFound(
+                            headlineText = R.string.no_contacts_found,
+                            bodyText = R.string.no_contacts_found_desc,
+                            icon = R.drawable.contacts
+                        )
+                    }
+                ) { contact ->
+
+                    val isSelected by sweetSelectState.isSelectedAsState(contact)
+
+                    ContactListItem(
+                        modifier = Modifier.animateItem(),
+                        contact = contact,
+                        isSelected = isSelected,
+                        onClick = {
+                            if (sweetSelectState.isInSelectionMode) {
+                                sweetSelectState.toggle(contact)
+                            } else {
+                                onNavigate(Screen.ContactDetails(contact.id))
+                            }
+                        },
+                        onLongClick = { sweetSelectState.toggle(contact) },
+                        showNumber = false
                     )
                 }
-            ) { contact ->
-
-                val isSelected by sweetSelectState.isSelectedAsState(contact)
-
-                ContactListItem(
-                    modifier = Modifier.animateItem(),
-                    contact = contact,
-                    isSelected = isSelected,
-                    onClick = {
-                        if (sweetSelectState.isInSelectionMode) {
-                            sweetSelectState.toggle(contact)
-                        } else {
-                            onNavigate(Screen.ContactDetails(contact.id))
-                        }
-                    },
-                    onLongClick = { sweetSelectState.toggle(contact) },
-                    showNumber = false
-                )
             }
         }
     }

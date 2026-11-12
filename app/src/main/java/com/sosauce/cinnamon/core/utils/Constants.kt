@@ -84,6 +84,8 @@ object SharedTransitionKeys {
     const val CONTACT_NAME = "CONTACT_NAME"
     const val CONVERSATION_NAME = "CONVERSATION_NAME"
     const val CONVERSATION_WALLPAPER = "CONVERSATION_WALLPAPER"
+    const val MAIN_SEARCHBAR = "MAIN_SEARCHBAR"
+    const val MAIN_SEARCHBAR_FAB = "MAIN_SEARCHBAR_FAB"
 }
 
 object CutePaletteStyle {

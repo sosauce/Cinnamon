@@ -43,6 +43,8 @@ fun CuteSearchbar2(
     navigationButton: @Composable (() -> Unit)? = null,
     fab: @Composable (() -> Unit)? = null,
     backButton: @Composable (() -> Unit)? = null,
+    barModifier: Modifier = Modifier,
+    fabRowModifier: Modifier = Modifier,
     onNavigate: (Screen) -> Unit,
 ) {
     Column(
@@ -54,7 +56,7 @@ fun CuteSearchbar2(
     ) {
         Column {
             Row(
-                modifier = Modifier
+                modifier = fabRowModifier
                     .fillMaxWidth()
                     .padding(bottom = 4.dp),
                 horizontalArrangement = Arrangement.End
@@ -66,7 +68,8 @@ fun CuteSearchbar2(
             Surface(
                 shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.surfaceContainer,
-                shadowElevation = 8.dp
+                shadowElevation = 8.dp,
+                modifier = barModifier
             ) {
                 Column(
                     modifier = Modifier.padding(8.dp),
