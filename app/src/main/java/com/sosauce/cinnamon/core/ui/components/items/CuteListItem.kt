@@ -60,7 +60,7 @@ fun CuteListItem(
             )
     ) {
         Row(
-            modifier = modifier
+            modifier = Modifier
                 .padding(vertical = 15.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
