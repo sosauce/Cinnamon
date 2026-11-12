@@ -54,7 +54,7 @@ class MessageBackupRepository(
                         },
                         snippet = entity.snippet,
                         dateMillis = entity.date,
-                        read = entity.read,
+                        read = entity.unreadCount < 1,
                         messages = messages.map { message ->
                             BackupMessage(
                                 id = message.id,

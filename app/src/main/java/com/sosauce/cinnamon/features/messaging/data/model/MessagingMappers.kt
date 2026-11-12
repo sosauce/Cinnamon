@@ -21,7 +21,8 @@ fun CuteConversationEntity.toCuteConversation(draft: String? = null): CuteConver
         participants = participants,
         snippet = snippet,
         date = date.toDate(),
-        read = read,
+        read = unreadCount <= 0,
+        unreadCount = unreadCount,
         draft = draft ?: ""
     )
 }

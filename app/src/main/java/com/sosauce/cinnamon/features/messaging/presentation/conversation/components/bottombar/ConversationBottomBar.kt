@@ -115,7 +115,7 @@ fun ConversationBottomBar(
     onHandleConversationActions: (ConversationActions) -> Unit
 ) {
     val viewModel = koinViewModel<BottomBarViewModel>(
-        parameters = { parametersOf(state.conversation.threadId, prefilledMessage) }
+        parameters = { parametersOf(state.threadId, prefilledMessage) }
     )
     val bottomBarState by viewModel.state.collectAsStateWithLifecycle()
 
@@ -244,8 +244,8 @@ fun ConversationBottomBar(
                             onHandleConversationActions(
                                 ConversationActions.ScheduleMessage(
                                     ScheduledMessageEntity(
-                                        threadId = state.conversation.threadId,
-                                        addresses = state.conversation.participants.fastMap { it.rawNumber },
+                                        threadId = state.threadId,
+                                        addresses = state.participants.fastMap { it.rawNumber },
                                         message = bottomBarState.message,
                                         sendAt = bottomBarState.scheduledTime ?: return@send
                                     )
@@ -254,7 +254,7 @@ fun ConversationBottomBar(
                         } else {
                             onHandleConversationActions(
                                 ConversationActions.SendMessage(
-                                    addresses = state.conversation.participants.fastMap { it.rawNumber },
+                                    addresses = state.participants.fastMap { it.rawNumber },
                                     message = bottomBarState.message,
                                     attachments = bottomBarState.attachments
                                 )

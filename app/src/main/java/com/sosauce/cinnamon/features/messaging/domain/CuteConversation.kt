@@ -1,5 +1,6 @@
 package com.sosauce.cinnamon.features.messaging.domain
 
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.core.net.toUri
@@ -10,6 +11,7 @@ data class CuteConversation(
     val snippet: String = "",
     val date: String = "",
     val read: Boolean = true,
+    val unreadCount: Int = 0,
     val draft: String = ""
 ) {
     val isGroupChat = participants.size > 1
@@ -42,4 +44,22 @@ data class Participant(
 ) {
     val photoUri
         get() = photoUriString?.toUri()
+}
+
+fun List<Participant>.isGroupChat(): Boolean = size > 1
+
+fun List<Participant>.name(): String {
+
+    if (isEmpty()) return ""
+
+    return if (size > 1) {
+        buildString {
+            this@name.fastForEachIndexed { index, participant ->
+                append(participant.displayName)
+                if (index != lastIndex) {
+                    append(", ")
+                }
+            }
+        }
+    } else first().displayName
 }

@@ -109,6 +109,7 @@ fun SharedTransitionScope.ConversationDetailsScreen(
     val transformState = rememberTransformableState { _, zoomChange, _, _ ->
         chatFontScale = (chatFontScale * zoomChange).coerceIn(0.9f, 2.2f)
     }
+    val isGroupChat = state.participants.size > 1
 
     val density = LocalDensity.current
     val scaledDensity = remember(density, chatFontScale) {
@@ -123,7 +124,7 @@ fun SharedTransitionScope.ConversationDetailsScreen(
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_CREATE, Lifecycle.Event.ON_RESUME, Lifecycle.Event.ON_START -> ActiveThreadId.threadId =
-                    state.conversation.threadId
+                    state.threadId
 
                 else -> ActiveThreadId.threadId = null
             }
@@ -173,7 +174,7 @@ fun SharedTransitionScope.ConversationDetailsScreen(
                     state.isShortCode -> TextingUnavailableBar(
                         reason = TextingUnavailableReason.SHORT_CODE
                     )
-                    state.conversation.participants.firstOrNull()?.isBlocked == true -> TextingUnavailableBar(
+                    state.participants.firstOrNull()?.isBlocked == true -> TextingUnavailableBar(
                         reason = TextingUnavailableReason.BLOCKED
                     )
                     else -> {
@@ -260,7 +261,7 @@ fun SharedTransitionScope.ConversationDetailsScreen(
                                             message = message,
                                             sandwichPosition = sandwichPosition,
                                             isSelected = isSelected,
-                                            isGroupChat = state.conversation.isGroupChat,
+                                            isGroupChat = isGroupChat,
                                             isTimestampVisible = isTimestampVisible,
                                             onClick = {
                                                 if (sweetSelectState.isInSelectionMode) {

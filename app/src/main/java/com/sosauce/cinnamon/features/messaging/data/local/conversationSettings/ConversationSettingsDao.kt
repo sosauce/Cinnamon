@@ -34,4 +34,7 @@ interface ConversationSettingsDao {
     @Query("SELECT draft FROM conversationsettingsentity WHERE :threadId = threadId LIMIT 1")
     fun getDraftForThread(threadId: Long): Flow<String?>
 
+    @Query("SELECT draft FROM conversationsettingsentity WHERE :threadId = threadId")
+    fun getDraftForThreadOneShot(threadId: Long): String?
+
 }

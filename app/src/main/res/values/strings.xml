@@ -309,4 +309,5 @@
     <string name="participants">Participants</string>
     <string name="view_contact">View contact</string>
     <string name="delete_conversation">Delete conversation</string>
+    <string name="unread_count_overflow">99+</string>
 </resources>

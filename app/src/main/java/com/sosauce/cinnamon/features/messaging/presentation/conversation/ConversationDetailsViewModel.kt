@@ -5,6 +5,7 @@ package com.sosauce.cinnamon.features.messaging.presentation.conversation
 import android.app.Application
 import android.net.Uri
 import android.provider.BlockedNumberContract
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
@@ -28,11 +29,12 @@ import com.sosauce.cinnamon.features.messaging.data.model.toEntity
 import com.sosauce.cinnamon.features.messaging.data.repository.ConversationsRepository
 import com.sosauce.cinnamon.features.messaging.data.repository.MessagesRepository
 import com.sosauce.cinnamon.features.messaging.domain.ConversationSettings
-import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
+import com.sosauce.cinnamon.features.messaging.domain.Participant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.mapLatest
@@ -56,41 +58,44 @@ class ConversationDetailsViewModel(
 
 
     private val messages = combine(
-        messagesRepository.fetchLatestSmsForThread(threadId),
-        messagesRepository.fetchLatestMmsForThread(threadId),
+        messagesRepository.fetchLatestMessagesForThread(threadId),
         scheduledMessageManager.getScheduledMessagesForThread(threadId)
-    ) { sms, mms, scheduled ->
-        (sms + mms + scheduled)
+    ) { messages, scheduled ->
+
+        (messages + scheduled)
             .sortedByDescending { it.timestamp }
             .groupBy { it.date }
     }
 
-    private val conversation = combine(
-        conversationsRepository.fetchLatestConversationForThreadId(threadId),
-        conversationSettingsDao.getDraftForThread(threadId)
-    ) { conversation, draft ->
-        conversation.toCuteConversation(draft.orEmpty())
-    }
+
     private val settings = conversationSettingsDao
         .getConversationSettings(threadId)
         .mapLatest { (it ?: ConversationSettingsEntity(threadId = threadId)).toConversationSettings() }
 
-    val state = combine(
-        messages,
-        conversation,
-        settings
-    ) { messages, conversation, settings ->
+    private val _state = MutableStateFlow(
         ConversationDetailsState(
+            isLoading = true,
+            threadId = threadId
+        )
+    )
+
+    val state = combine(
+        _state,
+        messages,
+        conversationsRepository.fetchLatestParticipantsForThreadId(threadId),
+        settings
+    ) { state, messages, participants, settings ->
+        state.copy(
             messages = messages,
-            conversation = conversation,
+            participants = participants,
             settings = settings,
             isLoading = false,
-            isShortCode = conversation.participants.firstOrNull()?.rawNumber?.isShortCode() ?: false
+            isShortCode = participants.firstOrNull()?.rawNumber?.isShortCode() ?: false
         )
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
-        ConversationDetailsState(isLoading = true)
+        _state.value
     )
 
 
@@ -147,11 +152,11 @@ class ConversationDetailsViewModel(
 
             is ConversationActions.ToggleBlock -> {
                 viewModelScope.launch(Dispatchers.IO) {
-                    if (state.value.conversation.participants.size > 1) return@launch // can't block group chats (unless we block everyone but why)
+                    if (state.value.participants.size > 1) return@launch // can't block group chats (unless we block everyone but why)
 
 
 
-                    val participantToBlock = state.value.conversation.participants.singleOrNull() ?: return@launch
+                    val participantToBlock = state.value.participants.singleOrNull() ?: return@launch
                     val rawNumber = participantToBlock.rawNumber
 
 
@@ -204,7 +209,8 @@ class ConversationDetailsViewModel(
 @Stable
 data class ConversationDetailsState(
     val isLoading: Boolean = false,
-    val conversation: CuteConversation = CuteConversation(),
+    val threadId: Long,
+    val participants: List<Participant> = emptyList(),
     val settings: ConversationSettings = ConversationSettings(),
     val messages: Map<String, List<CuteMessage>> = emptyMap(),
     val isShortCode: Boolean = false

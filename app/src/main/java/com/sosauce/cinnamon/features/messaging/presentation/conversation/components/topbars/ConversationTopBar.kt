@@ -47,10 +47,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
+import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
 import com.sosauce.cinnamon.core.ui.components.DefaultGroupChatIcon
 import com.sosauce.cinnamon.core.ui.components.dialogs.BlockUnblockDialog
 import com.sosauce.cinnamon.core.ui.components.toolbars.ToolbarSkeleton
 import com.sosauce.cinnamon.core.utils.getItemShape
+import com.sosauce.cinnamon.features.messaging.domain.isGroupChat
+import com.sosauce.cinnamon.features.messaging.domain.name
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationDetailsState
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.ConversationIcon
@@ -71,15 +74,17 @@ fun ConversationTopBar(
     var showMoreMenu by remember { mutableStateOf(false) }
     var showBlockDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val isSoloParticipantBlocked = state.participants.firstOrNull()?.isBlocked == true
+    val name = state.participants.name()
     val actions = listOf(
         MoreActions(
-            onClick = { onNavigate(Screen.ConversationTheming(state.conversation.threadId)) },
+            onClick = { onNavigate(Screen.ConversationTheming(state.threadId)) },
             text = R.string.customize,
             icon = R.drawable.palette
         ),
         MoreActions(
             onClick = { showBlockDialog = true },
-            text = if (state.conversation.isSoloParticipantBlocked) R.string.unblock else R.string.block,
+            text = if (isSoloParticipantBlocked) R.string.unblock else R.string.block,
             icon = R.drawable.block,
             tint = MaterialTheme.colorScheme.error
         ),
@@ -92,10 +97,10 @@ fun ConversationTopBar(
     )
 
     if (showBlockDialog) {
-        val participant = state.conversation.participants.firstOrNull()
+        val participant = state.participants.firstOrNull()
         if (participant != null) BlockUnblockDialog(
             displayName = participant.displayName,
-            isBlocked = state.conversation.isSoloParticipantBlocked,
+            isBlocked = isSoloParticipantBlocked,
             onDismissRequest = { showBlockDialog = false },
             onConfirm = {
                 onHandleConversationActions(ConversationActions.ToggleBlock)
@@ -135,7 +140,7 @@ fun ConversationTopBar(
 
 
     ToolbarSkeleton(
-        onClick = { onNavigate(Screen.AboutConversation(state.conversation.threadId)) }
+        onClick = { onNavigate(Screen.AboutConversation(state.threadId)) }
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -155,27 +160,28 @@ fun ConversationTopBar(
                 )
             }
             Spacer(Modifier.width(6.dp))
-            if (state.conversation.isGroupChat) {
+            if (state.participants.isGroupChat()) {
                 DefaultGroupChatIcon(size = 40.dp)
             } else {
-                ConversationIcon(
-                    conversation = state.conversation,
-                    size = 40.dp
+                DefaultContactIcon(
+                    firstLetter = name.firstOrNull(),
+                    size = 40.dp,
+                    contactPfp = state.participants.firstOrNull()?.photoUri
                 )
             }
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = state.conversation.name,
+                    text = name,
                     style = MaterialTheme.typography.titleMediumEmphasized,
                     maxLines = 1,
                     modifier = Modifier.basicMarquee()
                 )
-                val subtitle = if (state.conversation.isGroupChat) {
+                val subtitle = if (state.participants.isGroupChat()) {
                     pluralStringResource(
                         R.plurals.participants_count,
-                        state.conversation.participants.size,
-                        state.conversation.participants.size
+                        state.participants.size,
+                        state.participants.size
                     )
                 } else null
                 subtitle?.let {
@@ -189,10 +195,10 @@ fun ConversationTopBar(
                 }
             }
 
-            if (!state.conversation.isGroupChat) {
+            if (!state.participants.isGroupChat()) {
                 FilledTonalIconButton(
                     onClick = {
-                        val number = state.conversation.participants.first().rawNumber
+                        val number = state.participants.first().rawNumber
                         onHandleConversationActions(ConversationActions.CallNumber(number))
                     },
                     shapes = IconButtonDefaults.shapes(),

@@ -68,6 +68,8 @@ import com.sosauce.cinnamon.core.ui.components.items.CuteListItemDefaults
 import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.features.messaging.data.model.AttachmentType
 import com.sosauce.cinnamon.features.messaging.domain.Participant
+import com.sosauce.cinnamon.features.messaging.domain.isGroupChat
+import com.sosauce.cinnamon.features.messaging.domain.name
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationDetailsState
 import com.sosauce.nekobites.components.LoadingBox
@@ -81,8 +83,7 @@ fun AboutConversationScreen(
     onHandleConversationActions: (ConversationActions) -> Unit
 ) {
 
-    val conversation = state.conversation
-    val soloParticipant = conversation.participants.singleOrNull()
+    val soloParticipant = state.participants.singleOrNull()
     var showBlockDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
@@ -95,6 +96,7 @@ fun AboutConversationScreen(
                 } ?: emptyList()
         }
     }
+    val name = state.participants.name()
 
     if (showBlockDialog && soloParticipant != null) {
         BlockUnblockDialog(
@@ -201,18 +203,18 @@ fun AboutConversationScreen(
                                 .padding(horizontal = 10.dp)
                         ) {
                             Text(
-                                text = conversation.name,
+                                text = name,
                                 style = MaterialTheme.typography.headlineLargeEmphasized,
                                 maxLines = 1,
                                 modifier = Modifier.basicMarquee()
                             )
-                            if (conversation.isGroupChat) {
+                            if (state.participants.isGroupChat()) {
                                 Spacer(Modifier.height(5.dp))
                                 Text(
                                     text = pluralStringResource(
                                         R.plurals.participants_count,
-                                        conversation.participants.size,
-                                        conversation.participants.size
+                                        state.participants.size,
+                                        state.participants.size
                                     ),
                                     style = MaterialTheme.typography.bodyMediumEmphasized,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -227,7 +229,7 @@ fun AboutConversationScreen(
                             if (soloParticipant != null) {
                                 Spacer(Modifier.height(15.dp))
                                 AboutConversationActionsRow(
-                                    threadId = conversation.threadId,
+                                    threadId = state.threadId,
                                     participant = soloParticipant,
                                     onNavigate = onNavigate,
                                     onHandleConversationActions = onHandleConversationActions
@@ -264,14 +266,14 @@ fun AboutConversationScreen(
                                 }
                                 Spacer(Modifier.height(25.dp))
                             }
-                            if (conversation.isGroupChat) {
+                            if (state.participants.isGroupChat()) {
                                 SectionTitle(text = stringResource(R.string.participants))
-                                conversation.participants.fastForEachIndexed { index, participant ->
+                                state.participants.fastForEachIndexed { index, participant ->
                                     CuteListItem(
                                         onClick = { onNavigate(participant.contactScreen()) },
                                         shape = CuteListItemDefaults.getItemShape(
                                             index,
-                                            conversation.participants.size
+                                            state.participants.size
                                         ),
                                         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                                         leadingContent = {
@@ -349,15 +351,15 @@ fun AboutConversationScreen(
                             .align(Alignment.TopCenter)
                             .padding(top = seamY - iconSize / 2)
                     ) {
-                        if (conversation.isGroupChat) {
+                        if (state.participants.isGroupChat()) {
                             DefaultGroupChatIcon(
                                 size = iconSize,
                                 shape = MaterialShapes.Cookie9Sided.toShape()
                             )
                         } else {
                             DefaultContactIcon(
-                                firstLetter = conversation.name.firstOrNull(),
-                                contactPfp = conversation.photo,
+                                firstLetter = name.firstOrNull(),
+                                contactPfp = state.participants.firstOrNull()?.photoUri,
                                 size = iconSize,
                                 shape = MaterialShapes.Cookie9Sided.toShape()
                             )

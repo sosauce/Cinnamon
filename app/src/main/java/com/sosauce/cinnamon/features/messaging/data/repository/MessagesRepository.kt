@@ -6,6 +6,8 @@ import android.content.ContentProviderOperation
 import android.content.ContentUris
 import android.content.Context
 import android.os.Build
+import android.provider.BaseColumns
+import android.provider.Telephony
 import android.provider.Telephony.Mms
 import android.provider.Telephony.MmsSms
 import android.provider.Telephony.Sms
@@ -48,16 +50,154 @@ class MessagesRepository(
         }.flowOn(Dispatchers.IO)
     }
 
+    fun fetchLatestMessagesForThread(threadId: Long): Flow<List<CuteMessage>> {
+        return context.contentResolver
+            .observe(MmsSms.CONTENT_URI)
+            .mapLatest {
+                fetchMessagesForThread(threadId)
+                    .fastMap { it.toCuteMessage(context) }
+            }
+            .flowOn(Dispatchers.IO)
+    }
+
+    private fun fetchMessagesForThread(
+        threadId: Long
+    ): List<CuteMessageEntity> {
+        //if (!PermissionUtils.hasSmsPermission(context)) return emptyList()
+
+        data class MessageRow(
+            val id: Long,
+            val isMms: Boolean,
+            val type: Int,
+            val dateMillis: Long,
+            val read: Boolean,
+            val delivered: Boolean,
+            val body: String?
+        )
+
+        val rows = mutableListOf<MessageRow>()
+
+        val projection = arrayOf(
+            BaseColumns._ID,
+            Sms.THREAD_ID,
+            Sms.DATE,
+            Sms.BODY,
+            Sms.TYPE,
+            Sms.READ,
+            Sms.STATUS,
+            Mms.MESSAGE_BOX,
+            MmsSms.TYPE_DISCRIMINATOR_COLUMN
+        )
+
+        val conversationUri = ContentUris.withAppendedId(
+            MmsSms.CONTENT_CONVERSATIONS_URI,
+            threadId
+        )
+
+        context.contentResolver.query(
+            conversationUri,
+            projection,
+            null,
+            null,
+            "$NORMALIZED_DATE DESC"
+        )?.use { cursor ->
+
+            val idColumn = cursor.getColumnIndexOrThrow(BaseColumns._ID)
+            val dateColumn = cursor.getColumnIndexOrThrow(Sms.DATE)
+            val bodyColumn = cursor.getColumnIndexOrThrow(Sms.BODY)
+            val smsTypeColumn = cursor.getColumnIndexOrThrow(Sms.TYPE)
+            val mmsTypeColumn = cursor.getColumnIndexOrThrow(Mms.MESSAGE_BOX)
+            val readColumn = cursor.getColumnIndexOrThrow(Sms.READ)
+            val statusColumn = cursor.getColumnIndexOrThrow(Sms.STATUS)
+            val transportColumn = cursor.getColumnIndexOrThrow(
+                MmsSms.TYPE_DISCRIMINATOR_COLUMN
+            )
+
+            while (cursor.moveToNext()) {
+                val isMms = cursor.getString(transportColumn) == "mms"
+
+                val id = cursor.getLong(idColumn)
+                val rawDate = cursor.getLong(dateColumn)
+
+                // SMS dates are milliseconds, MMS dates are seconds.
+                val dateMillis = if (isMms) {
+                    if (rawDate > 0L) rawDate * 1000L
+                    else System.currentTimeMillis()
+                } else {
+                    rawDate
+                }
+
+                val type = cursor.getInt(
+                    if (isMms) mmsTypeColumn else smsTypeColumn
+                )
+
+                val read = cursor.getInt(readColumn) == 1
+                val status = cursor.getInt(statusColumn)
+
+                val delivered = if (isMms) {
+                    !cursor.isNull(statusColumn) &&
+                            status == MMS_STATUS_RETRIEVED
+                } else {
+                    status == Sms.STATUS_COMPLETE
+                }
+
+                rows.add(
+                    MessageRow(
+                        id = id,
+                        isMms = isMms,
+                        type = type,
+                        dateMillis = dateMillis,
+                        read = read,
+                        delivered = delivered,
+                        body = cursor.getString(bodyColumn)
+                    )
+                )
+            }
+        }
+
+        // Fetch attachments for all MMS messages in a single query.
+        val mmsIds = rows
+            .fastFilter { it.isMms }
+            .fastMap { it.id }
+
+        val allMmsAttachments = if (mmsIds.isNotEmpty()) {
+            getAllMmsAttachment(mmsIds)
+        } else {
+            emptyMap()
+        }
+
+        return rows.fastMap { row ->
+            val attachment = if (row.isMms) {
+                allMmsAttachments[row.id]
+            } else {
+                null
+            }
+
+            CuteMessageEntity(
+                id = row.id,
+                body = attachment?.body ?: row.body.orEmpty(),
+                type = row.type,
+                threadId = threadId,
+                read = row.read,
+                delivered = row.delivered,
+                isMms = row.isMms,
+                attachment = attachment,
+                dateMillis = row.dateMillis,
+                isScheduled = false
+            )
+        }
+    }
+
     /**
      * One-shot SMS+MMS snapshot for a thread, sorted by timestamp.
      * Used by the conversation backup/export flow.
      */
     suspend fun getMessagesForThread(threadId: Long): List<CuteMessage> =
         withContext(Dispatchers.IO) {
-            val sms = fetchSmsForThread(threadId).fastMap { it.toCuteMessage(context) }
-            val mms = fetchMmsForThread(threadId).fastMap { it.toCuteMessage(context) }
-            (sms + mms).sortedBy { it.timestamp }
+            fetchMessagesForThread(threadId)
+                .fastMap { it.toCuteMessage(context) }
         }
+
 
 
     private fun fetchSmsForThread(threadId: Long): List<CuteMessageEntity> {
@@ -462,6 +602,10 @@ class MessagesRepository(
         if (mmsOps.isNotEmpty()) {
             context.contentResolver.applyBatch("mms", mmsOps)
         }
+    }
+
+    companion object {
+        private const val NORMALIZED_DATE = "normalized_date"
     }
 
 }

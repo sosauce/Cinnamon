@@ -8,6 +8,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.material3.Badge
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -116,8 +117,17 @@ fun Conversation(
                     )
                     if (!conversation.read) {
                         Badge(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.defaultMinSize(25.dp, 25.dp)
+                        ) {
+                            Text(
+                                text = if (conversation.unreadCount > 99) {
+                                    stringResource(R.string.unread_count_overflow)
+                                } else {
+                                    conversation.unreadCount.toString()
+                                }
+                            )
+                        }
                     }
                 }
 
