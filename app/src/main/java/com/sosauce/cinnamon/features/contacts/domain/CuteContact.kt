@@ -52,7 +52,8 @@ data class ContactPhone(
 data class ContactEmail(
     val email: String,
     val type: Int,
-    val isDefault: Boolean
+    val isDefault: Boolean,
+    val isBlocked: Boolean = false
 )
 
 data class ContactAddress(

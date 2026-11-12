@@ -306,4 +306,7 @@
     <string name="preview_received_1">Did you change something?</string>
     <string name="preview_received_2">This chat looks purrfect now</string>
     <string name="preview_sent">Fresh paint, same cat 🐱</string>
+    <string name="participants">Participants</string>
+    <string name="view_contact">View contact</string>
+    <string name="delete_conversation">Delete conversation</string>
 </resources>

@@ -5,6 +5,7 @@ package com.sosauce.cinnamon.features.messaging.presentation.conversation
 import android.app.Application
 import android.net.Uri
 import android.provider.BlockedNumberContract
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
@@ -200,7 +201,7 @@ class ConversationDetailsViewModel(
 
 }
 
-
+@Stable
 data class ConversationDetailsState(
     val isLoading: Boolean = false,
     val conversation: CuteConversation = CuteConversation(),

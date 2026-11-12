@@ -134,7 +134,9 @@ fun ConversationTopBar(
 
 
 
-    ToolbarSkeleton {
+    ToolbarSkeleton(
+        onClick = { onNavigate(Screen.AboutConversation(state.conversation.threadId)) }
+    ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()

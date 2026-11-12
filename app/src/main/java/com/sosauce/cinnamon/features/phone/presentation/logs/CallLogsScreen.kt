@@ -2,8 +2,7 @@
 
 package com.sosauce.cinnamon.features.phone.presentation.logs
 
-import com.sosauce.cinnamon.core.ui.barsContentTransform
-import androidx.compose.animation.AnimatedContent
+import com.sosauce.cinnamon.core.ui.components.searchbars.MainSearchbarEntry
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -38,8 +37,8 @@ import com.sosauce.cinnamon.core.datastore.rememberSortLogsAscending
 import com.sosauce.cinnamon.core.ui.components.NoResult
 import com.sosauce.cinnamon.core.ui.components.SelectedBarSurface
 import com.sosauce.cinnamon.core.ui.components.menus.SortingDropdownMenu
-import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar
 import com.sosauce.cinnamon.core.utils.LazyListKeys
+import com.sosauce.cinnamon.core.utils.LocalSearchbarPadding
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.phone.domain.CallPresentation
 import com.sosauce.cinnamon.features.phone.domain.CuteCallLog
@@ -59,210 +58,198 @@ fun CallLogsScreen(
 ) {
     val sweetSelectState = rememberSweetSelectState<CuteCallLog>()
     var sortLogsAscending by rememberSortLogsAscending()
+    val searchbarPadding = LocalSearchbarPadding.current
 
-    Scaffold(
-        bottomBar = {
-
-            AnimatedContent(
-                targetState = sweetSelectState.isInSelectionMode,
-                transitionSpec = { barsContentTransform }
+    MainSearchbarEntry(
+        screen = Screen.Dialer,
+        textFieldState = textFieldState,
+        isInSelectionMode = sweetSelectState.isInSelectionMode,
+        sortingMenu = {
+            SortingDropdownMenu(
+                isSortedAscending = sortLogsAscending,
+                onChangeSorting = { sortLogsAscending = it }
             ) {
-                if (it) {
-                    val items = state.callLogs.mapNotNull { (it as? CallLogsListItem.Log)?.log }
+                repeat(5) { index ->
 
-                    SelectedBarSurface(
-                        modifier = Modifier.selfAlignHorizontally(),
-                        items = items,
-                        multiSelectState = sweetSelectState
-                    ) {
-                        ButtonGroup(
-                            horizontalArrangement = Arrangement.spacedBy(2.dp),
-                            overflowIndicator = {}
-                        ) {
-                            customItem(
-                                buttonGroupContent = {
-                                    Button(
-                                        onClick = {
-                                            val logs = sweetSelectState.selectedItems.map { it.id }
-                                            onHandleDialerActions(DialerAction.DeleteLogs(logs))
-                                            sweetSelectState.clearSelected()
-                                        },
-                                        shape = RoundedCornerShape(
-                                            topStart = 50.dp,
-                                            bottomStart = 50.dp,
-                                            topEnd = 50.dp,
-                                            bottomEnd = 50.dp
-                                        ),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                                        ),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.delete_filled),
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
-                                    }
-                                },
-                                menuContent = {}
+                    val filter = when (index) {
+                        0 -> CallLogsFilter.ALL
+                        1 -> CallLogsFilter.CONTACTS
+                        2 -> CallLogsFilter.INCOMING
+                        3 -> CallLogsFilter.OUTGOING
+                        4 -> CallLogsFilter.MISSED
+                        else -> throw IndexOutOfBoundsException()
+                    }
+                    val text = when (index) {
+                        0 -> R.string.all
+                        1 -> R.string.contacts
+                        2 -> R.string.incoming
+                        3 -> R.string.outgoing
+                        4 -> R.string.missed
+                        else -> throw IndexOutOfBoundsException()
+                    }
+
+                    SelectableDropdownMenuItem(
+                        selected = filter == state.filter,
+                        onClick = {
+                            onHandleDialerActions(
+                                DialerAction.ChangeFilter(
+                                    filter
+                                )
+                            )
+                        },
+                        shapes = MenuDefaults.itemShapes(),
+                        text = {
+                            Text(
+                                text = stringResource(text)
                             )
                         }
-                    }
-                } else {
-                    CuteSearchbar(
-                        modifier = Modifier.selfAlignHorizontally(),
-                        textFieldState = textFieldState,
-                        sortingMenu = {
-                            SortingDropdownMenu(
-                                isSortedAscending = sortLogsAscending,
-                                onChangeSorting = { sortLogsAscending = it }
+                    )
+                }
+            }
+        },
+        fab = {
+            AnimatedFab(
+                onClick = { onNavigate(Screen.Dialpad()) },
+                icon = R.drawable.dialpad
+            )
+        },
+        selectedBar = {
+            val items = state.callLogs.mapNotNull { (it as? CallLogsListItem.Log)?.log }
+
+            SelectedBarSurface(
+                modifier = Modifier.selfAlignHorizontally(),
+                items = items,
+                multiSelectState = sweetSelectState
+            ) {
+                ButtonGroup(
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    overflowIndicator = {}
+                ) {
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {
+                                    val logs = sweetSelectState.selectedItems.map { it.id }
+                                    onHandleDialerActions(DialerAction.DeleteLogs(logs))
+                                    sweetSelectState.clearSelected()
+                                },
+                                shape = RoundedCornerShape(
+                                    topStart = 50.dp,
+                                    bottomStart = 50.dp,
+                                    topEnd = 50.dp,
+                                    bottomEnd = 50.dp
+                                ),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+                                ),
+                                modifier = Modifier.weight(1f)
                             ) {
-                                repeat(5) { index ->
-
-                                    val filter = when (index) {
-                                        0 -> CallLogsFilter.ALL
-                                        1 -> CallLogsFilter.CONTACTS
-                                        2 -> CallLogsFilter.INCOMING
-                                        3 -> CallLogsFilter.OUTGOING
-                                        4 -> CallLogsFilter.MISSED
-                                        else -> throw IndexOutOfBoundsException()
-                                    }
-                                    val text = when (index) {
-                                        0 -> R.string.all
-                                        1 -> R.string.contacts
-                                        2 -> R.string.incoming
-                                        3 -> R.string.outgoing
-                                        4 -> R.string.missed
-                                        else -> throw IndexOutOfBoundsException()
-                                    }
-
-                                    SelectableDropdownMenuItem(
-                                        selected = filter == state.filter,
-                                        onClick = {
-                                            onHandleDialerActions(
-                                                DialerAction.ChangeFilter(
-                                                    filter
-                                                )
-                                            )
-                                        },
-                                        shapes = MenuDefaults.itemShapes(),
-                                        text = {
-                                            Text(
-                                                text = stringResource(text)
-                                            )
-                                        }
-                                    )
-                                }
+                                Icon(
+                                    painter = painterResource(R.drawable.delete_filled),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
                             }
                         },
-                        fab = {
-                            AnimatedFab(
-                                onClick = { onNavigate(Screen.Dialpad()) },
-                                icon = R.drawable.dialpad
-                            )
-                        },
-                        onNavigate = onNavigate
+                        menuContent = {}
                     )
-
                 }
             }
         }
-    ) { paddingValues ->
+    )
 
-        LoadingBox(
-            isLoading = state.isLoading
+    LoadingBox(
+        isLoading = state.isLoading
+    ) {
+        LazyColumn(
+            contentPadding = searchbarPadding
         ) {
-            LazyColumn(
-                contentPadding = paddingValues
-            ) {
-                item(LazyListKeys.VOICEMAIL) {
+            item(LazyListKeys.VOICEMAIL) {
 
-                    FilledTonalButton(
-                        onClick = { onNavigate(Screen.Voicemail) },
-                        shapes = ButtonDefaults.shapes(),
-                        modifier = Modifier
-                            .animateItem()
-                            .selfAlignHorizontally()
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.voicemail),
-                            contentDescription = null
-                        )
-                        Spacer(Modifier.width(5.dp))
-                        Text(stringResource(R.string.voicemail))
-                    }
-                    Spacer(Modifier.height(10.dp))
+                FilledTonalButton(
+                    onClick = { onNavigate(Screen.Voicemail) },
+                    shapes = ButtonDefaults.shapes(),
+                    modifier = Modifier
+                        .animateItem()
+                        .selfAlignHorizontally()
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.voicemail),
+                        contentDescription = null
+                    )
+                    Spacer(Modifier.width(5.dp))
+                    Text(stringResource(R.string.voicemail))
                 }
+                Spacer(Modifier.height(10.dp))
+            }
 
-                if (state.callLogs.isEmpty() && !state.isLoading) {
-                    item {
-                        if (state.isSearching) {
-                            NoResult()
-                        } else {
-                            NoXFound(
-                                headlineText = R.string.no_calls_found,
-                                bodyText = R.string.no_calls_found_desc,
-                                icon = R.drawable.call_log_rounded
+            if (state.callLogs.isEmpty() && !state.isLoading) {
+                item {
+                    if (state.isSearching) {
+                        NoResult()
+                    } else {
+                        NoXFound(
+                            headlineText = R.string.no_calls_found,
+                            bodyText = R.string.no_calls_found_desc,
+                            icon = R.drawable.call_log_rounded
+                        )
+                    }
+                }
+            } else {
+                items(
+                    items = state.callLogs,
+                    key = {
+                        when (it) {
+                            is CallLogsListItem.Header -> "header_${it.beforeLogId}"
+                            is CallLogsListItem.Log -> it.log.id
+                        }
+                    }
+                ) { item ->
+                    when (item) {
+                        is CallLogsListItem.Header -> {
+                            Text(
+                                text = item.date,
+                                style = MaterialTheme.typography.bodyLargeEmphasized.copy(
+                                    color = MaterialTheme.colorScheme.primary
+                                ),
+                                modifier = Modifier
+                                    .animateItem()
+                                    .padding(horizontal = 20.dp, vertical = 10.dp)
                             )
                         }
-                    }
-                } else {
-                    items(
-                        items = state.callLogs,
-                        key = {
-                            when (it) {
-                                is CallLogsListItem.Header -> "header_${it.beforeLogId}"
-                                is CallLogsListItem.Log -> it.log.id
-                            }
-                        }
-                    ) { item ->
-                        when (item) {
-                            is CallLogsListItem.Header -> {
-                                Text(
-                                    text = item.date,
-                                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(
-                                        color = MaterialTheme.colorScheme.primary
-                                    ),
-                                    modifier = Modifier
-                                        .animateItem()
-                                        .padding(horizontal = 20.dp, vertical = 10.dp)
-                                )
-                            }
 
-                            is CallLogsListItem.Log -> {
-                                val callLog = item.log
-                                val isSelected by sweetSelectState.isSelectedAsState(callLog)
+                        is CallLogsListItem.Log -> {
+                            val callLog = item.log
+                            val isSelected by sweetSelectState.isSelectedAsState(callLog)
 
-                                CallLogItem(
-                                    modifier = Modifier.animateItem(),
-                                    callLog = callLog,
-                                    isSelected = isSelected,
-                                    numberOfAppearance = item.count,
-                                    onCallAction = onHandleCallActions,
-                                    onNavigate = onNavigate,
-                                    onDeleteCallLog = {
-                                        onHandleDialerActions(
-                                            DialerAction.DeleteLogs(
-                                                listOf(callLog.id)
-                                            )
+                            CallLogItem(
+                                modifier = Modifier.animateItem(),
+                                callLog = callLog,
+                                isSelected = isSelected,
+                                numberOfAppearance = item.count,
+                                onCallAction = onHandleCallActions,
+                                onNavigate = onNavigate,
+                                onDeleteCallLog = {
+                                    onHandleDialerActions(
+                                        DialerAction.DeleteLogs(
+                                            listOf(callLog.id)
                                         )
-                                    },
-                                    onClick = {
-                                        if (sweetSelectState.isInSelectionMode) {
-                                            sweetSelectState.toggle(callLog)
-                                        } else {
-                                            if (callLog.presentation == CallPresentation.ALLOWED) {
-                                                onHandleCallActions(CallAction.LaunchCall(callLog.number))
-                                            }
+                                    )
+                                },
+                                onClick = {
+                                    if (sweetSelectState.isInSelectionMode) {
+                                        sweetSelectState.toggle(callLog)
+                                    } else {
+                                        if (callLog.presentation == CallPresentation.ALLOWED) {
+                                            onHandleCallActions(CallAction.LaunchCall(callLog.number))
                                         }
-                                    },
-                                    onLongClick = { sweetSelectState.toggle(callLog) }
-                                )
-                            }
-
+                                    }
+                                },
+                                onLongClick = { sweetSelectState.toggle(callLog) }
+                            )
                         }
+
                     }
                 }
             }

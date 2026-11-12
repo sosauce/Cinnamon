@@ -39,7 +39,7 @@ import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.utils.LocalScreen
 
 @Composable
-fun SharedTransitionScope.ScreenSelection(
+fun ScreenSelection(
     onNavigate: (Screen) -> Unit,
     dismiss: () -> Unit
 ) {
@@ -127,17 +127,13 @@ fun SharedTransitionScope.ScreenSelection(
                     val icon = if (selected) screen.selectedIcon else screen.unselectedIcon
                     Icon(
                         painter = painterResource(icon),
-                        contentDescription = stringResource(screen.name),
-                        modifier = Modifier.sharedElement(
-                            sharedContentState = rememberSharedContentState(icon),
-                            animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                        )
+                        contentDescription = stringResource(screen.name)
                     )
                     if (selected) {
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = stringResource(screen.name),
-                            style = MaterialTheme.typography.labelLargeEmphasized,
+                            style = MaterialTheme.typography.labelMediumEmphasized,
                             maxLines = 1,
                             softWrap = false
                         )

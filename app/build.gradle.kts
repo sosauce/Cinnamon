@@ -126,7 +126,6 @@ dependencies {
     implementation(libs.sweetselect.compose)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.ez.vcard)
-    //implementation(libs.android.smsmms)
     implementation(libs.mmslib)
     implementation(libs.squircle.shape)
     implementation(libs.lottie.compose)
@@ -134,6 +133,6 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
     implementation(libs.haze.blur)
-    implementation("io.github.sosauce:nekobites:1.1.2")
+    implementation(libs.nekobites)
 
 }

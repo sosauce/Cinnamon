@@ -37,7 +37,8 @@ data class Participant(
     val rawNumber: String,
     val displayName: String,
     val photoUriString: String?,
-    val isBlocked: Boolean
+    val isBlocked: Boolean,
+    val contactId: Long? = null
 ) {
     val photoUri
         get() = photoUriString?.toUri()

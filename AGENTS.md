@@ -61,5 +61,4 @@ app/src/main/res/  Strings, drawables and other resources
 - Never bypass permission, role, SIM/subscription or default-app handling.
 - SMS/MMS delivery, scheduled sends and call actions are lifecycle- and permission-sensitive; keep them on the existing coroutine/worker paths.
 - Setup flows, backup/import, call-log/voicemail screens and scheduled-message work must keep working when you touch related code.
-- NekoBites is declared directly in `app/build.gradle.kts` (legacy exception); never do that for new libraries.
 - Test source dirs may not exist; report accurately which checks you ran.

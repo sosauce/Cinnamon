@@ -146,25 +146,14 @@ fun ContactInfos(
                                     .alpha(if (index == 0) 1f else 0f)
                             )
                         },
-//                            trailingContent = {
-//                                if (email.isBlocked) {
-//                                    IconButton(
-//                                        onClick = {
-//                                            Toast.makeText(
-//                                                context,
-//                                                "You blocked this email",
-//                                                Toast.LENGTH_SHORT
-//                                            ).show()
-//                                        },
-//                                        shapes = IconButtonDefaults.shapes()
-//                                    ) {
-//                                        Icon(
-//                                            painter = painterResource(R.drawable.block),
-//                                            contentDescription = null
-//                                        )
-//                                    }
-//                                }
-//                            }
+                        trailingContent = {
+                            if (email.isBlocked) {
+                                Icon(
+                                    painter = painterResource(R.drawable.block),
+                                    contentDescription = null
+                                )
+                            }
+                        }
                     ) {
                         Text(email.email)
                         Text(

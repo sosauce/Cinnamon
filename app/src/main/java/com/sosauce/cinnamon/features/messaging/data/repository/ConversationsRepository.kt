@@ -187,7 +187,8 @@ class ConversationsRepository(private val context: Context) {
 
         val projection = arrayOf(
             PhoneLookup.DISPLAY_NAME,
-            PhoneLookup.PHOTO_THUMBNAIL_URI
+            PhoneLookup.PHOTO_THUMBNAIL_URI,
+            PhoneLookup.CONTACT_ID
         )
 
         val isBlocked = BlockedNumberContract.canCurrentUserBlockNumbers(context) && BlockedNumberContract.isBlocked(context, number)
@@ -206,12 +207,14 @@ class ConversationsRepository(private val context: Context) {
 
                 val displayName = cursor.getString(displayNameColumn) ?: number.beautifyNumber()
                 val photoThumbnail = cursor.getString(photoThumbnailColumn)
+                val contactIdColumn = cursor.getColumnIndexOrThrow(PhoneLookup.CONTACT_ID)
 
                 val participant = Participant(
                     rawNumber = number,
                     displayName = displayName,
                     photoUriString = photoThumbnail,
-                    isBlocked = isBlocked
+                    isBlocked = isBlocked,
+                    contactId = cursor.getLong(contactIdColumn)
                 )
                 return participant
             }

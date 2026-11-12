@@ -4,8 +4,7 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation
 
-import com.sosauce.cinnamon.core.ui.barsContentTransform
-import androidx.compose.animation.AnimatedContent
+import com.sosauce.cinnamon.core.ui.components.searchbars.MainSearchbarEntry
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateContentSize
@@ -78,8 +77,8 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.ConversationsSelectedBar
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
-import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar2
 import com.sosauce.cinnamon.core.utils.LazyListKeys
+import com.sosauce.cinnamon.core.utils.LocalSearchbarPadding
 import com.sosauce.cinnamon.core.utils.rememberHazeState
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
@@ -106,109 +105,99 @@ fun SharedTransitionScope.ConversationsScreen(
 ) {
     val listState = rememberLazyListState()
     val sweetSelectState = rememberSweetSelectState<CuteConversation>()
+    val searchbarPadding = LocalSearchbarPadding.current
 
-    Scaffold(
-        bottomBar = {
-            AnimatedContent(
-                targetState = sweetSelectState.isInSelectionMode,
-                transitionSpec = { barsContentTransform }
-            ) {
-                if (!it) {
-                    CuteSearchbar2(
-                        modifier = Modifier.selfAlignHorizontally(),
-                        sortingMenu = {},
-                        textFieldState = textFieldState,
-                        fab = {
-                            AnimatedFab(
-                                onClick = { onNavigate(Screen.StartConversation) },
-                                icon = R.drawable.add
-                            )
-                        },
-                        onNavigate = onNavigate
-                    )
-                } else {
-                    ConversationsSelectedBar(
-                        modifier = Modifier.selfAlignHorizontally(),
-                        items = state.pinnedConversations + state.conversations,
-                        multiSelectState = sweetSelectState,
-                        onDeleteConversations = {
-                            val threadIds = sweetSelectState.selectedItems.map { it.threadId }
-                            onHandleConversationsAction(
-                                ConversationsAction.DeleteConversations(
-                                    threadIds
-                                )
-                            )
-                            sweetSelectState.clearSelected()
-                        },
-                        onArchiveThreads = {
-                            val threadIds = sweetSelectState.selectedItems.map { it.threadId }
-                            onHandleConversationsAction(
-                                ConversationsAction.ArchiveConversations(
-                                    threadIds
-                                )
-                            )
-                            sweetSelectState.clearSelected()
-                        },
-                        onPinThreads = {
-                            val threadIds = sweetSelectState.selectedItems.map { it.threadId }
-                            onHandleConversationsAction(
-                                ConversationsAction.PinConversations(
-                                    threadIds
-                                )
-                            )
-                            sweetSelectState.clearSelected()
-                        }
-                    )
-                }
-            }
-        }
-    ) { paddingValues ->
-
-        LoadingBox(
-            isLoading = state.isLoading
-        ) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentPadding = paddingValues,
-                state = listState
-            ) {
-                if (state.hasArchivedThreads) {
-                    item(LazyListKeys.ARCHIVED) {
-                        FilledTonalButton(
-                            onClick = { onNavigate(Screen.ArchivedThreads) },
-                            shapes = ButtonDefaults.shapes(),
-                            modifier = Modifier
-                                .animateItem()
-                                .selfAlignHorizontally()
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.archived_outlined),
-                                contentDescription = null
-                            )
-                            Spacer(Modifier.width(5.dp))
-                            Text(stringResource(R.string.archived))
-                        }
-                        Spacer(Modifier.height(10.dp))
-                    }
-                }
-
-                threadsList(
-                    pinnedConversations = state.pinnedConversations,
-                    conversations = state.conversations,
-                    sweetSelectState = sweetSelectState,
-                    onNavigate = onNavigate,
-                    sharedTransitionScope = this@ConversationsScreen,
-                    onHandleConversationsAction = onHandleConversationsAction,
-                    emptyState = {
-                        NoXFound(
-                            headlineText = R.string.no_convo_found,
-                            bodyText = R.string.no_convo_found_desc,
-                            icon = R.drawable.message_rounded
+    MainSearchbarEntry(
+        screen = Screen.Conversations,
+        textFieldState = textFieldState,
+        isInSelectionMode = sweetSelectState.isInSelectionMode,
+        sortingMenu = {},
+        fab = {
+            AnimatedFab(
+                onClick = { onNavigate(Screen.StartConversation) },
+                icon = R.drawable.add
+            )
+        },
+        selectedBar = {
+            ConversationsSelectedBar(
+                modifier = Modifier.selfAlignHorizontally(),
+                items = state.pinnedConversations + state.conversations,
+                multiSelectState = sweetSelectState,
+                onDeleteConversations = {
+                    val threadIds = sweetSelectState.selectedItems.map { it.threadId }
+                    onHandleConversationsAction(
+                        ConversationsAction.DeleteConversations(
+                            threadIds
                         )
+                    )
+                    sweetSelectState.clearSelected()
+                },
+                onArchiveThreads = {
+                    val threadIds = sweetSelectState.selectedItems.map { it.threadId }
+                    onHandleConversationsAction(
+                        ConversationsAction.ArchiveConversations(
+                            threadIds
+                        )
+                    )
+                    sweetSelectState.clearSelected()
+                },
+                onPinThreads = {
+                    val threadIds = sweetSelectState.selectedItems.map { it.threadId }
+                    onHandleConversationsAction(
+                        ConversationsAction.PinConversations(
+                            threadIds
+                        )
+                    )
+                    sweetSelectState.clearSelected()
+                }
+            )
+        }
+    )
+
+    LoadingBox(
+        isLoading = state.isLoading
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentPadding = searchbarPadding,
+            state = listState
+        ) {
+            if (state.hasArchivedThreads) {
+                item(LazyListKeys.ARCHIVED) {
+                    FilledTonalButton(
+                        onClick = { onNavigate(Screen.ArchivedThreads) },
+                        shapes = ButtonDefaults.shapes(),
+                        modifier = Modifier
+                            .animateItem()
+                            .selfAlignHorizontally()
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.archived_outlined),
+                            contentDescription = null
+                        )
+                        Spacer(Modifier.width(5.dp))
+                        Text(stringResource(R.string.archived))
                     }
-                )
+                    Spacer(Modifier.height(10.dp))
+                }
             }
+
+            threadsList(
+                pinnedConversations = state.pinnedConversations,
+                conversations = state.conversations,
+                sweetSelectState = sweetSelectState,
+                onNavigate = onNavigate,
+                sharedTransitionScope = this@ConversationsScreen,
+                onHandleConversationsAction = onHandleConversationsAction,
+                emptyState = {
+                    NoXFound(
+                        headlineText = R.string.no_convo_found,
+                        bodyText = R.string.no_convo_found_desc,
+                        icon = R.drawable.message_rounded
+                    )
+                }
+            )
         }
     }
 }

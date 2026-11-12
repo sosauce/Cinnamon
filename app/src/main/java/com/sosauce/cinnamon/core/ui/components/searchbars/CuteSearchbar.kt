@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -45,6 +46,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.ScreenSelection
 import com.sosauce.cinnamon.core.utils.LocalScreen
+import com.sosauce.nekobites.animations.AnimatedFab
 
 @Composable
 fun CuteSearchbar(
@@ -66,6 +68,53 @@ fun CuteSearchbar(
     var isInScreenSelectionMode by remember { mutableStateOf(false) }
     val isSearching = textFieldState.text.isNotEmpty()
 
+
+    Column(
+        modifier = modifier
+            .navigationBarsPadding()
+            .fillMaxWidth(0.85f)
+            .imePadding()
+
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp),
+            horizontalArrangement = Arrangement.End
+        ) {
+            navigationButton?.invoke()
+            Spacer(Modifier.weight(1f))
+            fab?.invoke()
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+            //modifier = Modifier.fillMaxWidth()
+        ) {
+            Surface(
+                shape = RoundedCornerShape(50.dp),
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                modifier = Modifier.weight(1f)
+            ) {
+                SharedTransitionLayout(
+                    modifier = Modifier.padding(6.dp)
+                ) {
+                    ScreenSelection(
+                        onNavigate = onNavigate,
+                        dismiss = { isInScreenSelectionMode = false }
+                    )
+                }
+            }
+
+            AnimatedFab(
+                onClick = {},
+                icon = R.drawable.search,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                minSize = 65.dp
+            )
+        }
+    }
 
     Column(
         modifier = modifier

@@ -28,6 +28,7 @@ import com.sosauce.cinnamon.features.contacts.domain.CuteRawContact
 import com.sosauce.cinnamon.features.contacts.domain.RawContactEdit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
@@ -44,8 +45,10 @@ class ContactsRepository(
             .flowOn(Dispatchers.IO)
 
     fun fetchLatestContactsDetails(contactId: Long) =
-        context.contentResolver
-            .observe(ContactsContract.Data.CONTENT_URI)
+        combine(
+            context.contentResolver.observe(ContactsContract.Data.CONTENT_URI),
+            context.contentResolver.observe(BlockedNumbers.CONTENT_URI)
+        ) { _, _ -> Unit }
             .mapLatest {
                 fetchContactDetails(contactId)
             }
@@ -65,8 +68,10 @@ class ContactsRepository(
         withContext(Dispatchers.IO) { fetchContactDetails(contactId) }
 
     fun fetchContact(contactId: Long) =
-        context.contentResolver
-            .observe(ContactsContract.Contacts.CONTENT_URI)
+        combine(
+            context.contentResolver.observe(ContactsContract.Contacts.CONTENT_URI),
+            context.contentResolver.observe(BlockedNumbers.CONTENT_URI)
+        ) { _, _ -> Unit }
             .mapLatest {
                 fetchContacts(
                     extraSelection = "${ContactsContract.Contacts._ID} = ?",
@@ -219,7 +224,12 @@ class ContactsRepository(
                 when (mime) {
                     ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE ->
                         builder.addEmail(
-                            ContactEmail(data1, data2, isDefault)
+                            ContactEmail(
+                                email = data1,
+                                type = data2,
+                                isDefault = isDefault,
+                                isBlocked = BlockedNumberContract.isBlocked(context, data1)
+                            )
                         )
 
                     ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE -> {

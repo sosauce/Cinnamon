@@ -1,9 +1,11 @@
 package com.sosauce.cinnamon.core.ui.components.searchbars
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -40,7 +42,8 @@ fun CuteSearchbar2(
     sortingMenu: @Composable (() -> Unit)? = null,
     navigationButton: @Composable (() -> Unit)? = null,
     fab: @Composable (() -> Unit)? = null,
-    onNavigate: (Screen) -> Unit
+    backButton: @Composable (() -> Unit)? = null,
+    onNavigate: (Screen) -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -49,82 +52,102 @@ fun CuteSearchbar2(
             .imePadding(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainer
-        ) {
-            Column(
-                modifier = Modifier.padding(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
+                horizontalArrangement = Arrangement.End
             ) {
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    modifier = Modifier.fillMaxWidth()
+                navigationButton?.invoke()
+                Spacer(Modifier.weight(1f))
+                fab?.invoke()
+            }
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                shadowElevation = 8.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    TextField(
-                        state = textFieldState,
-                        modifier = Modifier.weight(1f),
-                        lineLimits = TextFieldLineLimits.SingleLine,
-                        shape = FloatingToolbarDefaults.ContainerShape,
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
-                        placeholder = {
-                            Text(
-                                text = stringResource(R.string.search_here),
-                                maxLines = 1
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.search),
-                                contentDescription = null
-                            )
-                        },
-                        trailingIcon = {
-                            if (textFieldState.text.isNotEmpty()) {
-                                IconButton(
-                                    onClick = textFieldState::clearText,
-                                    shapes = IconButtonDefaults.shapes()
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.cancel_filled),
-                                        contentDescription = stringResource(R.string.clear_search)
-                                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        TextField(
+                            state = textFieldState,
+                            modifier = Modifier.weight(1f),
+                            lineLimits = TextFieldLineLimits.SingleLine,
+                            shape = FloatingToolbarDefaults.ContainerShape,
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            placeholder = {
+                                Text(
+                                    text = stringResource(R.string.search_here),
+                                    maxLines = 1
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.search),
+                                    contentDescription = null
+                                )
+                            },
+                            trailingIcon = {
+                                Row {
+
+                                    AnimatedContent(
+                                        targetState = textFieldState.text.isNotEmpty()
+                                    ) {
+                                        if (it) {
+                                            IconButton(
+                                                onClick = textFieldState::clearText,
+                                                shapes = IconButtonDefaults.shapes()
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.cancel_filled),
+                                                    contentDescription = stringResource(R.string.clear_search)
+                                                )
+                                            }
+                                        }
+                                        else {
+                                            sortingMenu?.invoke()
+                                        }
+                                    }
+                                    IconButton(
+                                        onClick = { onNavigate(Screen.Settings) },
+                                        shapes = IconButtonDefaults.shapes()
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.settings_filled),
+                                            contentDescription = stringResource(R.string.settings)
+                                        )
+                                    }
                                 }
                             }
-                            sortingMenu?.invoke()
-                            IconButton(
-                                onClick = { onNavigate(Screen.Settings) },
-                                shapes = IconButtonDefaults.shapes()
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.settings_filled),
-                                    contentDescription = stringResource(R.string.settings)
-                                )
-                            }
-                        }
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    navigationButton?.invoke()
-                    SharedTransitionLayout(modifier = Modifier.weight(1f)) {
-                        ScreenSelection(
-                            onNavigate = onNavigate,
-                            dismiss = {}
                         )
                     }
-                    fab?.invoke()
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        navigationButton?.invoke()
+                        SharedTransitionLayout(modifier = Modifier.weight(1f)) {
+                            ScreenSelection(
+                                onNavigate = onNavigate,
+                                dismiss = {}
+                            )
+                        }
+                    }
                 }
             }
         }
