@@ -5,6 +5,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -40,12 +41,12 @@ fun SettingsNavigation() {
                     selected = selected,
                     onClick = { initialScreen = screen.value },
                     label = stringResource(screen.label),
-                    containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
                 ) {
                     Icon(
                         painter = painterResource(screen.icon),
                         contentDescription = null,
-                        tint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHighest)
                     )
                 }
             }
