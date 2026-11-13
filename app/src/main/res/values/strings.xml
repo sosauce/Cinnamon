@@ -323,4 +323,8 @@
         <item quantity="one">%d message</item>
         <item quantity="other">%d messages</item>
     </plurals>
+    <plurals name="plural_delete_conversations">
+        <item quantity="one">Delete conversation</item>
+        <item quantity="other">Delete conversations</item>
+    </plurals>
 </resources>

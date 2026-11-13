@@ -6,11 +6,14 @@ import androidx.compose.foundation.Image
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import com.sosauce.cinnamon.R
 
 @Composable
@@ -22,12 +25,17 @@ fun DeleteConversationsDialog(
     AlertDialog(
         onDismissRequest = onDismissRequest,
         icon = {
-            Image(
+            Icon(
                 painter = painterResource(R.drawable.delete_filled),
                 contentDescription = null
             )
         },
-        title = { Text("Delete conversations") },
+        title = {
+            Text(
+                text = pluralStringResource(R.plurals.plural_delete_conversations, numberOfConversations),
+                textAlign = TextAlign.Center
+            )
+        },
         confirmButton = {
             TextButton(
                 onClick = onDelete,

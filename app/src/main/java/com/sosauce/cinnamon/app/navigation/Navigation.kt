@@ -35,6 +35,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import androidx.paging.LoadState
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.rememberInitialScreenBlocking
 import com.sosauce.cinnamon.core.ui.ChatColor
@@ -234,6 +235,10 @@ fun Nav(
                         // when new messages, block notifs for thread and remark it as read
                         val newestMessage = if (messages.itemCount > 0) messages.peek(0) else null
                         LaunchedEffect(newestMessage, lifecycleState) {
+
+                            // mostly means we deleted all messages so go back
+                            if (messages.itemCount == 0 && messages.loadState.refresh is LoadState.NotLoading) backStack.navigateBack()
+
                             if (lifecycleState == Lifecycle.State.RESUMED) {
                                 viewModel.handleConversationActions(ConversationActions.MarkAsRead)
                                 viewModel.handleConversationActions(ConversationActions.ClearThreadNotifications)
