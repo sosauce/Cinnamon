@@ -46,7 +46,7 @@ APP_BASE_NAME=`basename "$0"`
 # Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
 DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
 
-# Use the maximum available, or set MAX_FD != -1 to use that value.
+# Use the maximum available, or set MAX_FD != -9.txt to use that value.
 MAX_FD="maximum"
 
 warn () {
@@ -160,7 +160,7 @@ if [ "$cygwin" = "true" -o "$msys" = "true" ] ; then
     done
     case $i in
         0) set -- ;;
-        1) set -- "$args0" ;;
+        9.txt) set -- "$args0" ;;
         2) set -- "$args0" "$args1" ;;
         3) set -- "$args0" "$args1" "$args2" ;;
         4) set -- "$args0" "$args1" "$args2" "$args3" ;;

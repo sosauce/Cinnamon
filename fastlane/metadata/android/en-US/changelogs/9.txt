@@ -1,0 +1,47 @@
+:sparkles: New features
+
+- Backup and restore: export and import your contacts, messages and call logs, with editable backup file names!
+- Search inside a conversation, with highlighted matches and next/previous navigation!
+- Search conversations by message content, with an option to turn it on or off and match counts shown!
+- Favorite contacts now appear as cards in a horizontal row, and pinned contacts get their own cards!
+- Unread message counts now show on conversation badges, including pinned conversations!
+- Conversation details now show a media viewer, blocked email and participant contact information!
+- Crash reports are saved, and the next time you open the app you can review or email them!
+- Added an "Add to contact" option in call logs!
+- Call logs show which SIM was used on multi-SIM phones!
+- You can schedule messages to multiple recipients!
+- Quick replies can now be sent to several recipients at once!
+- The new Material 3 Expressive redesign includes a new font, moved search bars and smoother transitions!
+
+:wrench: Improvements
+
+- Contacts, call logs and conversations now load in pages, so long lists open much faster and scroll more smoothly!
+- Opening individual conversations is much faster!
+- Large image attachments are automatically compressed to fit carrier MMS limits!
+- Phone numbers are now parsed using your SIM's home region, which gives better results when you travel!
+- MMS now uses your default messaging SIM, and MMS notifications are sent!
+- The SMS segment count is now calculated accurately!
+- SMS delivery reports and sent/failed status are tracked more reliably!
+- Improved contact editing, with better photo and poster editing, company details saved and block/unblock dialogs!
+- Better accessibility labels across contacts, messages and attachments!
+- Pinned and avatar images are sharper, and several animations feel less clunky!
+- Improved call handling and DTMF keypad tones!
+- Scheduling is disabled when attachments are present, which avoids failed sends!
+
+:bug: Bug fixes & other
+
+- Fixed MMS attachments not working and images scaling incorrectly in MMS!
+- Fixed some incoming SMS being dropped, and multipart SMS now arrive as one message!
+- Incoming SMS now keep the SIM they were received on!
+- Fixed MMS delivery status being shown wrongly!
+- Fixed notification replies failing when there was no input or the notification was gone!
+- Fixed conversations being marked as read while not on screen!
+- Fixed colliding SMS delivery intents on long multipart messages!
+- Fixed multiple emojis overlapping!
+- Fixed possible crashes with call notifications and with malformed MMS content!
+- The app now goes back from a conversation after all its messages are deleted!
+- Fixed insets on the call screen and error feedback when editing a contact!
+
+Thanks for using Cinnamon :heart:!!!
+
+**Full Changelog**: https://github.com/sosauce/Cinnamon/compare/v1.1.0...v1.2.0
