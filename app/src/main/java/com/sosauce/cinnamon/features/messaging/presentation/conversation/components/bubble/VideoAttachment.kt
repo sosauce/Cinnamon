@@ -14,9 +14,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -25,11 +26,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +60,7 @@ import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.buttons.WavySlider
 import com.sosauce.cinnamon.core.utils.ImageUtils
+import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.nekobites.helpers.rememberInteractionSource
 import com.sosauce.cinnamon.core.utils.toMediaTime
 import com.sosauce.nekobites.animations.AnimatedDrawable
@@ -94,7 +99,7 @@ fun VideoAttachment(
                 }
         }
         var isPlaying by remember { mutableStateOf(false) }
-        var currentPosition by remember { mutableLongStateOf(0) }
+        var position by remember { mutableLongStateOf(0) }
         var duration by remember { mutableLongStateOf(0) }
 
 
@@ -124,7 +129,7 @@ fun VideoAttachment(
 
         LaunchedEffect(isPlaying) {
             while (isPlaying) {
-                currentPosition = exoPlayer.currentPosition.coerceAtLeast(0)
+                position = exoPlayer.currentPosition.coerceAtLeast(0)
                 delay(500.milliseconds)
             }
         }
@@ -136,37 +141,15 @@ fun VideoAttachment(
                 decorFitsSystemWindows = false
             )
         ) {
-            Box(
+
+            Scaffold(
                 modifier = Modifier
                     .fillMaxSize()
                     .clickable(
                         interactionSource = null,
                         indication = null
-                    ) { showFullscreen = false }
-            ) {
-                Box(
-                    modifier = Modifier.cloudy(100)
-                ) {
-                    AsyncImage(
-                        model = request,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.7f))
-                )
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .systemBarsPadding()
-                        .padding(15.dp)
-                ) {
+                    ) { showFullscreen = false },
+                topBar = {
                     FilledIconButton(
                         onClick = { showFullscreen = false },
                         colors = IconButtonDefaults.filledIconButtonColors(
@@ -174,81 +157,119 @@ fun VideoAttachment(
                             contentColor = MaterialTheme.colorScheme.onSurface
                         ),
                         shapes = IconButtonDefaults.shapes(),
-                        modifier = Modifier.size(
-                            IconButtonDefaults.smallContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)
-                        )
+                        modifier = Modifier
+                            .statusBarsPadding()
+                            .padding(horizontal = 15.dp)
+                            .selfAlignHorizontally(Alignment.Start)
+                            .size(
+                                IconButtonDefaults.smallContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)
+                            )
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.keyboard_down),
                             contentDescription = null
                         )
                     }
-
-                    ContentFrame(
-                        player = exoPlayer,
+                },
+                bottomBar = {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f)
-                            .clip(MaterialTheme.shapes.extraLarge)
-                    )
-
-                    Surface(
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
                             .widthIn(max = 640.dp)
-                            .fillMaxWidth()
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                shape = RoundedCornerShape(28.dp)
+                            )
+                            .navigationBarsPadding()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                        ) {
+                        key(duration) {
                             WavySlider(
-                                value = tempSliderValue ?: currentPosition.toFloat(),
+                                value = tempSliderValue ?: position.toFloat(),
                                 valueRange = 0f..duration.toFloat(),
                                 onValueChange = { tempSliderValue = it },
                                 onValueChangeFinished = {
                                     tempSliderValue?.let {
                                         exoPlayer.seekTo(it.toLong())
+                                        position = it.toLong()
                                     }
                                     tempSliderValue = null
                                 },
+//                                    colors = SliderDefaults.colors(thumbColor = contentColor),
+//                                    indicatorColor = contentColor,
+//                                    trackColor = contentColor.copy(alpha = 0.24f),
                                 isPlaying = isPlaying
                             )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = (tempSliderValue?.toLong() ?: currentPosition).toMediaTime(),
-                                    style = MaterialTheme.typography.labelLargeEmphasized,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.weight(1f)
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = (tempSliderValue?.toLong() ?: position).toMediaTime(),
+                                style = MaterialTheme.typography.labelLargeEmphasized,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f)
+                            )
+                            FilledIconButton(
+                                onClick = { if (isPlaying) exoPlayer.pause() else exoPlayer.play() },
+                                shapes = IconButtonDefaults.shapes(),
+                                modifier = Modifier.size(
+                                    IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)
                                 )
-                                FilledIconButton(
-                                    onClick = { if (isPlaying) exoPlayer.pause() else exoPlayer.play() },
-                                    shapes = IconButtonDefaults.shapes(),
-                                    modifier = Modifier.size(
-                                        IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)
-                                    )
-                                ) {
-                                    AnimatedDrawable(
-                                        drawable = AnimatedDrawableFile.PLAY,
-                                        atEnd = isPlaying
-                                    )
-                                }
-                                Text(
-                                    text = duration.toMediaTime(),
-                                    style = MaterialTheme.typography.labelLargeEmphasized,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.End,
-                                    modifier = Modifier.weight(1f)
+                            ) {
+                                AnimatedDrawable(
+                                    drawable = AnimatedDrawableFile.PLAY,
+                                    atEnd = isPlaying
                                 )
                             }
+                            Text(
+                                text = duration.toMediaTime(),
+                                style = MaterialTheme.typography.labelLargeEmphasized,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.End,
+                                modifier = Modifier.weight(1f)
+                            )
                         }
                     }
                 }
+            ) { pv ->
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(pv)
+                ) {
+                    Box(
+                        modifier = Modifier.cloudy(100)
+                    ) {
+                        AsyncImage(
+                            model = request,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.7f))
+                    )
+
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(15.dp)
+                    ) {
+                        ContentFrame(
+                            player = exoPlayer
+                        )
+
+                    }
+                }
             }
+
         }
     }
 
