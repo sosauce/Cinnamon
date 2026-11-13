@@ -9,10 +9,12 @@ import android.net.Uri
 import android.os.Build
 import android.provider.BaseColumns
 import android.provider.BlockedNumberContract
+import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.PhoneLookup
 import android.provider.Telephony
 import android.provider.Telephony.Mms
 import android.provider.Telephony.MmsSms
+import android.telephony.PhoneNumberUtils
 import androidx.compose.ui.util.fastMap
 import androidx.core.content.contentValuesOf
 import androidx.core.net.toUri
@@ -20,6 +22,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.utils.observe
 import com.sosauce.cinnamon.features.messaging.data.model.CuteConversationEntity
+import com.sosauce.cinnamon.features.messaging.data.model.MessagesPage
 import com.sosauce.cinnamon.features.messaging.domain.Participant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -94,6 +97,180 @@ class ConversationsRepository(private val context: Context) {
 
         return conversations
     }
+
+    fun observeConversationChanges(): Flow<Boolean> =
+        context.contentResolver.observe(Telephony.Threads.CONTENT_URI)
+
+    /**
+     * One page of conversations (newest first), starting at [offset].
+     * Used by [ConversationsPagingSource].
+     */
+    suspend fun getConversationsPage(
+        extraSelection: String?,
+        offset: Int,
+        limit: Int
+    ): MessagesPage<CuteConversationEntity> = withContext(Dispatchers.IO) {
+        val conversations = mutableListOf<CuteConversationEntity>()
+        var totalCount = 0
+
+        queryThreads(extraSelection, emptyArray())?.use { cursor ->
+            totalCount = cursor.count
+            if (limit > 0 && cursor.moveToPosition(offset)) {
+                do {
+                    conversations.add(cursor.readConversation())
+                } while (conversations.size < limit && cursor.moveToNext())
+            }
+        }
+
+        MessagesPage(messages = conversations, totalCount = totalCount)
+    }
+
+    /**
+     * Finds the conversations matching [query], either through a participant (contact name or number),
+     * or through their content: every message when [searchMessages] is true, otherwise only the snippet.
+     *
+     * @return threadId -> amount of matching messages (0 when matched by participant/snippet only)
+     */
+    suspend fun searchThreads(
+        query: String,
+        searchMessages: Boolean
+    ): Map<Long, Int> = withContext(Dispatchers.IO) {
+        val results = mutableMapOf<Long, Int>()
+        val like = "%${query.escapeLike()}%"
+
+        // participants
+        val threadRecipients = mutableMapOf<Long, List<String>>()
+        context.contentResolver.query(
+            "${Telephony.Threads.CONTENT_URI}?simple=true".toUri(),
+            arrayOf(Telephony.Threads._ID, Telephony.Threads.RECIPIENT_IDS),
+            "${Telephony.Threads.MESSAGE_COUNT} > 0",
+            null,
+            null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                threadRecipients[cursor.getLong(0)] = cursor.getString(1).orEmpty().split(" ")
+            }
+        }
+
+        val addresses = mutableMapOf<String, String>()
+        context.contentResolver.query(
+            Uri.withAppendedPath(MmsSms.CONTENT_URI, "canonical-addresses"),
+            arrayOf(Telephony.CanonicalAddressesColumns._ID, Telephony.CanonicalAddressesColumns.ADDRESS),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                addresses[cursor.getString(0)] = cursor.getString(1).orEmpty()
+            }
+        }
+
+        val contactNumbers = runCatching {
+            context.contentResolver.query(
+                Phone.CONTENT_URI,
+                arrayOf(Phone.NUMBER),
+                "${Phone.DISPLAY_NAME} LIKE ? ESCAPE '\\'",
+                arrayOf(like),
+                null
+            )?.use { cursor ->
+                buildList { while (cursor.moveToNext()) cursor.getString(0)?.let(::add) }
+            }
+        }.getOrNull().orEmpty()
+
+        // "06 12 34" should match "+33612345678"-like addresses, so compare digits only for number-like queries
+        val queryDigits = query.filter(Char::isDigit)
+        val isNumberQuery = queryDigits.length >= 3 && query.all { it.isDigit() || it in " +-()." }
+
+        threadRecipients.forEach { (threadId, recipientIds) ->
+            val matches = recipientIds.any { recipientId ->
+                val address = addresses[recipientId] ?: return@any false
+                address.contains(query, ignoreCase = true) ||
+                        (isNumberQuery && address.filter(Char::isDigit).contains(queryDigits)) ||
+                        contactNumbers.any { PhoneNumberUtils.compare(it, address) }
+            }
+            if (matches) results[threadId] = 0
+        }
+
+        // content
+        if (searchMessages) {
+            countMessageMatches(like).forEach { (threadId, count) ->
+                results[threadId] = count
+            }
+        } else {
+            context.contentResolver.query(
+                "${Telephony.Threads.CONTENT_URI}?simple=true".toUri(),
+                arrayOf(Telephony.Threads._ID),
+                "${Telephony.Threads.MESSAGE_COUNT} > 0 AND ${Telephony.Threads.SNIPPET} LIKE ? ESCAPE '\\'",
+                arrayOf(like),
+                null
+            )?.use { cursor ->
+                while (cursor.moveToNext()) results.putIfAbsent(cursor.getLong(0), 0)
+            }
+        }
+
+        results
+    }
+
+    /**
+     * threadId -> amount of SMS/MMS whose text matches the LIKE pattern
+     */
+    private fun countMessageMatches(like: String): Map<Long, Int> {
+        val counts = mutableMapOf<Long, Int>()
+
+        context.contentResolver.query(
+            Telephony.Sms.CONTENT_URI,
+            arrayOf(Telephony.Sms.THREAD_ID),
+            "${Telephony.Sms.BODY} LIKE ? ESCAPE '\\'",
+            arrayOf(like),
+            null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                val threadId = cursor.getLong(0)
+                counts[threadId] = (counts[threadId] ?: 0) + 1
+            }
+        }
+
+        val partsUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Mms.Part.CONTENT_URI
+        } else {
+            "content://mms/part".toUri()
+        }
+
+        val matchingMmsIds = mutableSetOf<Long>()
+        context.contentResolver.query(
+            partsUri,
+            arrayOf(Mms.Part.MSG_ID),
+            "${Mms.Part.CONTENT_TYPE} = 'text/plain' AND ${Mms.Part.TEXT} LIKE ? ESCAPE '\\'",
+            arrayOf(like),
+            null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) matchingMmsIds.add(cursor.getLong(0))
+        }
+
+        if (matchingMmsIds.isNotEmpty()) {
+            context.contentResolver.query(
+                Mms.CONTENT_URI,
+                arrayOf(Mms._ID, Mms.THREAD_ID),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+                while (cursor.moveToNext()) {
+                    if (cursor.getLong(0) in matchingMmsIds) {
+                        val threadId = cursor.getLong(1)
+                        counts[threadId] = (counts[threadId] ?: 0) + 1
+                    }
+                }
+            }
+        }
+
+        return counts
+    }
+
+    private fun String.escapeLike(): String = this
+        .replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
 
     private fun queryThreads(
         extraSelection: String?,

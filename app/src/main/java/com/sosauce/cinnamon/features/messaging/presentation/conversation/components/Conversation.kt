@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -142,7 +143,18 @@ fun Conversation(
             modifier = Modifier.basicMarquee()
         )
 
+        val matchingMessages = if (conversation.matchingMessagesCount > 0) {
+            pluralStringResource(
+                R.plurals.matching_messages,
+                conversation.matchingMessagesCount,
+                conversation.matchingMessagesCount
+            )
+        } else null
+
         val text = when {
+            // searching through messages, show how many matched instead of the snippet
+            matchingMessages != null -> AnnotatedString(matchingMessages)
+
             conversation.isAnyBlocked && !conversation.isGroupChat -> {
                 buildAnnotatedString {
                     withStyle(

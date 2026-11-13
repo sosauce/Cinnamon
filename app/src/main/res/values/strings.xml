@@ -316,4 +316,10 @@
     <string name="search_match_counter">%1$d/%2$d</string>
     <string name="older_match">Older match</string>
     <string name="newer_match">Newer match</string>
+    <string name="search_message_content">Search in messages</string>
+    <string name="search_message_content_desc">When searching conversations, also show the ones containing messages that match the search</string>
+    <plurals name="matching_messages">
+        <item quantity="one">%d message</item>
+        <item quantity="other">%d messages</item>
+    </plurals>
 </resources>

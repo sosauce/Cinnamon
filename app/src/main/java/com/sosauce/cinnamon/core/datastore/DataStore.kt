@@ -52,6 +52,7 @@ data object PreferencesKeys {
     val ENABLE_PINCH_TO_ZOOM = booleanPreferencesKey("ENABLE_PINCH_TO_ZOOM")
     val CHAT_ZOOM_SCALE = floatPreferencesKey("CHAT_ZOOM_SCALE")
     val LAST_CRASH_LOG = stringPreferencesKey("LAST_CRASH_LOG")
+    val SEARCH_MESSAGE_CONTENT = booleanPreferencesKey("SEARCH_MESSAGE_CONTENT")
 }
 
 
@@ -119,6 +120,9 @@ fun rememberChatZoomScale() = rememberPreference(PreferencesKeys.CHAT_ZOOM_SCALE
 
 @Composable
 fun rememberEnablePinchToZoom() = rememberPreference(PreferencesKeys.ENABLE_PINCH_TO_ZOOM, false)
+
+@Composable
+fun rememberSearchMessageContent() = rememberPreference(PreferencesKeys.SEARCH_MESSAGE_CONTENT, true)
 
 @Composable
 fun rememberInitialScreen() = rememberPreference(DEFAULT_TAB, DefaultTabOption.MESSAGES)

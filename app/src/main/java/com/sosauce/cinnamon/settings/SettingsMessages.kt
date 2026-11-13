@@ -10,6 +10,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.rememberDefaultMessagesSim
 import com.sosauce.cinnamon.core.datastore.rememberEnableDeliveryReports
 import com.sosauce.cinnamon.core.datastore.rememberEnablePinchToZoom
+import com.sosauce.cinnamon.core.datastore.rememberSearchMessageContent
 import com.sosauce.cinnamon.core.datastore.rememberSendGroupAsMms
 import com.sosauce.cinnamon.core.datastore.rememberSendLongAsMms
 import com.sosauce.cinnamon.core.datastore.rememberShowCharCount
@@ -30,6 +31,7 @@ fun SettingsMessages() {
     var defaultMessagesSims by rememberDefaultMessagesSim()
     var showCharCount by rememberShowCharCount()
     var pinchToZoom by rememberEnablePinchToZoom()
+    var searchMessageContent by rememberSearchMessageContent()
     val sims = remember { simsViewModel.fetchSims() }
 
     SettingsGroup(title = stringResource(R.string.sim_card)) {
@@ -64,6 +66,12 @@ fun SettingsMessages() {
             title = stringResource(R.string.show_character_count_on_typing),
             checked = showCharCount,
             onCheckedChange = { showCharCount = !showCharCount }
+        )
+        SettingsSwitch(
+            title = stringResource(R.string.search_message_content),
+            description = stringResource(R.string.search_message_content_desc),
+            checked = searchMessageContent,
+            onCheckedChange = { searchMessageContent = !searchMessageContent }
         )
     }
 

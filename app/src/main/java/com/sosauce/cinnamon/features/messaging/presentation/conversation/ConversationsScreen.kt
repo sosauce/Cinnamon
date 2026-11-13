@@ -88,6 +88,9 @@ import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
 import com.sosauce.nekobites.components.Spacer
 import com.sosauce.sweetselect.SweetSelectState
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.itemKey
 import com.sosauce.sweetselect.rememberSweetSelectState
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
@@ -98,6 +101,7 @@ import dev.chrisbanes.haze.hazeSource
 @Composable
 fun SharedTransitionScope.ConversationsScreen(
     state: ConversationsState,
+    conversations: LazyPagingItems<CuteConversation>,
     textFieldState: TextFieldState,
     onNavigate: (Screen) -> Unit,
     onHandleConversationsAction: (ConversationsAction) -> Unit
@@ -120,7 +124,8 @@ fun SharedTransitionScope.ConversationsScreen(
                 selectedBar = {
                     ConversationsSelectedBar(
                         modifier = Modifier.selfAlignHorizontally(),
-                        items = state.pinnedConversations + state.conversations,
+                        // only what's loaded, see paging
+                        items = state.pinnedConversations + conversations.itemSnapshotList.items,
                         multiSelectState = sweetSelectState,
                         onDeleteConversations = {
                             val threadIds = sweetSelectState.selectedItems.map { it.threadId }
@@ -187,7 +192,8 @@ fun SharedTransitionScope.ConversationsScreen(
 
                 threadsList(
                     pinnedConversations = state.pinnedConversations,
-                    conversations = state.conversations,
+                    conversations = conversations,
+                    searchQuery = state.searchQuery,
                     sweetSelectState = sweetSelectState,
                     onNavigate = onNavigate,
                     sharedTransitionScope = this@ConversationsScreen,
@@ -203,6 +209,31 @@ fun SharedTransitionScope.ConversationsScreen(
             }
         }
     }
+}
+
+fun LazyListScope.threadsList(
+    pinnedConversations: List<CuteConversation>,
+    conversations: LazyPagingItems<CuteConversation>,
+    searchQuery: String,
+    sweetSelectState: SweetSelectState<CuteConversation>,
+    onNavigate: (Screen) -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    emptyState: @Composable () -> Unit,
+    onHandleConversationsAction: (ConversationsAction) -> Unit
+) {
+    threadsList(
+        pinnedConversations = pinnedConversations,
+        conversationCount = conversations.itemCount,
+        conversationKey = conversations.itemKey { it.threadId },
+        conversationAt = { conversations[it] },
+        isEmpty = conversations.itemCount == 0 &&
+                conversations.loadState.refresh is LoadState.NotLoading,
+        searchQuery = searchQuery,
+        sweetSelectState = sweetSelectState,
+        onNavigate = onNavigate,
+        sharedTransitionScope = sharedTransitionScope,
+        emptyState = emptyState
+    )
 }
 
 fun LazyListScope.threadsList(
@@ -233,6 +264,7 @@ private fun LazyListScope.threadsList(
     conversationKey: (Int) -> Any,
     conversationAt: (Int) -> CuteConversation?,
     isEmpty: Boolean,
+    searchQuery: String = "",
     sweetSelectState: SweetSelectState<CuteConversation>,
     onNavigate: (Screen) -> Unit,
     sharedTransitionScope: SharedTransitionScope,
@@ -261,7 +293,7 @@ private fun LazyListScope.threadsList(
                         if (sweetSelectState.isInSelectionMode) {
                             sweetSelectState.toggle(conversation)
                         } else {
-                            onNavigate(Screen.ConversationDetails(conversation.threadId))
+                            onNavigate(conversation.toDetailsScreen(searchQuery))
                         }
                     },
                     onLongClick = { sweetSelectState.toggle(conversation) }
@@ -286,7 +318,7 @@ private fun LazyListScope.threadsList(
                     if (sweetSelectState.isInSelectionMode) {
                         sweetSelectState.toggle(conversation)
                     } else {
-                        onNavigate(Screen.ConversationDetails(conversation.threadId))
+                        onNavigate(conversation.toDetailsScreen(searchQuery))
                     }
                 },
                 onLongClick = { sweetSelectState.toggle(conversation) },
@@ -298,3 +330,11 @@ private fun LazyListScope.threadsList(
         item { emptyState() }
     }
 }
+
+/**
+ * Opens the conversation, with its search prefilled when it matched [searchQuery] through its messages
+ */
+private fun CuteConversation.toDetailsScreen(searchQuery: String) = Screen.ConversationDetails(
+    threadId = threadId,
+    searchQuery = if (matchingMessagesCount > 0) searchQuery else ""
+)

@@ -12,7 +12,11 @@ data class CuteConversation(
     val date: String = "",
     val read: Boolean = true,
     val unreadCount: Int = 0,
-    val draft: String = ""
+    val draft: String = "",
+    /**
+     * Amount of messages matching the current search query, 0 when not searching through messages
+     */
+    val matchingMessagesCount: Int = 0
 ) {
     val isGroupChat = participants.size > 1
 

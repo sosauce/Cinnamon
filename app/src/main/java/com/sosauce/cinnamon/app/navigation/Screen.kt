@@ -76,7 +76,11 @@ sealed class Screen : NavKey {
     @Serializable
     data class ConversationDetails(
         val threadId: Long,
-        val prefilledMessage: String = ""
+        val prefilledMessage: String = "",
+        /**
+         * Opens the conversation with its search active and filled with this, if not empty
+         */
+        val searchQuery: String = ""
     ) : Screen()
 
 

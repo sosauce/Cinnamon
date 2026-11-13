@@ -7,6 +7,7 @@ import android.net.Uri
 import android.provider.BlockedNumberContract
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastFilter
@@ -113,6 +114,7 @@ class ConversationDetailsViewModel(
         .map { scheduled -> scheduled.sortedByDescending { it.timestamp } }
 
     val searchTextFieldState = TextFieldState()
+    private var initialSearchQueryApplied = false
     private val _search = MutableStateFlow(ConversationSearchState())
 
     private val searchQuery = snapshotFlow { searchTextFieldState.text.toString().trim() }
@@ -338,6 +340,14 @@ class ConversationDetailsViewModel(
 
             is ConversationActions.OpenSearch -> _search.update { it.copy(isActive = true) }
 
+            is ConversationActions.OpenSearchWithQuery -> {
+                // the nav entry re-runs this when coming back to the screen, only apply it once
+                if (initialSearchQueryApplied) return
+                initialSearchQueryApplied = true
+                searchTextFieldState.setTextAndPlaceCursorAtEnd(action.query)
+                _search.update { it.copy(isActive = true) }
+            }
+
             is ConversationActions.CloseSearch -> {
                 searchTextFieldState.clearText()
                 _search.value = ConversationSearchState()
@@ -424,6 +434,7 @@ sealed interface ConversationActions {
     ) : ConversationActions
 
     data object OpenSearch : ConversationActions
+    data class OpenSearchWithQuery(val query: String) : ConversationActions
     data object CloseSearch : ConversationActions
     data object ShowOlderSearchMatch : ConversationActions
     data object ShowNewerSearchMatch : ConversationActions

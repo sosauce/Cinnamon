@@ -195,9 +195,11 @@ fun Nav(
 
                         val viewModel = koinViewModel<ConversationsViewModel>()
                         val state by viewModel.state.collectAsStateWithLifecycle()
+                        val conversations = viewModel.conversations.collectAsLazyPagingItems()
 
                         ConversationsScreen(
                             state = state,
+                            conversations = conversations,
                             textFieldState = viewModel.textFieldState,
                             onNavigate = backStack::navigate,
                             onHandleConversationsAction = viewModel::handleThreadsAction
@@ -210,6 +212,14 @@ fun Nav(
                         )
                         val state by viewModel.state.collectAsStateWithLifecycle()
                         val messages = viewModel.messages.collectAsLazyPagingItems()
+
+                        LaunchedEffect(key.searchQuery) {
+                            if (key.searchQuery.isNotBlank()) {
+                                viewModel.handleConversationActions(
+                                    ConversationActions.OpenSearchWithQuery(key.searchQuery)
+                                )
+                            }
+                        }
                         val lifecycleOwner = LocalLifecycleOwner.current
                         val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
 

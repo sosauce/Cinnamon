@@ -19,6 +19,7 @@ import com.sosauce.cinnamon.core.datastore.PreferencesKeys.ENABLE_T9_DIALING
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.GROUP_SUBSEQUENT_CALLS
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.LAST_CRASH_LOG
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.PINNED_CONVOS
+import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SEARCH_MESSAGE_CONTENT
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SEND_GROUP_AS_MMS
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SEND_LONG_AS_MMS
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SORT_CONTACTS_ASCENDING
@@ -41,6 +42,10 @@ class UserPreferences(
 
     val archivedConversations = context.dataStore.data.map {
         it[ARCHIVED_CONVOS] ?: emptySet()
+    }
+
+    val searchMessageContent = context.dataStore.data.map {
+        it[SEARCH_MESSAGE_CONTENT] ?: true
     }
 
     val groupAsMms = context.dataStore.data.map {
