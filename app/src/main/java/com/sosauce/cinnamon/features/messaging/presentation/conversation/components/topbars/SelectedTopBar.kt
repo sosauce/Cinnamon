@@ -55,6 +55,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions
+import com.sosauce.nekobites.animations.AnimatedCounter
 import com.sosauce.sweetselect.SweetSelectState
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import kotlinx.coroutines.Dispatchers
@@ -146,15 +147,10 @@ fun SelectedTopBar(
                 modifier = Modifier.size(ButtonDefaults.IconSize)
             )
             Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-            AnimatedContent(
-                targetState = sweetSelectState.selectedItems.size,
-                transitionSpec = { fadeIn() togetherWith fadeOut() }
-            ) {
-                Text(
-                    text = it.toString(),
-                    style = MaterialTheme.typography.labelLargeEmphasized
-                )
-            }
+            AnimatedCounter(
+                count = sweetSelectState.selectedItems.size,
+                textStyle = MaterialTheme.typography.labelLargeEmphasized
+            )
         }
         Spacer(Modifier.weight(1f))
         AnimatedVisibility(

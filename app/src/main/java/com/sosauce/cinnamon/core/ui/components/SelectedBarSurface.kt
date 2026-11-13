@@ -72,36 +72,36 @@ fun <T> SelectedBarSurface(
                 Spacer(Modifier.width(5.dp))
                 Text("${multiSelectState.selectedItems.size}")
             }
-            Button(
-                onClick = {
-                    if (multiSelectState.selectedItems.size == items.size) {
-                        multiSelectState.clearSelected()
-                    } else {
-                        multiSelectState.toggleAll(items)
-                    }
-                },
-                shapes = ButtonDefaults.shapes(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                )
-
-            ) {
-
-                val icon =
-                    if (items.size == multiSelectState.selectedItems.size) R.drawable.unselect_all else R.drawable.select_all
-
-                Icon(
-                    painter = painterResource(icon),
-                    contentDescription = null
-                )
-                Spacer(Modifier.width(5.dp))
-
-                val text =
-                    if (items.size == multiSelectState.selectedItems.size) R.string.unselect_all else R.string.select_all
-
-                Text(stringResource(text))
-            }
+//            Button(
+//                onClick = {
+//                    if (multiSelectState.selectedItems.size == items.size) {
+//                        multiSelectState.clearSelected()
+//                    } else {
+//                        multiSelectState.toggleAll(items)
+//                    }
+//                },
+//                shapes = ButtonDefaults.shapes(),
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+//                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+//                )
+//
+//            ) {
+//
+//                val icon =
+//                    if (items.size == multiSelectState.selectedItems.size) R.drawable.unselect_all else R.drawable.select_all
+//
+//                Icon(
+//                    painter = painterResource(icon),
+//                    contentDescription = null
+//                )
+//                Spacer(Modifier.width(5.dp))
+//
+//                val text =
+//                    if (items.size == multiSelectState.selectedItems.size) R.string.unselect_all else R.string.select_all
+//
+//                Text(stringResource(text))
+//            }
         }
         Spacer(Modifier.height(5.dp))
 

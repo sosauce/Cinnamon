@@ -80,6 +80,7 @@ fun TextBubbleContent(
         sandwichPosition = sandwichPosition,
         messageType = type
     )
+    val bodyLarge = MaterialTheme.typography.labelLargeEmphasized
 
     Box(
         modifier = Modifier
@@ -104,8 +105,9 @@ fun TextBubbleContent(
             text = displayedText,
             modifier = Modifier
                 .padding(horizontal = 14.dp, vertical = 10.dp),
-            style = MaterialTheme.typography.bodyLargeEmphasized.copy(
-                fontSize = if (text.isEmoji()) 35.sp else TextUnit.Unspecified,
+            style = bodyLarge.copy(
+                fontSize = if (text.isEmoji()) 35.sp else bodyLarge.fontSize,
+                lineHeight = if (text.isEmoji()) 42.sp else bodyLarge.lineHeight,
                 color = contentColorFor(bubbleColor),
                 textDecoration = if (text.isLink()) TextDecoration.Underline else null,
             )

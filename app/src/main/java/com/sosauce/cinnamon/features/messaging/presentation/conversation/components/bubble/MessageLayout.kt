@@ -75,7 +75,7 @@ fun MessageLayout(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 5.dp)
+            .padding(horizontal = 10.dp, vertical = verticalPadding)
             .background(selectionColor, RoundedCornerShape(24.dp))
             .combinedClickable(
                 interactionSource = interactionSource,
@@ -83,7 +83,7 @@ fun MessageLayout(
                 onClick = onClick,
                 onLongClick = onLongClick
             )
-            .padding(horizontal = 5.dp, vertical = verticalPadding)
+            //.padding(horizontal = 5.dp, vertical = verticalPadding)
 
     ) {
         Box(
@@ -175,14 +175,14 @@ fun BubbleShape(
         val topEnd by animateDpAsState(
             when (sandwichPosition) {
                 SandwichPosition.SOLO, SandwichPosition.TOP -> 24.dp
-                else -> 4.dp
+                else -> 2.dp
             }
         )
 
         val bottomEnd by animateDpAsState(
             when (sandwichPosition) {
                 SandwichPosition.SOLO, SandwichPosition.BOTTOM -> 24.dp
-                else -> 4.dp
+                else -> 2.dp
             }
         )
 
@@ -197,14 +197,14 @@ fun BubbleShape(
         val topStart by animateDpAsState(
             when (sandwichPosition) {
                 SandwichPosition.SOLO, SandwichPosition.TOP -> 24.dp
-                else -> 4.dp
+                else -> 2.dp
             }
         )
 
         val bottomStart by animateDpAsState(
             when (sandwichPosition) {
                 SandwichPosition.SOLO, SandwichPosition.BOTTOM -> 24.dp
-                else -> 4.dp
+                else -> 2.dp
             }
         )
 
