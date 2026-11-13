@@ -99,19 +99,19 @@ fun MessageLayout(
         }
         AnimatedVisibility(
             visible = isTimestampVisible,
-            enter = expandVertically(),
-            exit = shrinkVertically(),
-            modifier = Modifier
-                .padding(5.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    shape = RoundedCornerShape(50)
-                )
-                .align(alignment)
+//            enter = expandVertically(),
+//            exit = shrinkVertically(),
+            modifier = Modifier.align(alignment)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                modifier = Modifier
+                    .padding(5.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = RoundedCornerShape(50)
+                    )
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
                 when {
                     message.delivered -> {

@@ -20,6 +20,7 @@ import com.sosauce.cinnamon.features.messaging.presentation.conversation.compone
 import com.sosauce.sweetselect.SweetSelectState
 import kotlin.math.abs
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.SizeTransform
@@ -439,44 +440,49 @@ private fun LazyItemScope.ConversationMessageItem(
             },
             onLongClick = { sweetSelectState.toggle(message) },
             statusContent = {
-                when (message.type) {
-                    MessageType.SENDING -> {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            CircularWavyProgressIndicator(
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = stringResource(R.string.sending),
-                                style = MaterialTheme.typography.labelLargeEmphasized,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                AnimatedContent(
+                    targetState = message.type
+                ) {
+                    when (it) {
+                        MessageType.SENDING -> {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CircularWavyProgressIndicator(
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = stringResource(R.string.sending),
+                                    style = MaterialTheme.typography.labelLargeEmphasized,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
-                    }
 
-                    MessageType.FAILED -> {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.info),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = stringResource(R.string.not_sent),
-                                style = MaterialTheme.typography.labelLargeEmphasized,
-                                color = MaterialTheme.colorScheme.error
-                            )
+                        MessageType.FAILED -> {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.info),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = stringResource(R.string.not_sent),
+                                    style = MaterialTheme.typography.labelLargeEmphasized,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
                         }
-                    }
 
-                    else -> Unit
+                        else -> Unit
+                    }
                 }
+
             }
         ) {
 
