@@ -37,16 +37,16 @@
 <h1>👀 Overview</h1>
 
 - Unified UI/UX for a fluid and gorgeous experience among the 3 modules!
-- Send and receive SMS & MMS!
+- Send and receive SMS & MMS, manage contacts and full dialer capabilities!
 - Schedule messages!
 - Pin chats!
 - Per chat customization: Wallpaper & color!
 - Manage & edit contacts!
 - Support for contact posters!
 - Device level blocking!
-- Full dialer capabilities!
 - T9 dialing!
 - Voicemail support!
+- Backup & restore eveything: Messages, contacts and call logs!
 - Multi-sim support along side separation of choice to choose default sim for messages and calls!
 
 ---
