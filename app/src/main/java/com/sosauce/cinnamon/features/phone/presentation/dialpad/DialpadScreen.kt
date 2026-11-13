@@ -8,16 +8,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -49,24 +46,25 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastFirst
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
+import androidx.paging.compose.LazyPagingItems
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.buttons.LongClickButton
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
-import com.sosauce.cinnamon.core.utils.LazyListKeys
 import com.sosauce.cinnamon.core.utils.backspace
 import com.sosauce.cinnamon.core.utils.rememberFocusRequester
 import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.presentation.ContactListItem
+import com.sosauce.cinnamon.features.contacts.presentation.ContactsListItem
+import com.sosauce.cinnamon.features.contacts.presentation.components.FavoriteContact
+import com.sosauce.cinnamon.features.contacts.presentation.contactsList
 import com.sosauce.cinnamon.features.contacts.presentation.components.dialogs.NumberPickerDialog
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.features.phone.presentation.call.components.DisableSoftKeyboard
@@ -76,6 +74,7 @@ import com.sosauce.nekobites.components.NoXFound
 @Composable
 fun SharedTransitionScope.DialpadScreen(
     state: DialpadState,
+    contacts: LazyPagingItems<ContactsListItem>,
     textFieldState: TextFieldState,
     onNavigateUp: () -> Unit,
     onNavigate: (Screen) -> Unit,
@@ -99,15 +98,13 @@ fun SharedTransitionScope.DialpadScreen(
         "0" to "+"
     )
     val focusRequester = rememberFocusRequester()
-    var showMultiNumberSelection by remember { mutableStateOf(Pair(false, 0L)) }
+    var numberPickerContact by remember { mutableStateOf<CuteContact?>(null) }
 
-    if (showMultiNumberSelection.first) {
-        val contact = state.contacts.fastFirst { it.id == showMultiNumberSelection.second }
-
+    numberPickerContact?.let { contact ->
         NumberPickerDialog(
-            onDismissRequest = { showMultiNumberSelection = Pair(false, 0) },
+            onDismissRequest = { numberPickerContact = null },
             onPickNumber = { number ->
-                showMultiNumberSelection = Pair(false, 0)
+                numberPickerContact = null
                 onHandleCallAction(CallAction.LaunchCall(number))
             },
             phoneNumbers = contact.phoneNumbers.fastMap { it.number }
@@ -253,148 +250,93 @@ fun SharedTransitionScope.DialpadScreen(
                 contentPadding = paddingValues,
                 modifier = Modifier.padding(horizontal = 10.dp)
             ) {
-                if (textFieldState.text.isNotEmpty() && state.contacts.isEmpty()) {
-                    item(LazyListKeys.ADD_CONTACT) {
-                        val number = textFieldState.text.toString()
-                        CuteListItem(
-                            modifier = Modifier.animateItem(),
-                            backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-                            onClick = {
-                                onNavigate(
-                                    Screen.ContactEditor(
-                                        rawContactId = null,
-                                        prefilledNumber = number
+                contactsList(
+                    favorites = state.favorites,
+                    contacts = contacts,
+                    emptyState = {
+                        if (textFieldState.text.isEmpty()) {
+                            NoXFound(
+                                headlineText = R.string.no_contacts_found,
+                                bodyText = R.string.no_contacts_found_desc,
+                                icon = R.drawable.contacts
+                            )
+                        } else {
+                            val number = textFieldState.text.toString()
+                            CuteListItem(
+                                modifier = Modifier.animateItem(),
+                                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                                onClick = {
+                                    onNavigate(
+                                        Screen.ContactEditor(
+                                            rawContactId = null,
+                                            prefilledNumber = number
+                                        )
                                     )
-                                )
-                            },
-                            leadingContent = {
-                                Box(
-                                    modifier = Modifier
-                                        .padding(start = 10.dp)
-                                        .size(50.dp)
-                                        .background(
-                                            color = MaterialTheme.colorScheme.primary,
-                                            shape = MaterialShapes.Cookie9Sided.toShape()
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.add),
-                                        contentDescription = null,
-                                        tint = contentColorFor(MaterialTheme.colorScheme.primary)
-                                    )
+                                },
+                                leadingContent = {
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(start = 10.dp)
+                                            .size(50.dp)
+                                            .background(
+                                                color = MaterialTheme.colorScheme.primary,
+                                                shape = MaterialShapes.Cookie9Sided.toShape()
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.add),
+                                            contentDescription = null,
+                                            tint = contentColorFor(MaterialTheme.colorScheme.primary)
+                                        )
+                                    }
                                 }
-                            }
-                        ) {
-                            Text(
-                                text = stringResource(R.string.add_contact),
-                                style = MaterialTheme.typography.bodyLargeEmphasized
-                            )
-                            Text(
-                                text = number,
-                                style = MaterialTheme.typography.bodyMediumEmphasized.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.add_contact),
+                                    style = MaterialTheme.typography.bodyLargeEmphasized
                                 )
-                            )
+                                Text(
+                                    text = number,
+                                    style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                )
+                            }
                         }
-                    }
-                }
+                    },
+                    favoriteContactItem = { contact ->
 
-                if (state.contacts.isEmpty() && textFieldState.text.isEmpty()) {
-                    item {
-                        NoXFound(
-                            headlineText = R.string.no_contacts_found,
-                            bodyText = R.string.no_contacts_found_desc,
-                            icon = R.drawable.contacts
+
+                        FavoriteContact(
+                            modifier = Modifier.animateItem(),
+                            contact = contact,
+                            isSelected = false,
+                            onClick = {
+                                if (contact.phoneNumbers.size > 1) {
+                                    numberPickerContact = contact
+                                } else {
+                                    onHandleCallAction(CallAction.LaunchCall(contact.phoneNumbers.first().number))
+                                }
+                            },
+                            onLongClick = {},
+                            showNumber = true
                         )
                     }
-                }
-
-                if (state.contacts.isNotEmpty()) {
-
-                    val (favorites, nonFavorites) = state.contacts.partition { it.isFavorite }
-
-                    if (favorites.isNotEmpty()) {
-                        item(LazyListKeys.FAVORITE_CONTACTS) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.favorite_filled),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(Modifier.width(5.dp))
-                                Text(
-                                    text = pluralStringResource(
-                                        R.plurals.favorites,
-                                        favorites.size
-                                    ),
-                                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                )
+                ) { contact ->
+                    ContactListItem(
+                        modifier = Modifier.animateItem(),
+                        contact = contact,
+                        isSelected = false,
+                        onClick = {
+                            if (contact.phoneNumbers.size > 1) {
+                                numberPickerContact = contact
+                            } else {
+                                onHandleCallAction(CallAction.LaunchCall(contact.phoneNumbers.first().number))
                             }
-                        }
-                        items(
-                            items = favorites,
-                            key = { contact -> contact.id }
-                        ) { contact ->
-
-                            ContactListItem(
-                                modifier = Modifier.animateItem(),
-                                contact = contact,
-                                isSelected = false,
-                                onClick = {
-                                    if (contact.phoneNumbers.size > 1) {
-                                        showMultiNumberSelection = Pair(true, contact.id)
-                                    } else {
-                                        onHandleCallAction(CallAction.LaunchCall(contact.phoneNumbers.first().number))
-                                    }
-                                },
-                                showNumber = true
-                            )
-                        }
-                    }
-
-
-                    nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }
-                        .toSortedMap().forEach { (letter, contacts) ->
-                            item(key = "contact_header_$letter") {
-                                Text(
-                                    text = letter.toString(),
-                                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(
-                                        color = MaterialTheme.colorScheme.primary
-                                    ),
-                                    modifier = Modifier.padding(
-                                        horizontal = 20.dp,
-                                        vertical = 10.dp
-                                    )
-                                )
-                            }
-                            items(
-                                items = contacts,
-                                key = { contact -> contact.id }
-                            ) { contact ->
-
-
-                                ContactListItem(
-                                    modifier = Modifier.animateItem(),
-                                    contact = contact,
-                                    isSelected = false,
-                                    onClick = {
-                                        if (contact.phoneNumbers.size > 1) {
-                                            showMultiNumberSelection = Pair(true, contact.id)
-                                        } else {
-                                            onHandleCallAction(CallAction.LaunchCall(contact.phoneNumbers.first().number))
-                                        }
-                                    },
-                                    showNumber = true
-                                )
-                            }
-                        }
+                        },
+                        showNumber = true
+                    )
                 }
             }
         }

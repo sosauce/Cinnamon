@@ -12,14 +12,12 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,14 +39,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastMap
+import androidx.paging.compose.LazyPagingItems
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
+import com.sosauce.cinnamon.core.ui.SimpleSearchbar
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar
@@ -57,6 +56,9 @@ import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.contacts.presentation.ContactListItem
+import com.sosauce.cinnamon.features.contacts.presentation.ContactsListItem
+import com.sosauce.cinnamon.features.contacts.presentation.components.FavoriteContact
+import com.sosauce.cinnamon.features.contacts.presentation.contactsList
 import com.sosauce.cinnamon.features.contacts.presentation.components.dialogs.NumberPickerDialog
 import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.nekobites.components.LoadingBox
@@ -65,6 +67,7 @@ import com.sosauce.nekobites.components.NoXFound
 @Composable
 fun SharedTransitionScope.StartConversation(
     state: StartConversationState,
+    contacts: LazyPagingItems<ContactsListItem>,
     textFieldState: TextFieldState,
     onNavigateUp: () -> Unit,
     onNavigate: (Screen) -> Unit,
@@ -94,10 +97,11 @@ fun SharedTransitionScope.StartConversation(
 
     Scaffold(
         bottomBar = {
-            CuteSearchbar(
+
+            SimpleSearchbar(
                 modifier = Modifier.selfAlignHorizontally(),
                 textFieldState = textFieldState,
-                onNavigate = onNavigate,
+                placeholder = R.string.type_name_number,
                 navigationButton = {
                     CuteNavigationButtonSurface(
                         onNavigateUp = onNavigateUp
@@ -222,140 +226,76 @@ fun SharedTransitionScope.StartConversation(
 
                 }
 
-                if (state.contacts.isNotEmpty()) {
-
-                    val (favorites, nonFavorites) = state.contacts.partition { it.isFavorite }
-
-                    if (favorites.isNotEmpty()) {
-                        item(LazyListKeys.FAVORITE_CONTACTS) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .padding(horizontal = 20.dp, vertical = 10.dp)
-                                    .animateItem(),
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.favorite_filled),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(Modifier.width(5.dp))
-                                Text(
-                                    text = pluralStringResource(R.plurals.favorites, favorites.size),
-                                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                )
-                            }
-                        }
-                        with(this@StartConversation) {
-                            items(
-                                items = favorites,
-                                key = { contact -> contact.id }
-                            ) { contact ->
-
-                                val isSelected = remember(contact, state.selectedNumbers) {
-                                    contact.phoneNumbers.fastAny {
-                                        state.selectedNumbers.contains(
-                                            it.number
-                                        )
-                                    }
-                                }
-
-                                ContactListItem(
-                                    modifier = Modifier.animateItem(),
-                                    contact = contact,
-                                    isSelected = isSelected,
-                                    onClick = {
-                                        val phoneNumbers = contact.phoneNumbers
-                                        val firstNumber =
-                                            phoneNumbers.firstOrNull()?.number ?: return@ContactListItem
-
-                                        when {
-                                            phoneNumbers.size > 1 -> {
-                                                contactPhoneNumbersPicker =
-                                                    phoneNumbers.fastMap { it.number }
-                                            }
-
-                                            state.isGroupChatMode -> onAddNumberToGroup(firstNumber)
-                                            else -> {
-                                                val threadId = firstNumber.getThreadIdOrCreate(context)
-                                                onNavigate(Screen.ConversationDetails(threadId))
-                                            }
-                                        }
-                                    },
-                                    showNumber = true
-                                )
-                            }
-                        }
-                    }
-
-
-                    nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }
-                        .toSortedMap().forEach { (letter, contacts) ->
-                            item(key = "contact_header_$letter") {
-                                Text(
-                                    text = letter.toString(),
-                                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(
-                                        color = MaterialTheme.colorScheme.primary
-                                    ),
-                                    modifier = Modifier
-                                        .animateItem()
-                                        .padding(horizontal = 20.dp, vertical = 10.dp)
-                                )
-                            }
-                            with(this@StartConversation) {
-                                items(
-                                    items = contacts,
-                                    key = { contact -> contact.id }
-                                ) { contact ->
-
-                                    val isSelected = remember(contact, state.selectedNumbers) {
-                                        contact.phoneNumbers.fastAny {
-                                            state.selectedNumbers.contains(
-                                                it.number
-                                            )
-                                        }
-                                    }
-                                    ContactListItem(
-                                        modifier = Modifier.animateItem(),
-                                        contact = contact,
-                                        isSelected = isSelected,
-                                        onClick = {
-                                            val phoneNumbers = contact.phoneNumbers
-                                            val firstNumber =
-                                                phoneNumbers.firstOrNull()?.number
-                                                    ?: return@ContactListItem
-
-                                            when {
-                                                phoneNumbers.size > 1 -> {
-                                                    contactPhoneNumbersPicker =
-                                                        phoneNumbers.fastMap { it.number }
-                                                }
-
-                                                state.isGroupChatMode -> onAddNumberToGroup(firstNumber)
-                                                else -> {
-                                                    val threadId =
-                                                        firstNumber.getThreadIdOrCreate(context)
-                                                    onNavigate(Screen.ConversationDetails(threadId))
-                                                }
-                                            }
-                                        },
-                                        showNumber = true
-                                    )
-                                }
-                            }
-                        }
-                } else {
-                    item(LazyListKeys.EMPTY_STATE) {
+                contactsList(
+                    favorites = state.favorites,
+                    contacts = contacts,
+                    emptyState = {
                         NoXFound(
                             modifier = Modifier.animateItem(),
                             headlineText = R.string.no_contacts_found,
                             bodyText = R.string.no_contacts_found_starter_desc,
                             icon = R.drawable.contacts
                         )
+                    },
+                    favoriteContactItem = { contact ->
+
+                        val isSelected = remember(contact, state.selectedNumbers) {
+                            contact.phoneNumbers.fastAny { state.selectedNumbers.contains(it.number) }
+                        }
+
+                        FavoriteContact(
+                            modifier = Modifier.animateItem(),
+                            contact = contact,
+                            isSelected = isSelected,
+                            onClick = {
+                                val phoneNumbers = contact.phoneNumbers
+                                val firstNumber =
+                                    phoneNumbers.firstOrNull()?.number ?: return@FavoriteContact
+
+                                when {
+                                    phoneNumbers.size > 1 -> {
+                                        contactPhoneNumbersPicker = phoneNumbers.fastMap { it.number }
+                                    }
+
+                                    state.isGroupChatMode -> onAddNumberToGroup(firstNumber)
+                                    else -> {
+                                        val threadId = firstNumber.getThreadIdOrCreate(context)
+                                        onNavigate(Screen.ConversationDetails(threadId))
+                                    }
+                                }
+                            },
+                            onLongClick = { },
+                            showNumber = true
+                        )
                     }
+                ) { contact ->
+                    val isSelected = remember(contact, state.selectedNumbers) {
+                        contact.phoneNumbers.fastAny { state.selectedNumbers.contains(it.number) }
+                    }
+
+                    ContactListItem(
+                        modifier = Modifier.animateItem(),
+                        contact = contact,
+                        isSelected = isSelected,
+                        onClick = {
+                            val phoneNumbers = contact.phoneNumbers
+                            val firstNumber =
+                                phoneNumbers.firstOrNull()?.number ?: return@ContactListItem
+
+                            when {
+                                phoneNumbers.size > 1 -> {
+                                    contactPhoneNumbersPicker = phoneNumbers.fastMap { it.number }
+                                }
+
+                                state.isGroupChatMode -> onAddNumberToGroup(firstNumber)
+                                else -> {
+                                    val threadId = firstNumber.getThreadIdOrCreate(context)
+                                    onNavigate(Screen.ConversationDetails(threadId))
+                                }
+                            }
+                        },
+                        showNumber = true
+                    )
                 }
             }
         }

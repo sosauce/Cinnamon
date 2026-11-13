@@ -57,13 +57,6 @@ fun List<Participant>.name(): String {
     if (isEmpty()) return ""
 
     return if (size > 1) {
-        buildString {
-            this@name.fastForEachIndexed { index, participant ->
-                append(participant.displayName)
-                if (index != lastIndex) {
-                    append(", ")
-                }
-            }
-        }
+        this.joinToString(", ") { it.displayName }
     } else first().displayName
 }

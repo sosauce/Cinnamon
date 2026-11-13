@@ -499,26 +499,6 @@ fun rememberHazeState(): HazeState {
 
 
 @Composable
-fun rememberSearchbarAlignment(
-): Alignment {
-
-    val isLandscape = rememberIsLandscape()
-
-    return remember(isLandscape) {
-        if (isLandscape) {
-            Alignment.BottomEnd
-        } else {
-            Alignment.BottomCenter
-        }
-    }
-}
-
-@Composable
-fun rememberInteractionSource(): MutableInteractionSource {
-    return remember { MutableInteractionSource() }
-}
-
-@Composable
 fun anyDarkColorScheme(): ColorScheme {
     val context = LocalContext.current
 

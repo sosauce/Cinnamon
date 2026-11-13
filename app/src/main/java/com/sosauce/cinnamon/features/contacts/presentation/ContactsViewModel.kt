@@ -4,9 +4,9 @@ package com.sosauce.cinnamon.features.contacts.presentation
 
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
@@ -14,15 +14,16 @@ import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -33,47 +34,93 @@ class ContactsViewModel(
 ) : ViewModel() {
 
     val textFieldState = TextFieldState()
-    private val _state = MutableStateFlow(ContactsState(isLoading = true))
-    val state = _state.asStateFlow()
 
-    init {
-        viewModelScope.launch {
-            combine(
-                contactsRepository.fetchLatestContacts(),
-                snapshotFlow { textFieldState.text }.debounce(250.milliseconds),
-                userPreferences.getSortContactsAscending(),
-                state.mapLatest { it.accountFilter }.distinctUntilChanged()
-            ) { contacts, search, ascending, accountFilter ->
-                contacts
-                    .fastFilter { search.isEmpty() || it.searchIndex.contains(search, true) }
-                    .fastFilter { accountFilter == null || accountFilter == "All" || it.accountName == accountFilter }
-                    .let { if (ascending) it else it.reversed() }
-            }.flowOn(Dispatchers.Default).collectLatest { contacts ->
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        contacts = contacts,
-                        accountsToCount = mapOf("All" to contacts.size) + contacts.groupingBy {
-                            it.accountName.ifEmpty { "Device" }
-                        }.eachCount()
-                    )
-                }
+    private val searchQuery = snapshotFlow { textFieldState.text.toString().trim() }
+        .debounce(250.milliseconds)
+        .distinctUntilChanged()
+
+    private val accountFilter = MutableStateFlow<String?>(null)
+
+    private val sortAscending = userPreferences.getSortContactsAscending().distinctUntilChanged()
+
+    /**
+     * contactId -> account name, null until loaded
+     */
+    private val contactAccounts = contactsRepository
+        .observeContactChanges()
+        .mapLatest { contactsRepository.getContactAccounts() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    /**
+     * Ids of the contacts matching the search query, null when not searching
+     */
+    private val searchResults: Flow<Set<Long>?> = searchQuery
+        .flatMapLatest { query ->
+            if (query.isBlank()) {
+                flowOf(null)
+            } else {
+                // refresh results when contacts change
+                contactsRepository
+                    .observeContactChanges()
+                    .mapLatest { contactsRepository.searchContactIds(query) }
             }
         }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-        viewModelScope.launch {
-            contactsRepository.fetchLatestContacts().collectLatest { contacts ->
-                val accountsToCount = mapOf("All" to contacts.size) + contacts.groupingBy {
-                    it.accountName.ifEmpty { "Device" }
-                }.eachCount()
-                _state.update { it.copy(accountsToCount = accountsToCount) }
-            }
+    /**
+     * Search + account filtering, applied to both favorites and the paged contacts
+     */
+    private val selection: Flow<String?> = combine(
+        searchResults,
+        accountFilter,
+        contactAccounts
+    ) { results, filter, accounts ->
+        val accountIds = if (filter == null || filter == ALL_ACCOUNTS) {
+            null
+        } else {
+            accounts?.filterValues { it == filter }?.keys
         }
-    }
+
+        listOfNotNull(results, accountIds)
+            .joinToString(" AND ") { it.toContactIdSelection() }
+            .ifEmpty { null }
+    }.distinctUntilChanged()
+
+    private val pager = ContactsPager(
+        contactsRepository = contactsRepository,
+        scope = viewModelScope,
+        selection = selection,
+        sortAscending = sortAscending
+    )
+
+    /**
+     * Non favorite contacts, paged, with a letter header before each group.
+     */
+    val contacts: Flow<PagingData<ContactsListItem>> = pager.contacts
+
+    val state = combine(
+        pager.favorites,
+        contactAccounts,
+        accountFilter,
+        pager.loaded
+    ) { favorites, accounts, filter, loaded ->
+        ContactsState(
+            isLoading = !loaded || favorites == null,
+            favorites = favorites.orEmpty(),
+            accountsToCount = accounts?.let {
+                mapOf(ALL_ACCOUNTS to it.size) + it.values.groupingBy { name -> name }.eachCount()
+            } ?: emptyMap(),
+            accountFilter = filter
+        )
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        ContactsState(isLoading = true)
+    )
 
     fun handleContactsAction(action: ContactsAction) {
         when (action) {
-            is ContactsAction.ChangeAccountFiltering -> _state.update { it.copy(accountFilter = action.accountName) }
+            is ContactsAction.ChangeAccountFiltering -> accountFilter.value = action.accountName
             is ContactsAction.DeleteContacts -> viewModelScope.launch(Dispatchers.IO) {
                 contactsRepository.deleteContacts(action.ids)
                 contactSettingsDao.deleteContactsSettings(action.ids)
@@ -83,11 +130,18 @@ class ContactsViewModel(
             }
         }
     }
+
+    companion object {
+        private const val ALL_ACCOUNTS = "All"
+    }
 }
 
 data class ContactsState(
     val isLoading: Boolean = false,
-    val contacts: List<CuteContact> = emptyList(),
+    /**
+     * Favorite contacts aren't paged, the others are in [ContactsViewModel.contacts]
+     */
+    val favorites: List<CuteContact> = emptyList(),
     val accountsToCount: Map<String, Int> = emptyMap(),
     val accountFilter: String? = null
 )

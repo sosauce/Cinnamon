@@ -62,7 +62,7 @@ import com.sosauce.cinnamon.app.navigation.navigateBack
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButton
 import com.sosauce.nekobites.utils.groupedShape
 import com.sosauce.cinnamon.core.utils.GITHUB_RELEASES
-import com.sosauce.cinnamon.core.utils.rememberInteractionSource
+import com.sosauce.nekobites.helpers.rememberInteractionSource
 import com.sosauce.cinnamon.settings.components.SettingsNavigation
 import com.sosauce.nekobites.animations.rememberAnimatedShape
 import com.sosauce.nekobites.components.settings.AboutCard

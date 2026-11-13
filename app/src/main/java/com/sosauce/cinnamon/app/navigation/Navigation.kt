@@ -127,9 +127,11 @@ fun Nav(
                     entry<Screen.Contacts> {
                         val viewModel = koinViewModel<ContactsViewModel>()
                         val state by viewModel.state.collectAsStateWithLifecycle()
+                        val contacts = viewModel.contacts.collectAsLazyPagingItems()
 
                         ContactsScreen(
                             state = state,
+                            contacts = contacts,
                             textFieldState = viewModel.textFieldState,
                             onNavigate = backStack::navigate,
                             onHandleContactsAction = viewModel::handleContactsAction
@@ -273,9 +275,11 @@ fun Nav(
                             parameters = { parametersOf(key.prefilledNumber) }
                         )
                         val state by viewModel.state.collectAsStateWithLifecycle()
+                        val contacts = viewModel.contacts.collectAsLazyPagingItems()
 
                         DialpadScreen(
                             state = state,
+                            contacts = contacts,
                             textFieldState = viewModel.textFieldState,
                             onNavigateUp = backStack::navigateBack,
                             onNavigate = backStack::navigate,
@@ -287,9 +291,11 @@ fun Nav(
 
                         val viewModel = koinViewModel<StartConversationViewModel>()
                         val state by viewModel.state.collectAsStateWithLifecycle()
+                        val contacts = viewModel.contacts.collectAsLazyPagingItems()
 
                         StartConversation(
                             state = state,
+                            contacts = contacts,
                             textFieldState = viewModel.textFieldState,
                             onNavigateUp = backStack::navigateBack,
                             onNavigate = backStack::navigate,

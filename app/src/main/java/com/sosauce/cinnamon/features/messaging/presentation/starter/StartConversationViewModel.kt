@@ -2,24 +2,33 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.starter
 
+import android.provider.ContactsContract
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
 import com.sosauce.cinnamon.core.utils.copyMutate
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
-import kotlinx.coroutines.Dispatchers
+import com.sosauce.cinnamon.features.contacts.presentation.ContactsListItem
+import com.sosauce.cinnamon.features.contacts.presentation.ContactsPager
+import com.sosauce.cinnamon.features.contacts.presentation.toContactIdSelection
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 class StartConversationViewModel(
@@ -27,35 +36,61 @@ class StartConversationViewModel(
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(StartConversationState())
-    val state = _state.asStateFlow()
 
     val textFieldState = TextFieldState()
 
-    init {
-        viewModelScope.launch(Dispatchers.IO) {
+    private val searchQuery = snapshotFlow { textFieldState.text.toString().trim() }
+        .debounce(250.milliseconds)
+        .distinctUntilChanged()
 
-            combine(
-                contactsRepository.fetchLatestContacts(),
-                snapshotFlow { textFieldState.text }.debounce(250.milliseconds)
-            ) { contacts, searchQuery ->
-                contacts
-                    .fastFilter { it.phoneNumbers.isNotEmpty() }
-                    .fastFilter {
-                        if (searchQuery.isEmpty()) {
-                            true
-                        } else {
-                            it.searchIndex.contains(searchQuery, true)
-                        }
-                    }
-            }.collectLatest { contacts ->
-                _state.update {
-                    it.copy(
-                        contacts = contacts
-                    )
-                }
+    /**
+     * Ids of the contacts matching the search query, null when not searching
+     */
+    private val searchResults: Flow<Set<Long>?> = searchQuery
+        .flatMapLatest { query ->
+            if (query.isBlank()) {
+                flowOf(null)
+            } else {
+                // refresh results when contacts change
+                contactsRepository
+                    .observeContactChanges()
+                    .mapLatest { contactsRepository.searchContactIds(query) }
             }
         }
-    }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    private val pager = ContactsPager(
+        contactsRepository = contactsRepository,
+        scope = viewModelScope,
+        // only contacts that can be texted
+        selection = searchResults.map { results ->
+            listOfNotNull(
+                "${ContactsContract.Contacts.HAS_PHONE_NUMBER} = 1",
+                results?.toContactIdSelection()
+            ).joinToString(" AND ")
+        },
+        sortAscending = flowOf(true)
+    )
+
+    /**
+     * Non favorite contacts, paged, with a letter header before each group.
+     */
+    val contacts: Flow<PagingData<ContactsListItem>> = pager.contacts
+
+    val state = combine(
+        _state,
+        pager.favorites,
+        pager.loaded
+    ) { state, favorites, loaded ->
+        state.copy(
+            isLoading = !loaded || favorites == null,
+            favorites = favorites.orEmpty()
+        )
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        StartConversationState(isLoading = true)
+    )
 
 
     fun toggleGroupChatMode() {
@@ -81,9 +116,13 @@ class StartConversationViewModel(
 }
 
 
+@Stable
 data class StartConversationState(
     val isLoading: Boolean = false,
-    val contacts: List<CuteContact> = emptyList(),
+    /**
+     * Favorite contacts aren't paged, the others are in [StartConversationViewModel.contacts]
+     */
+    val favorites: List<CuteContact> = emptyList(),
     val isGroupChatMode: Boolean = false,
     val selectedNumbers: List<String> = emptyList()
 )

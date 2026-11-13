@@ -64,7 +64,7 @@ import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.extractor.mp3.Mp3Extractor
 import androidx.media3.ui.compose.buttons.PlayPauseButton
 import com.sosauce.cinnamon.core.ui.components.buttons.WavySlider
-import com.sosauce.cinnamon.core.utils.rememberInteractionSource
+import com.sosauce.nekobites.helpers.rememberInteractionSource
 import com.sosauce.cinnamon.core.utils.toMediaTime
 import com.sosauce.nekobites.animations.AnimatedDrawable
 import com.sosauce.nekobites.animations.AnimatedDrawableFile

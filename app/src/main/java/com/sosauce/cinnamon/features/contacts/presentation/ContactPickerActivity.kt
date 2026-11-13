@@ -9,7 +9,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.app.navigation.Screen
+import com.sosauce.cinnamon.features.contacts.presentation.components.FavoriteContact
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
 import org.koin.androidx.compose.koinViewModel
@@ -25,6 +28,7 @@ class ContactPickerActivity : ComponentActivity() {
 
             val contactsViewModel = koinViewModel<ContactsViewModel>()
             val state by contactsViewModel.state.collectAsStateWithLifecycle()
+            val contacts = contactsViewModel.contacts.collectAsLazyPagingItems()
 
 
             SharedTransitionLayout {
@@ -36,12 +40,25 @@ class ContactPickerActivity : ComponentActivity() {
                             contentPadding = paddingValues
                         ) {
                             contactsList(
-                                contacts = state.contacts,
+                                favorites = state.favorites,
+                                contacts = contacts,
                                 emptyState = {
                                     NoXFound(
                                         headlineText = R.string.no_contacts_found,
                                         bodyText = R.string.no_contacts_found_desc,
                                         icon = R.drawable.contacts
+                                    )
+                                },
+                                favoriteContactItem = { contact ->
+
+
+                                    FavoriteContact(
+                                        modifier = Modifier.animateItem(),
+                                        contact = contact,
+                                        isSelected = false,
+                                        onClick = {},
+                                        onLongClick = { },
+                                        showNumber = false
                                     )
                                 }
                             ) { contact ->

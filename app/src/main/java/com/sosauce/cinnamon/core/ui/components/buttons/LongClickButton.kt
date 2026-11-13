@@ -26,7 +26,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.sosauce.cinnamon.core.utils.rememberInteractionSource
+import com.sosauce.nekobites.helpers.rememberInteractionSource
 
 @Composable
 fun LongClickButton(

@@ -1,7 +1,7 @@
 package com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bubble
 
 import com.sosauce.nekobites.animations.bouncySpec
-import com.sosauce.cinnamon.core.utils.rememberInteractionSource
+import com.sosauce.nekobites.helpers.rememberInteractionSource
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.interaction.collectIsPressedAsState

@@ -272,8 +272,11 @@ private fun LazyListScope.threadsList(
 ) {
     item(LazyListKeys.PINNED_CONVERSATIONS) {
         LazyRow(
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateItem()
         ) {
             items(
                 items = pinnedConversations,

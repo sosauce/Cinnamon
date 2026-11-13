@@ -318,6 +318,7 @@
     <string name="newer_match">Newer match</string>
     <string name="search_message_content">Search in messages</string>
     <string name="search_message_content_desc">When searching conversations, also show the ones containing messages that match the search</string>
+    <string name="type_name_number">Type a name or a number</string>
     <plurals name="matching_messages">
         <item quantity="one">%d message</item>
         <item quantity="other">%d messages</item>

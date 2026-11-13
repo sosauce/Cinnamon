@@ -55,7 +55,7 @@ fun CuteSearchbar(
     sortingMenu: @Composable (() -> Unit)? = null,
     navigationButton: @Composable (() -> Unit)? = null,
     fab: @Composable (() -> Unit)? = null,
-    onNavigate: (Screen) -> Unit,
+    onNavigate: (Screen) -> Unit
 ) {
 
     val screenToLeadingIcon =

@@ -15,6 +15,7 @@ import androidx.core.content.contentValuesOf
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.utils.observe
+import com.sosauce.cinnamon.features.contacts.data.model.ContactsPage
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContactEntity
 import com.sosauce.cinnamon.features.contacts.data.model.toDomain
 import com.sosauce.cinnamon.features.contacts.domain.ContactAddress
@@ -54,11 +55,6 @@ class ContactsRepository(
             }
             .flowOn(Dispatchers.IO)
 
-    fun fetchDialpadContacts(): List<CuteContact> =
-        fetchContacts(
-            extraSelection = "${ContactsContract.Contacts.HAS_PHONE_NUMBER} = ?",
-            extraSelectionArgs = arrayOf("1")
-        ).fastMap { it.toDomain() }
 
 
     /**
@@ -79,6 +75,227 @@ class ContactsRepository(
                 ).firstOrNull()?.toDomain() ?: CuteContact()
             }
             .flowOn(Dispatchers.IO)
+
+    fun observeContactChanges() =
+        context.contentResolver.observe(ContactsContract.Contacts.CONTENT_URI)
+
+    /**
+     * A slice of the contacts matching [extraSelection], sorted by name.
+     * Phone numbers and account names are only fetched for the returned contacts.
+     */
+    suspend fun getContactsPage(
+        extraSelection: String?,
+        ascending: Boolean,
+        offset: Int,
+        limit: Int
+    ): ContactsPage = withContext(Dispatchers.IO) {
+        val rows = mutableListOf<CuteContactEntity>()
+        var totalCount = 0
+
+        context.contentResolver.query(
+            ContactsContract.Contacts.CONTENT_URI,
+            CONTACT_PROJECTION,
+            extraSelection,
+            null,
+            "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} COLLATE LOCALIZED ${if (ascending) "ASC" else "DESC"}"
+        )?.use { cursor ->
+            totalCount = cursor.count
+
+            val idCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
+            val nameCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
+            val starCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.STARRED)
+            val photoCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI)
+
+            if (limit > 0 && cursor.moveToPosition(offset)) {
+                do {
+                    rows.add(
+                        CuteContactEntity(
+                            id = cursor.getLong(idCol),
+                            displayName = cursor.getString(nameCol) ?: "<unknown>",
+                            isFavorite = cursor.getInt(starCol) == 1,
+                            thumbnail = cursor.getString(photoCol),
+                            accountName = "Device",
+                            phoneNumbers = emptyList()
+                        )
+                    )
+                } while (rows.size < limit && cursor.moveToNext())
+            }
+        }
+
+        val ids = rows.map { it.id }
+        val phones = fetchAllPhoneNumbers(ids)
+        val accountNames = fetchAccountNames(ids)
+
+        ContactsPage(
+            contacts = rows.map {
+                it.copy(
+                    accountName = accountNames[it.id] ?: "Device",
+                    phoneNumbers = phones[it.id] ?: emptyList()
+                )
+            },
+            totalCount = totalCount
+        )
+    }
+
+    /**
+     * Ids of the contacts whose name, phone numbers or emails match [query]
+     */
+    suspend fun searchContactIds(query: String): Set<Long> = withContext(Dispatchers.IO) {
+        val like = "%${query.escapeLike()}%"
+        val ids = mutableSetOf<Long>()
+
+        // names
+        context.contentResolver.query(
+            ContactsContract.Contacts.CONTENT_URI,
+            arrayOf(ContactsContract.Contacts._ID),
+            "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} LIKE ? ESCAPE '\\'",
+            arrayOf(like),
+            null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) ids.add(cursor.getLong(0))
+        }
+
+        // phone numbers & emails (both stored in DATA1)
+        context.contentResolver.query(
+            ContactsContract.Data.CONTENT_URI,
+            arrayOf(ContactsContract.Data.CONTACT_ID),
+            "${ContactsContract.Data.MIMETYPE} IN (?, ?) AND ${ContactsContract.Data.DATA1} LIKE ? ESCAPE '\\'",
+            arrayOf(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE,
+                ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE,
+                like
+            ),
+            null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) ids.add(cursor.getLong(0))
+        }
+
+        // "06 12 34" should match "+33 6 12 34 56 78"-like numbers, so compare digits only for number-like queries
+        val queryDigits = query.filter(Char::isDigit)
+        val isNumberQuery = queryDigits.length >= 3 && query.all { it.isDigit() || it in " +-()." }
+
+        if (isNumberQuery) {
+            context.contentResolver.query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(
+                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                    ContactsContract.CommonDataKinds.Phone.NUMBER,
+                    ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER
+                ),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+                while (cursor.moveToNext()) {
+                    val number = cursor.getString(1).orEmpty().filter(Char::isDigit)
+                    val normalized = cursor.getString(2).orEmpty().filter(Char::isDigit)
+                    if (queryDigits in number || queryDigits in normalized) {
+                        ids.add(cursor.getLong(0))
+                    }
+                }
+            }
+        }
+
+        ids
+    }
+
+    /**
+     * Ids of the contacts with a phone number matching [query] typed on the dialpad,
+     * or whose name matches it in T9 when [t9] is enabled
+     */
+    suspend fun searchDialpadContactIds(query: String, t9: Boolean): Set<Long> = withContext(Dispatchers.IO) {
+        val ids = mutableSetOf<Long>()
+        val queryDigits = query.filter(Char::isDigit)
+
+        context.contentResolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            arrayOf(
+                ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                ContactsContract.CommonDataKinds.Phone.NUMBER,
+                ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER
+            ),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                val number = cursor.getString(1).orEmpty()
+                val matches = query in number || (
+                        queryDigits.isNotEmpty() && (
+                                queryDigits in number.filter(Char::isDigit) ||
+                                        queryDigits in cursor.getString(2).orEmpty().filter(Char::isDigit)
+                                )
+                        )
+                if (matches) ids.add(cursor.getLong(0))
+            }
+        }
+
+        if (t9) {
+            context.contentResolver.query(
+                ContactsContract.Contacts.CONTENT_URI,
+                arrayOf(
+                    ContactsContract.Contacts._ID,
+                    ContactsContract.Contacts.DISPLAY_NAME_PRIMARY
+                ),
+                "${ContactsContract.Contacts.HAS_PHONE_NUMBER} = 1",
+                null,
+                null
+            )?.use { cursor ->
+                while (cursor.moveToNext()) {
+                    if (nameToT9(cursor.getString(1).orEmpty()).contains(query, true)) {
+                        ids.add(cursor.getLong(0))
+                    }
+                }
+            }
+        }
+
+        ids
+    }
+
+    private fun nameToT9(name: String): String {
+        return name.lowercase().map {
+            when (it) {
+                'a', 'b', 'c' -> '2'
+                'd', 'e', 'f' -> '3'
+                'g', 'h', 'i' -> '4'
+                'j', 'k', 'l' -> '5'
+                'm', 'n', 'o' -> '6'
+                'p', 'q', 'r', 's' -> '7'
+                't', 'u', 'v' -> '8'
+                'w', 'x', 'y', 'z' -> '9'
+                '+' -> '+'
+                else -> '0'
+            }
+        }.joinToString("")
+    }
+
+    /**
+     * contactId -> account name ("Device" when it has none), for every contact
+     */
+    suspend fun getContactAccounts(): Map<Long, String> = withContext(Dispatchers.IO) {
+        val accountNames = fetchAccountNames()
+        val result = LinkedHashMap<Long, String>()
+
+        context.contentResolver.query(
+            ContactsContract.Contacts.CONTENT_URI,
+            arrayOf(ContactsContract.Contacts._ID),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(0)
+                result[id] = accountNames[id]?.ifEmpty { "Device" } ?: "Device"
+            }
+        }
+
+        result
+    }
+
+    private fun String.escapeLike(): String = this
+        .replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
 
     fun fetchContacts(
         extraSelection: String? = null,
@@ -127,8 +344,12 @@ class ContactsRepository(
         return contacts
     }
 
-    private fun fetchAllPhoneNumbers(): Map<Long, List<ContactPhone>> {
+    /**
+     * @param contactIds only fetch numbers of these contacts, all of them when null
+     */
+    private fun fetchAllPhoneNumbers(contactIds: Collection<Long>? = null): Map<Long, List<ContactPhone>> {
         val map = mutableMapOf<Long, MutableList<ContactPhone>>()
+        if (contactIds?.isEmpty() == true) return map
 
 
         context.contentResolver.query(
@@ -139,7 +360,7 @@ class ContactsRepository(
                 ContactsContract.Data.MIMETYPE,
                 ContactsContract.CommonDataKinds.Phone.IS_PRIMARY,
             ),
-            null,
+            contactIds?.let { "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} IN (${it.joinToString(",")})" },
             null,
             null
         )?.use { cursor ->
@@ -437,15 +658,19 @@ class ContactsRepository(
 
 
 
-    private fun fetchAccountNames(): Map<Long, String> {
+    /**
+     * @param contactIds only fetch account names of these contacts, all of them when null
+     */
+    private fun fetchAccountNames(contactIds: Collection<Long>? = null): Map<Long, String> {
         val map = mutableMapOf<Long, String>()
+        if (contactIds?.isEmpty() == true) return map
         context.contentResolver.query(
             ContactsContract.RawContacts.CONTENT_URI,
             arrayOf(
                 ContactsContract.RawContacts.CONTACT_ID,
                 ContactsContract.RawContacts.ACCOUNT_NAME
             ),
-            null,
+            contactIds?.let { "${ContactsContract.RawContacts.CONTACT_ID} IN (${it.joinToString(",")})" },
             null,
             null
         )?.use { cursor ->

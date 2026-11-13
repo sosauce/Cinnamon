@@ -22,7 +22,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.sosauce.nekobites.utils.groupedShape
 import com.sosauce.nekobites.animations.bouncySpec
-import com.sosauce.cinnamon.core.utils.rememberInteractionSource
+import com.sosauce.nekobites.helpers.rememberInteractionSource
 
 @Composable
 fun CuteListItem(
