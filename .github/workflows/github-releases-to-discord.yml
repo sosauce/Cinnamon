@@ -1,8 +1,9 @@
 name: Publish release to Discord
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Build & Release"]
+    types: [completed]
 
 jobs:
   github-releases-to-discord:
@@ -16,7 +17,7 @@ jobs:
           webhook_url: ${{ secrets.WEBHOOK_URL }}
           color: "2105893"
           username: "Auto Releases"
-          avatar_url: "https://i.pinimg.com/736x/80/47/b2/8047b2ccc3d44c86a8c9791259946d6c.jpg"
+          avatar_url: "https://i.pinimg.com/736x/1a/e3/12/1ae312bbacceb8f39546b4157f6f6c4c.jpg"
           content: "<@&1472222634208006204>"
           footer_title: "Changelog"
           reduce_headings: true
