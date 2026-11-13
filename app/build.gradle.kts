@@ -31,8 +31,8 @@ android {
         applicationId = "com.sosauce.cinnamon"
         minSdk = 26
         targetSdk = 37
-        versionCode = 7
-        versionName = "1.2.1"
+        versionCode = 8
+        versionName = "1.2.2"
 
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
