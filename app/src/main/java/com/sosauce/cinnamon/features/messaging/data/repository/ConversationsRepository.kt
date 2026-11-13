@@ -300,7 +300,6 @@ class ConversationsRepository(private val context: Context) {
             }
         }.toTypedArray()
 
-        val s = MmsSms.CONTENT_CONVERSATIONS_URI
 
         return context.contentResolver.query(
             "${Telephony.Threads.CONTENT_URI}?simple=true".toUri(),
@@ -331,6 +330,7 @@ class ConversationsRepository(private val context: Context) {
             participants = participants,
             snippet = snippet,
             date = date,
+            read = read,
             unreadCount = if (read) 0 else getUnreadCount(threadId)
         )
     }

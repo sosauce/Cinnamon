@@ -8,7 +8,8 @@ data class CuteConversationEntity(
     val participants: List<Participant> = emptyList(),
     val snippet: String = "",
     val date: Long = 0,
-    val unreadCount: Int = 0
+    val unreadCount: Int = 0,
+    val read: Boolean
 )
 
 
