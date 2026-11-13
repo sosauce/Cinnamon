@@ -258,7 +258,7 @@ fun MediaViewerDialog(
 }
 
 @Composable
-private fun ImagePage(image: Uri) {
+fun ImagePage(image: Uri) {
     val zoomState = rememberZoomState()
     var aspectRatio by remember { mutableStateOf<Float?>(null) }
     Box(

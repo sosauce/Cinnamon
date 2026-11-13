@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -30,6 +31,7 @@ import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.about.ImagePage
 import com.sosauce.nekobites.animations.AnimatedFab
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -38,14 +40,13 @@ import net.engawapg.lib.zoomable.zoomable
 fun ImageAttachment(
     modifier: Modifier = Modifier,
     image: Uri?,
-    onHandleConversationActions: (com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions) -> Unit,
+    onHandleConversationActions: (ConversationActions) -> Unit,
 ) {
 
     var showFullscreen by remember { mutableStateOf(false) }
 
     if (showFullscreen) {
 
-        val zoomState = rememberZoomState()
         Dialog(
             onDismissRequest = { showFullscreen = false },
             properties = DialogProperties(
@@ -69,17 +70,11 @@ fun ImageAttachment(
                         contentScale = ContentScale.Crop,
                     )
                 }
-                AsyncImage(
-                    model = image,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .zoomable(zoomState)
-                        .clip(RoundedCornerShape(12.dp)),
-                    contentScale = ContentScale.Crop,
-                    onSuccess = { state ->
-                        zoomState.setContentSize(state.painter.intrinsicSize)
-                    },
-                )
+                Box(
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    ImagePage(image ?: Uri.EMPTY)
+                }
 
                 Row(
                     modifier = Modifier
