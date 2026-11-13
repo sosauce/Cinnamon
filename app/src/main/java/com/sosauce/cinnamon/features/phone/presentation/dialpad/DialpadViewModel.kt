@@ -4,6 +4,7 @@ package com.sosauce.cinnamon.features.phone.presentation.dialpad
 
 import android.provider.ContactsContract
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -93,6 +94,7 @@ class DialpadViewModel(
     )
 }
 
+@Stable
 data class DialpadState(
     val isLoading: Boolean = false,
     /**

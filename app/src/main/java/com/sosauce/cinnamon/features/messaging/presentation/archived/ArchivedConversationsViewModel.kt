@@ -2,6 +2,7 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.archived
 
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.ViewModel
@@ -64,6 +65,7 @@ class ArchivedConversationsViewModel(
 
 }
 
+@Stable
 data class ArchivedState(
     val isLoading: Boolean = false,
     val conversations: List<CuteConversation> = emptyList()

@@ -3,6 +3,7 @@ package com.sosauce.cinnamon.features.messaging.presentation.conversation.compon
 import android.net.Uri
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -74,6 +75,7 @@ class BottomBarViewModel(
 
 }
 
+@Stable
 data class BottomBarState(
     val message: String = "",
     val attachments: List<Uri> = emptyList(),

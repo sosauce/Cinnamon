@@ -352,6 +352,7 @@ class ConversationsRepository(private val context: Context) {
         val projection = arrayOf(
             PhoneLookup.DISPLAY_NAME,
             PhoneLookup.PHOTO_THUMBNAIL_URI,
+            PhoneLookup.PHOTO_URI,
             PhoneLookup.CONTACT_ID
         )
 
@@ -366,6 +367,7 @@ class ConversationsRepository(private val context: Context) {
 
             val displayNameColumn = cursor.getColumnIndexOrThrow(PhoneLookup.DISPLAY_NAME)
             val photoThumbnailColumn = cursor.getColumnIndexOrThrow(PhoneLookup.PHOTO_THUMBNAIL_URI)
+            val photoColumn = cursor.getColumnIndexOrThrow(PhoneLookup.PHOTO_URI)
 
             if (cursor.moveToFirst()) {
 
@@ -377,6 +379,7 @@ class ConversationsRepository(private val context: Context) {
                     rawNumber = number,
                     displayName = displayName,
                     photoUriString = photoThumbnail,
+                    hqPhotoUriString = cursor.getString(photoColumn),
                     isBlocked = isBlocked,
                     contactId = cursor.getLong(contactIdColumn)
                 )

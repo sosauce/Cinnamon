@@ -8,6 +8,7 @@ fun CuteContactEntity.toDomain(): CuteContact {
         id = id,
         displayName = displayName,
         thumbnail = thumbnail?.toUri(),
+        photo = photo?.toUri(),
         isFavorite = isFavorite,
         accountName = accountName,
         phoneNumbers = phoneNumbers

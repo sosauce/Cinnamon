@@ -36,6 +36,11 @@ data class CuteConversation(
      */
     val photo = participants.firstOrNull()?.photoUri
 
+    /**
+     * Full quality version of [photo], only use where a large avatar is shown
+     */
+    val hqPhoto = participants.firstOrNull()?.hqPhotoUri
+
     val isSoloParticipantBlocked = participants.firstOrNull()?.isBlocked == true
 }
 
@@ -44,10 +49,17 @@ data class Participant(
     val displayName: String,
     val photoUriString: String?,
     val isBlocked: Boolean,
-    val contactId: Long? = null
+    val contactId: Long? = null,
+    /**
+     * Full quality photo, prefer [photoUriString] unless a large avatar is shown
+     */
+    val hqPhotoUriString: String? = null
 ) {
     val photoUri
         get() = photoUriString?.toUri()
+
+    val hqPhotoUri
+        get() = (hqPhotoUriString ?: photoUriString)?.toUri()
 }
 
 fun List<Participant>.isGroupChat(): Boolean = size > 1

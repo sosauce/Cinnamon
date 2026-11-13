@@ -1,5 +1,6 @@
 package com.sosauce.cinnamon.features.contacts.presentation.editor
 
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsActions
@@ -115,6 +116,7 @@ class EditContactViewModel(
 
 }
 
+@Stable
 data class EditContactState(
     val isLoading: Boolean = false,
     val rawContact: RawContactEdit = RawContactEdit(),

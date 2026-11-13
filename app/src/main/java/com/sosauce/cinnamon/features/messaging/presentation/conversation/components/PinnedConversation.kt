@@ -73,8 +73,8 @@ fun PinnedConversation(
         visual = {
             ConversationIcon(
                 conversation = conversation,
-                size = 90.dp
-
+                size = 90.dp,
+                highQuality = true
             )
         }
     )

@@ -105,6 +105,7 @@ class ContactsRepository(
             val nameCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
             val starCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.STARRED)
             val photoCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI)
+            val hqPhotoCol = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.PHOTO_URI)
 
             if (limit > 0 && cursor.moveToPosition(offset)) {
                 do {
@@ -114,6 +115,7 @@ class ContactsRepository(
                             displayName = cursor.getString(nameCol) ?: "<unknown>",
                             isFavorite = cursor.getInt(starCol) == 1,
                             thumbnail = cursor.getString(photoCol),
+                            photo = cursor.getString(hqPhotoCol),
                             accountName = "Device",
                             phoneNumbers = emptyList()
                         )
@@ -324,6 +326,8 @@ class ContactsRepository(
                 cursor.getColumnIndexOrThrow(ContactsContract.Contacts.STARRED)
             val photoCol =
                 cursor.getColumnIndexOrThrow(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI)
+            val hqPhotoCol =
+                cursor.getColumnIndexOrThrow(ContactsContract.Contacts.PHOTO_URI)
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idCol)
@@ -334,6 +338,7 @@ class ContactsRepository(
                         displayName = cursor.getString(nameCol) ?: "<unknown>",
                         isFavorite = cursor.getInt(starCol) == 1,
                         thumbnail = cursor.getString(photoCol),
+                        photo = cursor.getString(hqPhotoCol),
                         accountName = accountNames[id] ?: "Device",
                         phoneNumbers = allPhones[id] ?: emptyList()
                     )
@@ -1028,6 +1033,7 @@ class ContactsRepository(
             ContactsContract.Contacts._ID,
             ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
             ContactsContract.Contacts.PHOTO_THUMBNAIL_URI,
+            ContactsContract.Contacts.PHOTO_URI,
             ContactsContract.Contacts.STARRED
         )
     }

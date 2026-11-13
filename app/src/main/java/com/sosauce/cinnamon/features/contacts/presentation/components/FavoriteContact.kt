@@ -41,7 +41,7 @@ fun FavoriteContact(
         visual = {
             DefaultContactIcon(
                 firstLetter = contact.displayName.firstOrNull(),
-                contactPfp = contact.thumbnail,
+                contactPfp = contact.photo ?: contact.thumbnail,
                 size = 90.dp
             )
         }

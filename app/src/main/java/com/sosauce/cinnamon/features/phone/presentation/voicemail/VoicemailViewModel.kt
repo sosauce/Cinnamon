@@ -3,6 +3,7 @@
 package com.sosauce.cinnamon.features.phone.presentation.voicemail
 
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.ViewModel
@@ -49,6 +50,7 @@ class VoicemailViewModel(
 
 }
 
+@Stable
 data class VoicemailState(
     val isLoading: Boolean = false,
     val voicemails: List<CuteVoicemail> = emptyList()

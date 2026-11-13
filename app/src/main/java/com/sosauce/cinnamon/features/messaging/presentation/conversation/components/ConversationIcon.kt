@@ -28,7 +28,8 @@ import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 @Composable
 fun ConversationIcon(
     conversation: CuteConversation,
-    size: Dp = 50.dp
+    size: Dp = 50.dp,
+    highQuality: Boolean = false
 ) {
     Box(
         modifier = Modifier
@@ -55,7 +56,7 @@ fun ConversationIcon(
             )
         }
         AsyncImage(
-            model = conversation.photo,
+            model = if (highQuality) conversation.hqPhoto else conversation.photo,
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop

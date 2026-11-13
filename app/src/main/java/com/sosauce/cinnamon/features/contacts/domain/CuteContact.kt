@@ -8,6 +8,10 @@ data class CuteContact(
     val id: Long = 0,
     val displayName: String = "",
     val thumbnail: Uri? = null,
+    /**
+     * Full quality photo, only use where a large avatar is shown, prefer [thumbnail] otherwise
+     */
+    val photo: Uri? = null,
     val isFavorite: Boolean = false,
     val accountName: String = "",
     val accountType: String? = null,

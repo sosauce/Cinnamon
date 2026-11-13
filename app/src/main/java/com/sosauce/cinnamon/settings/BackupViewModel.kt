@@ -3,6 +3,7 @@ package com.sosauce.cinnamon.settings
 import android.net.Uri
 import androidx.annotation.StringRes
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -38,6 +39,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+@Stable
 data class MessageBackupUiState(
     val selectedThreadIds: Set<Long> = emptySet(),
     val isExporting: Boolean = false,
@@ -45,6 +47,7 @@ data class MessageBackupUiState(
     val progressTotal: Int? = null
 )
 
+@Stable
 data class ContactsBackupUiState(
     val selectedContactIds: Set<Long> = emptySet(),
     val isExporting: Boolean = false,
@@ -52,6 +55,7 @@ data class ContactsBackupUiState(
     val progressTotal: Int? = null
 )
 
+@Stable
 data class CallLogsBackupUiState(
     val selectedLogIds: Set<Long> = emptySet(),
     val isExporting: Boolean = false,

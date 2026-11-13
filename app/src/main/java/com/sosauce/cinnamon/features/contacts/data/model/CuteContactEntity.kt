@@ -6,6 +6,7 @@ data class CuteContactEntity(
     val id: Long,
     val displayName: String,
     val thumbnail: String?,
+    val photo: String?,
     val isFavorite: Boolean,
     val accountName: String,
     val phoneNumbers: List<ContactPhone>

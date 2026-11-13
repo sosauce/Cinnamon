@@ -1,6 +1,7 @@
 package com.sosauce.cinnamon.features.contacts.presentation
 
 import android.app.Application
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -147,6 +148,7 @@ class ContactDetailsViewModel(
 
 }
 
+@Stable
 data class ContactDetailsState(
     val isLoading: Boolean = false,
     val contact: CuteContact = CuteContact(),

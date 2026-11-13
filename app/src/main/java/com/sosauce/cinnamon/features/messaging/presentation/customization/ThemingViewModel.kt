@@ -2,6 +2,7 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.customization
 
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingActions
@@ -55,6 +56,7 @@ class ThemingViewModel(
 
 }
 
+@Stable
 data class ThemingState(
     val isLoading: Boolean = false,
     val settings: ConversationSettings = ConversationSettings()

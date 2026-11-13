@@ -2,6 +2,7 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation.forwarding
 
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -35,6 +36,7 @@ class ForwardingViewModel(
 
 }
 
+@Stable
 data class ForwardingState(
     val isLoading: Boolean = false,
     val conversations: List<CuteConversation> = emptyList(),

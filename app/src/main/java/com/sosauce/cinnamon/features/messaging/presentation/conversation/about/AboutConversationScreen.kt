@@ -349,7 +349,7 @@ fun AboutConversationScreen(
                         } else {
                             DefaultContactIcon(
                                 firstLetter = name.firstOrNull(),
-                                contactPfp = state.participants.firstOrNull()?.photoUri,
+                                contactPfp = state.participants.firstOrNull()?.hqPhotoUri,
                                 size = iconSize,
                                 shape = MaterialShapes.Cookie9Sided.toShape()
                             )
