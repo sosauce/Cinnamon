@@ -1,0 +1,14 @@
+Cinnamon est une application 3-en-1 (messagerie, contacts et téléphone) qui vise à regrouper toutes vos expériences de communication au sein d’un design cohérent, élégant et fonctionnel !
+
+- Une interface utilisateur et une expérience utilisateur unifiées pour une utilisation fluide et agréable entre les 3 modules !
+- Envoyez et recevez des SMS et MMS, gérez vos contacts et profitez de toutes les fonctionnalités du téléphone !
+- Planifiez vos messages !
+- Épinglez des discussions !
+- Personnalisation par discussion : fond d’écran et couleur !
+- Gérez et modifiez vos contacts !
+- Prise en charge des affiches de contacts !
+- Blocage au niveau de l’appareil !
+- Numérotation T9 !
+- Prise en charge de la messagerie vocale !
+- Sauvegardez et restaurez tout : messages, contacts et historique des appels !
+- Prise en charge multi-SIM avec possibilité de choisir la carte SIM par défaut pour les messages et les appels !
