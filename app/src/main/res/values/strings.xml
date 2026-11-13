@@ -310,4 +310,10 @@
     <string name="view_contact">View contact</string>
     <string name="delete_conversation">Delete conversation</string>
     <string name="unread_count_overflow">99+</string>
+    <string name="search">Search</string>
+    <string name="search_conversation">Search conversation</string>
+    <string name="close_search">Close search</string>
+    <string name="search_match_counter">%1$d/%2$d</string>
+    <string name="older_match">Older match</string>
+    <string name="newer_match">Newer match</string>
 </resources>

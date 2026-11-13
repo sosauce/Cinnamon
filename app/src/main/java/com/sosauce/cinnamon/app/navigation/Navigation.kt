@@ -73,6 +73,7 @@ import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailScree
 import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailViewModel
 import com.sosauce.cinnamon.settings.SettingsScreen
 import com.sosauce.nekobites.helpers.ObserveAsEvents
+import androidx.paging.compose.collectAsLazyPagingItems
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -208,6 +209,7 @@ fun Nav(
                             parameters = { parametersOf(key.threadId) }
                         )
                         val state by viewModel.state.collectAsStateWithLifecycle()
+                        val messages = viewModel.messages.collectAsLazyPagingItems()
                         val lifecycleOwner = LocalLifecycleOwner.current
                         val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
 
@@ -216,7 +218,8 @@ fun Nav(
                         }
 
                         // when new messages, block notifs for thread and remark it as read
-                        LaunchedEffect(state.messages, lifecycleState) {
+                        val newestMessage = if (messages.itemCount > 0) messages.peek(0) else null
+                        LaunchedEffect(newestMessage, lifecycleState) {
                             if (lifecycleState == Lifecycle.State.RESUMED) {
                                 viewModel.handleConversationActions(ConversationActions.MarkAsRead)
                                 viewModel.handleConversationActions(ConversationActions.ClearThreadNotifications)
@@ -229,6 +232,8 @@ fun Nav(
                         }
                         ConversationDetailsScreen(
                             state = state,
+                            messages = messages,
+                            searchTextFieldState = viewModel.searchTextFieldState,
                             prefilledMessage = key.prefilledMessage,
                             onNavigateUp = backStack::navigateBack,
                             onNavigate = backStack::navigate,
@@ -288,6 +293,7 @@ fun Nav(
                             parameters = { parametersOf(key.threadId) }
                         )
                         val state by viewModel.state.collectAsStateWithLifecycle()
+                        val media by viewModel.media.collectAsStateWithLifecycle()
 
                         ObserveAsEvents(viewModel.events) { event ->
                             showConversationEventToast(context, resources, event)
@@ -295,6 +301,7 @@ fun Nav(
 
                         AboutConversationScreen(
                             state = state,
+                            medias = media,
                             onNavigateBack = backStack::navigateBack,
                             onNavigate = backStack::navigate,
                             onDeleteConversation = {

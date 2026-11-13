@@ -16,6 +16,21 @@ data class CuteMessage(
     val isScheduled: Boolean,
     val delivered: Boolean
 )
+/**
+ * Unique key of a message across SMS, MMS and scheduled messages (ids can collide between them).
+ */
+fun messageListKey(id: Long, isMms: Boolean, isScheduled: Boolean): String {
+    val type = when {
+        isScheduled -> "scheduled"
+        isMms -> "mms"
+        else -> "sms"
+    }
+    return "${type}_$id"
+}
+
+val CuteMessage.listKey: String
+    get() = messageListKey(id = id, isMms = isMms, isScheduled = isScheduled)
+
 enum class MessageType {
     SENT,
     RECEIVED,

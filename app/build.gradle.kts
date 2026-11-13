@@ -134,5 +134,6 @@ dependencies {
     implementation(libs.androidx.glance.material3)
     implementation(libs.haze.blur)
     implementation(libs.nekobites)
+    implementation(libs.androidx.paging.compose)
 
 }

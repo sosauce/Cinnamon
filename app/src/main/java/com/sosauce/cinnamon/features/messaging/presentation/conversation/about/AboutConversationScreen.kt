@@ -52,8 +52,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastFilter
-import androidx.compose.ui.util.fastFlatMap
 import androidx.compose.ui.util.fastForEachIndexed
 import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
@@ -66,7 +64,7 @@ import com.sosauce.cinnamon.core.ui.components.dialogs.BlockUnblockDialog
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItemDefaults
 import com.sosauce.cinnamon.core.utils.beautifyNumber
-import com.sosauce.cinnamon.features.messaging.data.model.AttachmentType
+import com.sosauce.cinnamon.features.messaging.data.model.CuteAttachment
 import com.sosauce.cinnamon.features.messaging.domain.Participant
 import com.sosauce.cinnamon.features.messaging.domain.isGroupChat
 import com.sosauce.cinnamon.features.messaging.domain.name
@@ -77,6 +75,7 @@ import com.sosauce.nekobites.components.LoadingBox
 @Composable
 fun AboutConversationScreen(
     state: ConversationDetailsState,
+    medias: List<CuteAttachment.AttachmentDetails>,
     onNavigateBack: () -> Unit,
     onNavigate: (Screen) -> Unit,
     onDeleteConversation: () -> Unit,
@@ -87,15 +86,6 @@ fun AboutConversationScreen(
     var showBlockDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
-    val medias = remember(state.messages) {
-        state.messages.values.flatten().fastFlatMap { message ->
-            message.attachment?.attachmentDetails
-                ?.fastFilter {
-                    it.attachmentType == AttachmentType.IMAGE ||
-                            it.attachmentType == AttachmentType.VIDEO
-                } ?: emptyList()
-        }
-    }
     val name = state.participants.name()
 
     if (showBlockDialog && soloParticipant != null) {

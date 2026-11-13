@@ -46,6 +46,8 @@ fun MmsBubble(
     sandwichPosition: SandwichPosition,
     bubbleColor: Color,
     onHandleConversationActions: (com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions) -> Unit,
+    highlightQuery: String? = null,
+    isFocusedMatch: Boolean = false
 ) {
     val alignment = if (message.type == MessageType.RECEIVED)
         Alignment.Start else Alignment.End
@@ -72,7 +74,9 @@ fun MmsBubble(
                 type = message.type,
                 bubbleColor = bubbleColor,
                 sandwichPosition = sandwichPosition,
-                isScheduled = message.isScheduled
+                isScheduled = message.isScheduled,
+                highlightQuery = highlightQuery,
+                isFocusedMatch = isFocusedMatch
             )
         }
     }

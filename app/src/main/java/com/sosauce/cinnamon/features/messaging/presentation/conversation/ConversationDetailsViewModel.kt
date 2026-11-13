@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalCoroutinesApi::class)
+@file:OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation
 
@@ -6,12 +6,34 @@ import android.app.Application
 import android.net.Uri
 import android.provider.BlockedNumberContract
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.InvalidatingPagingSourceFactory
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import com.sosauce.cinnamon.features.messaging.data.model.SearchableMessage
+import com.sosauce.cinnamon.features.messaging.data.repository.ThreadMessagesPagingSource
+import com.sosauce.cinnamon.features.messaging.domain.listKey
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
+import kotlin.time.Duration.Companion.milliseconds
 import com.sosauce.cinnamon.core.MediaManager
 import com.sosauce.cinnamon.core.telephony.message.CuteTelephonyManager
 import com.sosauce.cinnamon.core.telephony.message.MessageNotificationManager
@@ -57,14 +79,124 @@ class ConversationDetailsViewModel(
 ) : AndroidViewModel(application) {
 
 
-    private val messages = combine(
-        messagesRepository.fetchLatestMessagesForThread(threadId),
-        scheduledMessageManager.getScheduledMessagesForThread(threadId)
-    ) { messages, scheduled ->
+    private val pagingSourceFactory = InvalidatingPagingSourceFactory {
+        ThreadMessagesPagingSource(messagesRepository, threadId)
+    }
 
-        (messages + scheduled)
-            .sortedByDescending { it.timestamp }
-            .groupBy { it.date }
+    /**
+     * SMS + MMS of the thread, newest first, paged. Scheduled messages are not part of it,
+     * see [ConversationDetailsState.scheduledMessages].
+     */
+    val messages: Flow<PagingData<CuteMessage>> = Pager(
+        config = PagingConfig(
+            pageSize = PAGE_SIZE,
+            initialLoadSize = PAGE_SIZE * 2,
+            prefetchDistance = PAGE_SIZE / 2,
+            enablePlaceholders = true,
+            jumpThreshold = PAGE_SIZE * 3
+        ),
+        pagingSourceFactory = pagingSourceFactory
+    ).flow.cachedIn(viewModelScope)
+
+    /**
+     * Images & videos of the thread, used by the about screen.
+     */
+    val media = messagesRepository.fetchLatestMediaForThread(threadId)
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            emptyList()
+        )
+
+    private val scheduledMessages = scheduledMessageManager
+        .getScheduledMessagesForThread(threadId)
+        .map { scheduled -> scheduled.sortedByDescending { it.timestamp } }
+
+    val searchTextFieldState = TextFieldState()
+    private val _search = MutableStateFlow(ConversationSearchState())
+
+    private val searchQuery = snapshotFlow { searchTextFieldState.text.toString().trim() }
+        .debounce(300.milliseconds)
+        .distinctUntilChanged()
+
+    // Only loaded while search is opened, and kept up to date with new/deleted messages
+    private val searchCorpus = _search
+        .map { it.isActive }
+        .distinctUntilChanged()
+        .flatMapLatest { isActive ->
+            if (isActive) {
+                messagesRepository
+                    .observeMessageChanges()
+                    .mapLatest { messagesRepository.getSearchableMessages(threadId) }
+            } else {
+                flowOf(emptyList())
+            }
+        }
+
+    init {
+        viewModelScope.launch {
+            // first emission is the initial value, the paging source is already fresh
+            messagesRepository.observeMessageChanges().drop(1).collect {
+                pagingSourceFactory.invalidate()
+            }
+        }
+
+        viewModelScope.launch {
+            combine(
+                searchQuery,
+                searchCorpus,
+                scheduledMessages
+            ) { query, corpus, scheduled ->
+                query to findSearchMatches(query, corpus, scheduled)
+            }
+                .flowOn(Dispatchers.Default)
+                .collect { (query, matches) ->
+                    _search.update { search ->
+                        if (!search.isActive) return@update search
+
+                        val newIndex = if (query == search.query) {
+                            // same query but messages changed, stay on the same message if possible
+                            matches
+                                .indexOfFirst { it.key == search.currentMatch?.key }
+                                .takeIf { it >= 0 }
+                                ?: search.currentIndex.coerceIn(0, (matches.size - 1).coerceAtLeast(0))
+                        } else 0
+
+                        search.copy(
+                            query = query,
+                            matches = matches,
+                            currentIndex = newIndex
+                        )
+                    }
+                }
+        }
+    }
+
+    /**
+     * Matches are ordered newest first and their index is the position in the conversation list,
+     * which renders scheduled messages first and then the paged messages.
+     */
+    private fun findSearchMatches(
+        query: String,
+        corpus: List<SearchableMessage>,
+        scheduled: List<CuteMessage>
+    ): List<SearchMatch> {
+        if (query.isBlank()) return emptyList()
+
+        val matches = mutableListOf<SearchMatch>()
+
+        scheduled.fastForEachIndexed { index, message ->
+            if (message.body.contains(query, ignoreCase = true)) {
+                matches.add(SearchMatch(key = message.listKey, listIndex = index))
+            }
+        }
+        corpus.fastForEachIndexed { index, message ->
+            if (message.text.contains(query, ignoreCase = true)) {
+                matches.add(SearchMatch(key = message.key, listIndex = scheduled.size + index))
+            }
+        }
+
+        return matches
     }
 
 
@@ -81,12 +213,14 @@ class ConversationDetailsViewModel(
 
     val state = combine(
         _state,
-        messages,
+        scheduledMessages,
         conversationsRepository.fetchLatestParticipantsForThreadId(threadId),
-        settings
-    ) { state, messages, participants, settings ->
+        settings,
+        _search
+    ) { state, scheduledMessages, participants, settings, search ->
         state.copy(
-            messages = messages,
+            scheduledMessages = scheduledMessages,
+            search = search,
             participants = participants,
             settings = settings,
             isLoading = false,
@@ -201,7 +335,28 @@ class ConversationDetailsViewModel(
                 }
             }
             is ConversationActions.CallNumber -> callManager.startCall(action.number)
+
+            is ConversationActions.OpenSearch -> _search.update { it.copy(isActive = true) }
+
+            is ConversationActions.CloseSearch -> {
+                searchTextFieldState.clearText()
+                _search.value = ConversationSearchState()
+            }
+
+            is ConversationActions.ShowOlderSearchMatch -> _search.update { search ->
+                search.copy(
+                    currentIndex = (search.currentIndex + 1).coerceAtMost((search.matches.size - 1).coerceAtLeast(0))
+                )
+            }
+
+            is ConversationActions.ShowNewerSearchMatch -> _search.update { search ->
+                search.copy(currentIndex = (search.currentIndex - 1).coerceAtLeast(0))
+            }
         }
+    }
+
+    companion object {
+        private const val PAGE_SIZE = 50
     }
 
 }
@@ -212,8 +367,35 @@ data class ConversationDetailsState(
     val threadId: Long,
     val participants: List<Participant> = emptyList(),
     val settings: ConversationSettings = ConversationSettings(),
-    val messages: Map<String, List<CuteMessage>> = emptyMap(),
+    val scheduledMessages: List<CuteMessage> = emptyList(),
+    val search: ConversationSearchState = ConversationSearchState(),
     val isShortCode: Boolean = false
+)
+
+@Stable
+data class ConversationSearchState(
+    val isActive: Boolean = false,
+    val query: String = "",
+    val matches: List<SearchMatch> = emptyList(),
+    val currentIndex: Int = 0
+) {
+    val currentMatch: SearchMatch?
+        get() = matches.getOrNull(currentIndex)
+
+    val hasOlderMatch: Boolean
+        get() = currentIndex < matches.lastIndex
+
+    val hasNewerMatch: Boolean
+        get() = currentIndex > 0
+}
+
+/**
+ * @param key [listKey] of the matching message
+ * @param listIndex index of the matching message in the conversation list (newest = 0)
+ */
+data class SearchMatch(
+    val key: String,
+    val listIndex: Int
 )
 
 sealed interface ConversationActions {
@@ -240,6 +422,11 @@ sealed interface ConversationActions {
     data class CallNumber(
         val number: String
     ) : ConversationActions
+
+    data object OpenSearch : ConversationActions
+    data object CloseSearch : ConversationActions
+    data object ShowOlderSearchMatch : ConversationActions
+    data object ShowNewerSearchMatch : ConversationActions
 }
 
 sealed interface ConversationDetailsEvents {

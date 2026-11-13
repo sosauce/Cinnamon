@@ -25,6 +25,7 @@ materialKolor = "5.0.1"
 media3Exoplayer = "1.11.1"
 media3UiCompose = "1.11.1"
 nekobites = "1.1.2"
+pagingCompose = "3.5.3"
 serialization = "2.4.21"
 roomCompiler = "2.8.5"
 roomKtx = "2.8.5"
@@ -43,6 +44,7 @@ zoomable = "2.16.0"
 
 
 [libraries]
+androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "pagingCompose" }
 mmslib = { module = "org.fossify:mmslib", version.ref = "mmslib" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-glance-appwidget = { module = "androidx.glance:glance-appwidget", version.ref = "glanceAppwidget" }

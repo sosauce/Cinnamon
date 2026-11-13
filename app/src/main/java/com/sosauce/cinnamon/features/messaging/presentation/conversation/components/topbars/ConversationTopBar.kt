@@ -78,6 +78,11 @@ fun ConversationTopBar(
     val name = state.participants.name()
     val actions = listOf(
         MoreActions(
+            onClick = { onHandleConversationActions(ConversationActions.OpenSearch) },
+            text = R.string.search,
+            icon = R.drawable.search
+        ),
+        MoreActions(
             onClick = { onNavigate(Screen.ConversationTheming(state.threadId)) },
             text = R.string.customize,
             icon = R.drawable.palette

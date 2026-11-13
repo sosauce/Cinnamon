@@ -23,6 +23,8 @@ import com.sosauce.cinnamon.core.utils.observe
 import com.sosauce.cinnamon.features.messaging.data.model.AttachmentType
 import com.sosauce.cinnamon.features.messaging.data.model.CuteAttachment
 import com.sosauce.cinnamon.features.messaging.data.model.CuteMessageEntity
+import com.sosauce.cinnamon.features.messaging.data.model.MessagesPage
+import com.sosauce.cinnamon.features.messaging.data.model.SearchableMessage
 import com.sosauce.cinnamon.features.messaging.data.model.toCuteMessage
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import kotlinx.coroutines.Dispatchers
@@ -62,7 +64,181 @@ class MessagesRepository(
 
     private fun fetchMessagesForThread(
         threadId: Long
-    ): List<CuteMessageEntity> {
+    ): List<CuteMessageEntity> = queryThreadMessages(threadId, 0, Int.MAX_VALUE).messages
+
+    /**
+     * Emits whenever anything in the SMS/MMS providers changes (and once on collection).
+     */
+    fun observeMessageChanges(): Flow<Boolean> =
+        context.contentResolver.observe(MmsSms.CONTENT_URI)
+
+    /**
+     * One page of SMS+MMS messages for a thread, newest first, starting at [offset].
+     * Used by [ThreadMessagesPagingSource].
+     */
+    suspend fun getMessagesPage(
+        threadId: Long,
+        offset: Int,
+        limit: Int
+    ): MessagesPage<CuteMessage> = withContext(Dispatchers.IO) {
+        val page = queryThreadMessages(threadId, offset, limit)
+        MessagesPage(
+            messages = page.messages.fastMap { it.toCuteMessage(context) },
+            totalCount = page.totalCount
+        )
+    }
+
+    /**
+     * Lightweight text-only snapshot of a thread, in the same order (newest first) as
+     * [getMessagesPage], so that a list index here equals the paged position.
+     */
+    suspend fun getSearchableMessages(threadId: Long): List<SearchableMessage> =
+        withContext(Dispatchers.IO) {
+            data class Row(val id: Long, val isMms: Boolean, val body: String?)
+
+            val rows = mutableListOf<Row>()
+
+            context.contentResolver.query(
+                ContentUris.withAppendedId(MmsSms.CONTENT_CONVERSATIONS_URI, threadId),
+                arrayOf(BaseColumns._ID, Sms.BODY, MmsSms.TYPE_DISCRIMINATOR_COLUMN),
+                null,
+                null,
+                "$NORMALIZED_DATE DESC"
+            )?.use { cursor ->
+                val idColumn = cursor.getColumnIndexOrThrow(BaseColumns._ID)
+                val bodyColumn = cursor.getColumnIndexOrThrow(Sms.BODY)
+                val transportColumn = cursor.getColumnIndexOrThrow(MmsSms.TYPE_DISCRIMINATOR_COLUMN)
+
+                while (cursor.moveToNext()) {
+                    rows.add(
+                        Row(
+                            id = cursor.getLong(idColumn),
+                            isMms = cursor.getString(transportColumn) == "mms",
+                            body = cursor.getString(bodyColumn)
+                        )
+                    )
+                }
+            }
+
+            val mmsTexts = getMmsTexts(
+                rows.fastFilter { it.isMms }.fastMap { it.id }
+            )
+
+            rows.fastMap { row ->
+                SearchableMessage(
+                    id = row.id,
+                    isMms = row.isMms,
+                    text = if (row.isMms) mmsTexts[row.id].orEmpty() else row.body.orEmpty()
+                )
+            }
+        }
+
+    /**
+     * Images and videos of every MMS in a thread, newest message first.
+     */
+    fun fetchLatestMediaForThread(threadId: Long): Flow<List<CuteAttachment.AttachmentDetails>> {
+        return context.contentResolver
+            .observe(MmsSms.CONTENT_URI)
+            .mapLatest { fetchMediaForThread(threadId) }
+            .flowOn(Dispatchers.IO)
+    }
+
+    private fun fetchMediaForThread(threadId: Long): List<CuteAttachment.AttachmentDetails> {
+        val mmsIds = mutableListOf<Long>()
+
+        context.contentResolver.query(
+            Mms.CONTENT_URI,
+            arrayOf(Mms._ID),
+            "${Mms.THREAD_ID} = ?",
+            arrayOf(threadId.toString()),
+            Mms.DEFAULT_SORT_ORDER
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(Mms._ID)
+            while (cursor.moveToNext()) mmsIds.add(cursor.getLong(idColumn))
+        }
+
+        if (mmsIds.isEmpty()) return emptyList()
+
+        val uri = partsUri()
+        val idToMedia = mutableMapOf<Long, MutableList<CuteAttachment.AttachmentDetails>>()
+
+        mmsIds.chunked(SQL_IN_CHUNK).fastForEach { chunk ->
+            val placeholders = chunk.joinToString(",") { "?" }
+            context.contentResolver.query(
+                uri,
+                arrayOf(Mms.Part._ID, Mms.Part.MSG_ID, Mms.Part.CONTENT_TYPE),
+                "${Mms.Part.MSG_ID} IN ($placeholders) AND " +
+                        "(${Mms.Part.CONTENT_TYPE} LIKE 'image/%' OR ${Mms.Part.CONTENT_TYPE} LIKE 'video/%')",
+                chunk.fastMap { it.toString() }.toTypedArray(),
+                "${Mms.Part._ID} ASC"
+            )?.use { cursor ->
+                val partIdColumn = cursor.getColumnIndexOrThrow(Mms.Part._ID)
+                val messageIdColumn = cursor.getColumnIndexOrThrow(Mms.Part.MSG_ID)
+                val mimeTypeColumn = cursor.getColumnIndexOrThrow(Mms.Part.CONTENT_TYPE)
+
+                while (cursor.moveToNext()) {
+                    val partId = cursor.getLong(partIdColumn)
+                    val mimeType = cursor.getString(mimeTypeColumn).orEmpty()
+                    idToMedia.getOrPut(cursor.getLong(messageIdColumn)) { mutableListOf() }.add(
+                        CuteAttachment.AttachmentDetails(
+                            id = partId,
+                            uri = ContentUris.withAppendedId(uri, partId),
+                            filename = context.getString(R.string.unknown),
+                            attachmentType = if (mimeType.startsWith("video/")) AttachmentType.VIDEO else AttachmentType.IMAGE,
+                            size = 0
+                        )
+                    )
+                }
+            }
+        }
+
+        return mmsIds.flatMap { idToMedia[it].orEmpty() }
+    }
+
+    /**
+     * Maps MMS id -> its text/plain part.
+     */
+    private fun getMmsTexts(mmsIds: List<Long>): Map<Long, String> {
+        if (mmsIds.isEmpty()) return emptyMap()
+
+        val texts = mutableMapOf<Long, String>()
+
+        mmsIds.chunked(SQL_IN_CHUNK).fastForEach { chunk ->
+            val placeholders = chunk.joinToString(",") { "?" }
+            context.contentResolver.query(
+                partsUri(),
+                arrayOf(Mms.Part.MSG_ID, Mms.Part.TEXT),
+                "${Mms.Part.MSG_ID} IN ($placeholders) AND ${Mms.Part.CONTENT_TYPE} = 'text/plain'",
+                chunk.fastMap { it.toString() }.toTypedArray(),
+                null
+            )?.use { cursor ->
+                val messageIdColumn = cursor.getColumnIndexOrThrow(Mms.Part.MSG_ID)
+                val textColumn = cursor.getColumnIndexOrThrow(Mms.Part.TEXT)
+                while (cursor.moveToNext()) {
+                    texts[cursor.getLong(messageIdColumn)] = cursor.getString(textColumn).orEmpty()
+                }
+            }
+        }
+
+        return texts
+    }
+
+    private fun partsUri() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        Mms.Part.CONTENT_URI
+    } else {
+        "content://mms/part".toUri()
+    }
+
+    /**
+     * Reads at most [limit] SMS+MMS rows of a thread (newest first), starting at [offset].
+     * The cursor is positioned directly instead of using LIMIT/OFFSET because the
+     * mms-sms provider doesn't officially support them.
+     */
+    private fun queryThreadMessages(
+        threadId: Long,
+        offset: Int,
+        limit: Int
+    ): MessagesPage<CuteMessageEntity> {
         //if (!PermissionUtils.hasSmsPermission(context)) return emptyList()
 
         data class MessageRow(
@@ -76,6 +252,7 @@ class MessagesRepository(
         )
 
         val rows = mutableListOf<MessageRow>()
+        var totalCount = 0
 
         val projection = arrayOf(
             BaseColumns._ID,
@@ -113,7 +290,10 @@ class MessagesRepository(
                 MmsSms.TYPE_DISCRIMINATOR_COLUMN
             )
 
-            while (cursor.moveToNext()) {
+            totalCount = cursor.count
+
+            if (limit > 0 && cursor.moveToPosition(offset)) {
+                do {
                 val isMms = cursor.getString(transportColumn) == "mms"
 
                 val id = cursor.getLong(idColumn)
@@ -152,6 +332,7 @@ class MessagesRepository(
                         body = cursor.getString(bodyColumn)
                     )
                 )
+            } while (rows.size < limit && cursor.moveToNext())
             }
         }
 
@@ -166,7 +347,7 @@ class MessagesRepository(
             emptyMap()
         }
 
-        return rows.fastMap { row ->
+        val messages = rows.fastMap { row ->
             val attachment = if (row.isMms) {
                 allMmsAttachments[row.id]
             } else {
@@ -186,6 +367,8 @@ class MessagesRepository(
                 isScheduled = false
             )
         }
+
+        return MessagesPage(messages = messages, totalCount = totalCount)
     }
 
     /**
@@ -606,6 +789,8 @@ class MessagesRepository(
 
     companion object {
         private const val NORMALIZED_DATE = "normalized_date"
+        // stay well below SQLite's bound-variable limit on older devices (999)
+        private const val SQL_IN_CHUNK = 900
     }
 
 }

@@ -8,10 +8,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -28,27 +32,50 @@ fun TextBubble(
     type: MessageType,
     sandwichPosition: SandwichPosition,
     isScheduled: Boolean,
-    bubbleColor: Color
+    bubbleColor: Color,
+    highlightQuery: String? = null,
+    isFocusedMatch: Boolean = false
 ) {
     TextBubbleContent(
         text = body,
         type = type,
         bubbleColor = bubbleColor,
         sandwichPosition = sandwichPosition,
-        isScheduled = isScheduled
+        isScheduled = isScheduled,
+        highlightQuery = highlightQuery,
+        isFocusedMatch = isFocusedMatch
     )
 }
 
+/**
+ * @param highlightQuery occurrences of it (case-insensitive) get highlighted, used by conversation search
+ * @param isFocusedMatch whether this bubble is the currently focused search match, highlighted stronger
+ */
 @Composable
 fun TextBubbleContent(
     text: String,
     type: MessageType,
     isScheduled: Boolean,
     sandwichPosition: SandwichPosition,
-    bubbleColor: Color
+    bubbleColor: Color,
+    highlightQuery: String? = null,
+    isFocusedMatch: Boolean = false
 ) {
 
     val uriHandler = LocalUriHandler.current
+    val highlightContainer = if (isFocusedMatch) {
+        MaterialTheme.colorScheme.tertiary
+    } else MaterialTheme.colorScheme.tertiaryContainer
+    val highlightContent = contentColorFor(highlightContainer)
+    val displayedText = remember(text, highlightQuery, highlightContainer, highlightContent) {
+        text.highlightOccurrences(
+            query = highlightQuery,
+            style = SpanStyle(
+                background = highlightContainer,
+                color = highlightContent
+            )
+        )
+    }
     val shape = BubbleShape(
         sandwichPosition = sandwichPosition,
         messageType = type
@@ -74,7 +101,7 @@ fun TextBubbleContent(
 
     ) {
         Text(
-            text = text,
+            text = displayedText,
             modifier = Modifier
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             style = MaterialTheme.typography.bodyLargeEmphasized.copy(
@@ -83,5 +110,18 @@ fun TextBubbleContent(
                 textDecoration = if (text.isLink()) TextDecoration.Underline else null,
             )
         )
+    }
+}
+private fun String.highlightOccurrences(
+    query: String?,
+    style: SpanStyle
+): AnnotatedString = buildAnnotatedString {
+    append(this@highlightOccurrences)
+    if (query.isNullOrEmpty()) return@buildAnnotatedString
+
+    var start = indexOf(query, ignoreCase = true)
+    while (start >= 0) {
+        addStyle(style, start, start + query.length)
+        start = indexOf(query, startIndex = start + query.length, ignoreCase = true)
     }
 }
