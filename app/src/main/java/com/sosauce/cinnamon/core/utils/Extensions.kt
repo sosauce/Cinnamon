@@ -549,8 +549,7 @@ fun Uri.isVideo(context: Context): Boolean =
     context.contentResolver.getType(this)?.startsWith("video/") == true
 
 fun Uri.isVcard(context: Context): Boolean = context.contentResolver.getType(this)
-    ?.endsWith("vCard") == true || context.contentResolver.getType(this)
-    ?.endsWith("x-vCard") == true
+    ?.let { it.endsWith("vCard") || it.endsWith("x-vCard") } == true
 
 
 fun Uri.getVcfName(context: Context): String? {

@@ -43,7 +43,6 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.retain.RetainedEffect
 import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
@@ -71,8 +70,6 @@ import com.sosauce.nekobites.animations.AnimatedDrawableFile
 import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.nekobites.animations.rememberAnimatedShape
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 @SuppressLint("UnsafeOptInUsageError")
@@ -82,7 +79,6 @@ fun AudioAttachment(
     bubbleColor: Color
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     var tempSliderValue by remember { mutableStateOf<Float?>(null) }
     var position by remember { mutableFloatStateOf(0f) }
     var duration by remember { mutableStateOf<Float?>(null) }
@@ -103,17 +99,6 @@ fun AudioAttachment(
                 isPlayerPlaying = isPlaying
             }
 
-            override fun onEvents(player: Player, events: Player.Events) {
-                super.onEvents(player, events)
-                scope.launch {
-                    ensureActive()
-                    while (player.isPlaying) {
-                        position = player.currentPosition.toFloat()
-                        delay(1.seconds)
-                    }
-                }
-            }
-
             override fun onPlaybackStateChanged(playbackState: Int) {
                 super.onPlaybackStateChanged(playbackState)
 
@@ -131,6 +116,14 @@ fun AudioAttachment(
         onRetire {
             player.removeListener(listener)
             player.release()
+        }
+    }
+
+    // Single polling loop while playing, restarts/stops with the playing state
+    LaunchedEffect(isPlayerPlaying) {
+        while (isPlayerPlaying) {
+            position = player.currentPosition.toFloat()
+            delay(1.seconds)
         }
     }
 

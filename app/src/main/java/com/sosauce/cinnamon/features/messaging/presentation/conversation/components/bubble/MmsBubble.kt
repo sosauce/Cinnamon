@@ -19,9 +19,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +38,8 @@ import com.sosauce.cinnamon.features.messaging.data.model.AttachmentType
 import com.sosauce.cinnamon.features.messaging.data.model.CuteAttachment
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import com.sosauce.cinnamon.features.messaging.domain.MessageType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun MmsBubble(
@@ -93,7 +94,19 @@ private fun MmsAttachmentRouter(
     val context = LocalContext.current
     val resources = LocalResources.current
     val uri = details.uri
+    val isMedia = details.attachmentType == AttachmentType.IMAGE ||
+            details.attachmentType == AttachmentType.VIDEO ||
+            details.attachmentType == AttachmentType.AUDIO
 
+    // vCard name, or null if not a vCard (or not resolved yet).
+    val vcardName by produceState<String?>(initialValue = null, uri, isMedia) {
+        if (isMedia) return@produceState
+        value = withContext(Dispatchers.IO) {
+            if (uri.isVcard(context)) {
+                uri.getVcfName(context) ?: resources.getString(R.string.unknown)
+            } else null
+        }
+    }
 
     when {
         details.attachmentType == AttachmentType.IMAGE -> ImageAttachment(
@@ -108,10 +121,8 @@ private fun MmsAttachmentRouter(
             bubbleColor = bubbleColor
         )
 
-        uri.isVcard(context) -> {
-            val contactName by remember {
-                derivedStateOf { uri.getVcfName(context) ?: resources.getString(R.string.unknown) }
-            }
+        vcardName != null -> {
+            val contactName = vcardName.orEmpty()
 
             Box(
                 modifier = Modifier

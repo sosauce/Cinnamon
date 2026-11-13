@@ -71,8 +71,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
@@ -417,7 +417,7 @@ private fun AttachmentPicker(
                 painter = painterResource(R.drawable.add),
                 contentDescription = null,
                 tint = contentColorFor(attachContainer),
-                modifier = Modifier.rotate(attachmentRotation)
+                modifier = Modifier.graphicsLayer { rotationZ = attachmentRotation }
             )
         }
     }
@@ -517,15 +517,16 @@ fun Modifier.dashedBorder(
     animate: Boolean = true
 ): Modifier {
 
-    val infiniteTransition = rememberInfiniteTransition()
     val density = LocalDensity.current
-    val phase by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = with(density) { 40.dp.toPx() },
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = LinearEasing)
+    val phase = if (animate) {
+        rememberInfiniteTransition().animateFloat(
+            initialValue = 0f,
+            targetValue = with(density) { 40.dp.toPx() },
+            animationSpec = infiniteRepeatable(
+                animation = tween(1500, easing = LinearEasing)
+            )
         )
-    )
+    } else null
     val color = MaterialTheme.colorScheme.onSurfaceVariant
 
     return drawWithContent {
@@ -535,7 +536,7 @@ fun Modifier.dashedBorder(
             width = 2.dp.toPx(),
             pathEffect = PathEffect.dashPathEffect(
                 intervals = floatArrayOf(10.dp.toPx(), 10.dp.toPx()),
-                phase = if (animate) phase else 0f
+                phase = phase?.value ?: 0f
             )
         )
         drawContent()
