@@ -170,9 +170,11 @@ fun Nav(
                         val viewModel = koinViewModel<CallLogsViewModel>()
                         val callViewModel = koinViewModel<CallingViewModel>()
                         val state by viewModel.state.collectAsStateWithLifecycle()
+                        val callLogs = viewModel.callLogs.collectAsLazyPagingItems()
 
                         CallLogsScreen(
                             state = state,
+                            callLogs = callLogs,
                             textFieldState = viewModel.textFieldState,
                             onNavigate = backStack::navigate,
                             onHandleCallActions = callViewModel::handleCallAction,

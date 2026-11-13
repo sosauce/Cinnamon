@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Button
@@ -32,6 +31,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.datastore.rememberSortLogsAscending
@@ -51,6 +54,7 @@ import com.sosauce.sweetselect.rememberSweetSelectState
 @Composable
 fun SharedTransitionScope.CallLogsScreen(
     state: CallLogsState,
+    callLogs: LazyPagingItems<CallLogsListItem>,
     textFieldState: TextFieldState,
     onNavigate: (Screen) -> Unit,
     onHandleCallActions: (CallAction) -> Unit,
@@ -114,7 +118,8 @@ fun SharedTransitionScope.CallLogsScreen(
                     )
                 },
                 selectedBar = {
-                    val items = state.callLogs.mapNotNull { (it as? CallLogsListItem.Log)?.log }
+                    // loaded logs only
+                    val items = callLogs.itemSnapshotList.items.mapNotNull { (it as? CallLogsListItem.Log)?.log }
 
                     SelectedBarSurface(
                         modifier = Modifier.selfAlignHorizontally(),
@@ -187,8 +192,8 @@ fun SharedTransitionScope.CallLogsScreen(
                     Spacer(Modifier.height(10.dp))
                 }
 
-                if (state.callLogs.isEmpty() && !state.isLoading) {
-                    item {
+                if (callLogs.itemCount == 0 && callLogs.loadState.refresh is LoadState.NotLoading && !state.isLoading) {
+                    item(LazyListKeys.EMPTY_STATE) {
                         if (state.isSearching) {
                             NoResult()
                         } else {
@@ -201,15 +206,11 @@ fun SharedTransitionScope.CallLogsScreen(
                     }
                 } else {
                     items(
-                        items = state.callLogs,
-                        key = {
-                            when (it) {
-                                is CallLogsListItem.Header -> "header_${it.beforeLogId}"
-                                is CallLogsListItem.Log -> it.log.id
-                            }
-                        }
-                    ) { item ->
-                        when (item) {
+                        count = callLogs.itemCount,
+                        key = callLogs.itemKey { it.key },
+                        contentType = callLogs.itemContentType { it::class }
+                    ) { index ->
+                        when (val item = callLogs[index]) {
                             is CallLogsListItem.Header -> {
                                 Text(
                                     text = item.date,
@@ -253,6 +254,7 @@ fun SharedTransitionScope.CallLogsScreen(
                                 )
                             }
 
+                            null -> Unit // placeholders are disabled
                         }
                     }
                 }
