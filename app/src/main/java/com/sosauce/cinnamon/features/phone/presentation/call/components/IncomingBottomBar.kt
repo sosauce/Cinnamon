@@ -45,15 +45,6 @@ fun IncomingBottomBar(
     onCallAction: (CallAction) -> Unit
 ) {
     val haptics = LocalHapticFeedback.current
-    val transition = rememberInfiniteTransition()
-    val breath by transition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.05f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(900, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
 
     Column(
         modifier = Modifier
@@ -113,12 +104,8 @@ fun IncomingBottomBar(
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 modifier = Modifier
-                    .weight(1.4f)
+                    .weight(1f)
                     .height(64.dp)
-                    .graphicsLayer {
-                        scaleX = breath
-                        scaleY = breath
-                    }
             ) {
                 Icon(
                     painter = painterResource(R.drawable.phone_filled),
