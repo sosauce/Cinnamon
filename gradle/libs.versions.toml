@@ -1,5 +1,6 @@
 [versions]
 agp = "9.5.1"
+coilGif = "3.6.3"
 mmslib = "1.0.1"
 cloudy = "0.7.1"
 coilCompose = "3.6.3"
@@ -19,7 +20,7 @@ coreKtx = "1.19.1"
 lifecycleRuntimeKtx = "2.11.0"
 activityCompose = "1.13.0"
 composeBom = "2026.09.00"
-kotlinxSerializationJson = "1.12.0"
+kotlinxSerializationJson = "1.13.0"
 lottieCompose = "6.7.1"
 materialKolor = "5.0.1"
 media3Exoplayer = "1.11.1"
@@ -45,6 +46,7 @@ zoomable = "2.16.0"
 
 [libraries]
 androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "pagingCompose" }
+coil-gif = { module = "io.coil-kt.coil3:coil-gif", version.ref = "coilGif" }
 mmslib = { module = "org.fossify:mmslib", version.ref = "mmslib" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-glance-appwidget = { module = "androidx.glance:glance-appwidget", version.ref = "glanceAppwidget" }

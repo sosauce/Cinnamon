@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
 import androidx.compose.animation.animateColorAsState
 import android.net.Uri
+import android.widget.Toast
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import android.telephony.SmsMessage
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -87,6 +90,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.window.Popup
@@ -120,6 +125,7 @@ fun ConversationBottomBar(
     val bottomBarState by viewModel.state.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
+    val resources = LocalResources.current
     val showCharCount by rememberShowCharCount()
 
     var showSchedulerDialog by remember { mutableStateOf(false) }
@@ -127,9 +133,21 @@ fun ConversationBottomBar(
     var cameraPicture by remember { mutableStateOf<Uri?>(null) }
 
 
+    val scope = rememberCoroutineScope()
+    val addAttachmentsIfNotTooLarge: (List<Uri>) -> Unit = { uris ->
+        scope.launch {
+            val (tooLarge, sendable) = uris.partition { viewModel.isTooLargeForMms(it) }
+            if (tooLarge.isNotEmpty()) {
+                val error = resources.getQuantityString(R.plurals.plural_files_too_large_mms, tooLarge.count(), tooLarge.count())
+                Toast.makeText(context,error, Toast.LENGTH_SHORT).show()
+            }
+            viewModel.addAttachments(sendable)
+        }
+    }
+
     val mediaSelector =
         rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
-            viewModel.addAttachments(uris)
+            addAttachmentsIfNotTooLarge(uris)
         }
     val systemCameraLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) {
@@ -139,7 +157,7 @@ fun ConversationBottomBar(
         }
     val documentsLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-            viewModel.addAttachments(uris)
+            addAttachmentsIfNotTooLarge(uris)
         }
     val attachmentOptions = listOf(
         MoreOptions(

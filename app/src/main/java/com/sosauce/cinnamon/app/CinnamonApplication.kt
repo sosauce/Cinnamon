@@ -8,10 +8,13 @@ import android.app.NotificationChannelGroup
 import android.app.NotificationManager
 import android.media.AudioAttributes
 import android.media.RingtoneManager
+import android.os.Build.VERSION.SDK_INT
 import android.util.Log
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
+import coil3.gif.AnimatedImageDecoder
+import coil3.gif.GifDecoder
 import coil3.request.crossfade
 import coil3.video.VideoFrameDecoder
 import com.sosauce.cinnamon.R
@@ -134,7 +137,14 @@ class CinnamonApplication : Application(), KoinStartup, SingletonImageLoader.Fac
 
     override fun newImageLoader(context: PlatformContext): ImageLoader {
         return ImageLoader.Builder(context)
-            .components { add(VideoFrameDecoder.Factory()) }
+            .components {
+                add(VideoFrameDecoder.Factory())
+//                if (SDK_INT >= 28) {
+//                    add(AnimatedImageDecoder.Factory())
+//                } else {
+//                    add(GifDecoder.Factory())
+//                }
+            }
             .crossfade(true)
             .build()
     }

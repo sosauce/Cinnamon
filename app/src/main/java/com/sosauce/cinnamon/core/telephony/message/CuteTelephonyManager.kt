@@ -63,7 +63,6 @@ class CuteTelephonyManager(
         attachments: List<Uri>
     ) {
 
-
         val normalizedAddresses = addresses.fastMap {
             phoneNumberNormalizer.formatToE164(it)
         }
@@ -94,7 +93,35 @@ class CuteTelephonyManager(
                 sendSms(address, message)
             }
         }
+    }
 
+    private suspend fun getMaxMessageSize(): Int {
+        return runCatching {
+            getSmsManager(userPreferences.defaultMessagesSim.first())
+                .carrierConfigValues
+                .getInt(SmsManager.MMS_CONFIG_MAX_MESSAGE_SIZE)
+        }.getOrDefault(300_000).coerceAtLeast(100_000)
+    }
+
+    // 5 kb is just a safety net here, technically not needed but better saf than sorry
+    private fun getMaxAttachmentSize(maxMessageSize: Int, bodyText: String): Int {
+        return (maxMessageSize - bodyText.toByteArray().size - 5_000).coerceAtLeast(maxMessageSize / 2)
+    }
+
+    /**
+     * Whether this file exceeds the carrier's MMS size limit
+     */
+    suspend fun isTooLargeForMms(file: Uri): Boolean = withContext(Dispatchers.IO) {
+        val mimeType = context.contentResolver.getType(file)
+
+        // images other than GIFs get compressed before being sent
+        if (mimeType != "image/gif" && mimeType?.startsWith("image/") == true) return@withContext false
+
+        val size = runCatching {
+            context.contentResolver.openAssetFileDescriptor(file, "r")?.use { it.length }
+        }.getOrNull()?.takeIf { it >= 0 } ?: return@withContext false
+
+        size > getMaxAttachmentSize(getMaxMessageSize(), "")
     }
 
     // TODO, check if saved default sim is still active, if not, set back to default device sim?
@@ -155,11 +182,7 @@ class CuteTelephonyManager(
         attachment: Uri?
     ) = withContext(Dispatchers.IO) {
 
-        val maxMessageSize = runCatching {
-            getSmsManager(userPreferences.defaultMessagesSim.first())
-                .carrierConfigValues
-                .getInt(SmsManager.MMS_CONFIG_MAX_MESSAGE_SIZE)
-        }.getOrDefault(300_000).coerceAtLeast(100_000)
+        val maxMessageSize = getMaxMessageSize()
 
         val settings = Settings().apply {
             subscriptionId = userPreferences.defaultMessagesSim.first()
@@ -177,14 +200,17 @@ class CuteTelephonyManager(
             context.contentResolver.openInputStream(attachment)?.use {
                 val mimeType = context.contentResolver.getType(attachment)
                 val name = attachment.getFileName(context) ?: context.getString(R.string.unknown)
-                // 5 kb is just a safety net here, technically not needed but better saf than sorry
-                val compressionThreshold = (maxMessageSize - bodyText.toByteArray().size - 5_000).coerceAtLeast(maxMessageSize / 2)
-                val imageBytes = if (mimeType?.startsWith("image/") == true) {
-                    compressImage(
-                        image = attachment,
-                        compressionThreshold = compressionThreshold
-                    )
-                } else null
+                val compressionThreshold = getMaxAttachmentSize(maxMessageSize, bodyText)
+                val imageBytes = when {
+                    mimeType == "image/gif" -> null
+                    mimeType?.startsWith("image/") == true -> {
+                        compressImage(
+                            image = attachment,
+                            compressionThreshold = compressionThreshold
+                        )
+                    }
+                    else -> null
+                }
                 val bytes = imageBytes ?: it.readBytes()
 
                 message.addMedia(bytes, if (imageBytes != null) "image/jpeg" else mimeType, name)

@@ -7,6 +7,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sosauce.cinnamon.core.telephony.message.CuteTelephonyManager
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +20,8 @@ import kotlinx.coroutines.launch
 class BottomBarViewModel(
     private val threadId: Long,
     private val prefilledMessage: String,
-    private val conversationSettingsDao: ConversationSettingsDao
+    private val conversationSettingsDao: ConversationSettingsDao,
+    private val cuteTelephonyManager: CuteTelephonyManager
 ) : ViewModel() {
 
     val textFieldState = TextFieldState(prefilledMessage)
@@ -45,6 +47,8 @@ class BottomBarViewModel(
             }
         }
     }
+
+    suspend fun isTooLargeForMms(uri: Uri) = cuteTelephonyManager.isTooLargeForMms(uri)
 
     fun addAttachments(uris: List<Uri>) {
         _state.update {
