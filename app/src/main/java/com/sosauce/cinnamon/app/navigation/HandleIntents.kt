@@ -24,13 +24,16 @@ fun NavBackStack<NavKey>.handleIntent(
         CuteIntents.SHORTCUT_DIALPAD -> add(Screen.Dialpad())
 
         Intent.ACTION_DIAL -> {
-            val number = (intent.data?.toString() ?: "").removePrefix("tel:").replace('%', ' ')
+            val number = intent.data?.schemeSpecificPart.orEmpty().replace('%', ' ')
             add(Screen.Dialpad(number))
         }
 
         Intent.ACTION_SENDTO -> {
-            val threadId =
-                (intent.data?.toString() ?: "").removePrefix("smsto:").getThreadIdOrCreate(context)
+
+            val threadId = intent.data
+                ?.schemeSpecificPart
+                .orEmpty()
+                .getThreadIdOrCreate(context)
             val message = intent.getStringExtra("sms_body") ?: ""
             add(Screen.ConversationDetails(threadId, message))
         }

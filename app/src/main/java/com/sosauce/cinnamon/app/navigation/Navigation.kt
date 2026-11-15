@@ -235,10 +235,6 @@ fun Nav(
                         // when new messages, block notifs for thread and remark it as read
                         val newestMessage = if (messages.itemCount > 0) messages.peek(0) else null
                         LaunchedEffect(newestMessage, lifecycleState) {
-
-                            // mostly means we deleted all messages so go back
-                            if (messages.itemCount == 0 && messages.loadState.refresh is LoadState.NotLoading) backStack.navigateBack()
-
                             if (lifecycleState == Lifecycle.State.RESUMED) {
                                 viewModel.handleConversationActions(ConversationActions.MarkAsRead)
                                 viewModel.handleConversationActions(ConversationActions.ClearThreadNotifications)
