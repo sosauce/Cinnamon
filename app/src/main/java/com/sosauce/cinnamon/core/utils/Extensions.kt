@@ -453,19 +453,29 @@ inline fun <K, V> Map<K, V>.copyMutate(block: MutableMap<K, V>.() -> Unit): Map<
 }
 
 fun String.formateEventDate(): String {
-    return when {
-        startsWith("--") -> {
-            val monthDay = MonthDay.parse(this)
-            monthDay.format(DateTimeFormatter.ofPattern("MMMM d", Locale.getDefault()))
-        }
 
-        length == 10 -> {
-            val parsedDate = LocalDate.parse(this)
-            parsedDate.format(DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.getDefault()))
-        }
+    // run catching in case of niche formats I didn't take into account
+    return runCatching {
+        when {
+            // --MM-DD or --MMDD partial format
+            startsWith("--") -> {
 
-        else -> this
-    }
+                // add month/year separator hyphen to increase chances of ts working
+                val text = if (length == 6) "${take(4)}-${takeLast(2)}" else this
+
+                val monthDay = MonthDay.parse(text)
+                monthDay.format(DateTimeFormatter.ofPattern("MMMM d", Locale.getDefault()))
+            }
+
+            // YYYY-MM-DD standard format
+            length == 10 -> {
+                val parsedDate = LocalDate.parse(this)
+                parsedDate.format(DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.getDefault()))
+            }
+
+            else -> this
+        }
+    }.getOrDefault(this)
 }
 
 
