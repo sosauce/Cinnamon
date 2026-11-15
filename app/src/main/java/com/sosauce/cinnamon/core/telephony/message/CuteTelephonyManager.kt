@@ -213,7 +213,7 @@ class CuteTelephonyManager(
                 }
                 val bytes = imageBytes ?: it.readBytes()
 
-                message.addMedia(bytes, if (imageBytes != null) "image/jpeg" else mimeType, name)
+                message.addMedia(bytes, mimeType, name)
             }
         }
 
@@ -241,7 +241,7 @@ class CuteTelephonyManager(
             ensureActive()
 
             withContext(Dispatchers.Default) {
-                val bitmap = BitmapFactory.decodeByteArray(inputBytes, 0, inputBytes.size)
+                val bitmap = BitmapFactory.decodeByteArray(inputBytes, 0, inputBytes.size) ?: return@withContext inputBytes
 
                 ensureActive()
 
