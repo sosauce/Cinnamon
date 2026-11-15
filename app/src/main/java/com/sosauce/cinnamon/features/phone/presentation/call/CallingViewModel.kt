@@ -39,21 +39,12 @@ class CallingViewModel(
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-
-            val id = state.value.number.getContactId(application.applicationContext)
-            val poster = contactSettingsDao.getContactPoster(id)
-            callManager._callingState.update {
-                it.copy(
-                    poster = poster?.toUri()
-                )
-            }
-        }
-
-        viewModelScope.launch(Dispatchers.IO) {
             state.mapLatest { it.number }.distinctUntilChanged().collectLatest { number ->
+                val poster = contactSettingsDao.getContactPoster(number.getContactId(application.applicationContext))
                 _state.update {
                     it.copy(
-                        photo = numberLookup.fetchPhoto(number, true)?.toUri()
+                        photo = numberLookup.fetchPhoto(number, true)?.toUri(),
+                        poster = poster?.toUri()
                     )
                 }
             }
@@ -63,16 +54,18 @@ class CallingViewModel(
     fun handleCallAction(action: CallAction) {
         when (action) {
             is CallAction.LaunchCall -> {
-                callManager.startCall(action.number)
-                // Optimistically update state and launch UI even if placeCall
-                // threw, ensures call button always opens Cinnamon's CallScreen
-                // (incoming UI is handled separately via CallService fullScreenIntent).
-                callManager._callingState.update {
-                    it.copy(
-                        number = action.number,
-                        displayName = action.number,
-                        callState = CallState.DIALING
-                    )
+                viewModelScope.launch {
+                    callManager.startCall(action.number)
+                    // Optimistically update state and launch UI even if placeCall
+                    // threw, ensures call button always opens Cinnamon's CallScreen
+                    // (incoming UI is handled separately via CallService fullScreenIntent).
+                    callManager._callingState.update {
+                        it.copy(
+                            number = action.number,
+                            displayName = action.number,
+                            callState = CallState.DIALING
+                        )
+                    }
                 }
             }
 

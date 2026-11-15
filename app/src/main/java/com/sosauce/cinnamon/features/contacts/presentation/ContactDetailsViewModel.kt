@@ -141,7 +141,7 @@ class ContactDetailsViewModel(
                 }
             }
             is ContactDetailsAction.CallNumber -> {
-                callManager.startCall(action.number)
+                viewModelScope.launch { callManager.startCall(action.number) }
             }
         }
     }

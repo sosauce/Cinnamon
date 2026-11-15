@@ -17,6 +17,7 @@ import android.telecom.VideoProfile
 import android.telephony.SubscriptionManager
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.dataStore
+import com.sosauce.cinnamon.core.repository.SimsRepository
 import com.sosauce.cinnamon.core.telephony.phone.AndroidCallCallback
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
 import com.sosauce.cinnamon.core.telephony.phone.CallNotificationManager
@@ -47,6 +48,7 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
     val callNotificationManager by inject<CallNotificationManager>()
     val callManager by inject<CallManager>()
     val callOverlayManager by inject<CallOverlayManager>()
+    val simsRepository by inject<SimsRepository>()
     private var cuteCall: Call? = null
 
     private val handler = Handler(Looper.getMainLooper())
@@ -180,7 +182,7 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         val subscriptionManager = getSystemService(SubscriptionManager::class.java)
 
 
-        val subId = call.details.accountHandle?.id?.toIntOrNull() ?: -1
+        val subId = call.details.accountHandle?.let { simsRepository.subIdFor(it) } ?: -1
         val activeSubInfo = try {
             subscriptionManager.getActiveSubscriptionInfo(subId)
         } catch (_: SecurityException) { null }

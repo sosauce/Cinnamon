@@ -336,7 +336,7 @@ class ConversationDetailsViewModel(
                     }
                 }
             }
-            is ConversationActions.CallNumber -> callManager.startCall(action.number)
+            is ConversationActions.CallNumber -> viewModelScope.launch { callManager.startCall(action.number) }
 
             is ConversationActions.OpenSearch -> _search.update { it.copy(isActive = true) }
 

@@ -64,6 +64,7 @@ class CallLogsRepository(
         val sims = if (shouldBotherWithSims) {
             simsRepository.simLookup()
         } else emptyMap()
+        val accountSubIds = if (shouldBotherWithSims) simsRepository.accountIdToSubId() else emptyMap()
 
         context.contentResolver.query(
             CallLog.Calls.CONTENT_URI,
@@ -76,7 +77,7 @@ class CallLogsRepository(
             val columns = CallLogColumns(cursor)
 
             while (cursor.moveToNext()) {
-                val callLog = readCallLog(cursor, columns, sims, lookupCache)
+                val callLog = readCallLog(cursor, columns, sims, accountSubIds, lookupCache)
 
                 logs.add(callLog)
             }
@@ -107,6 +108,7 @@ class CallLogsRepository(
         cursor: Cursor,
         columns: CallLogColumns,
         sims: Map<Int, CuteSimCard>,
+        accountSubIds: Map<String, Int>,
         lookupCache: MutableMap<String, Pair<String?, String?>>
     ): CuteCallLogEntity {
         val id = cursor.getLong(columns.id)
@@ -118,7 +120,7 @@ class CallLogsRepository(
         val cachedName = cursor.getString(columns.cachedName).orEmpty()
         val location = cursor.getString(columns.location)
         val photo = cursor.getString(columns.photo)
-        val subId = cursor.getString(columns.subId)?.toIntOrNull() ?: 0
+        val subId = cursor.getString(columns.subId)?.let { accountSubIds[it] ?: it.toIntOrNull() } ?: 0
 
         val needsName = cachedName.isEmpty()
         val needsPhoto = photo.isNullOrEmpty()
@@ -177,6 +179,7 @@ class CallLogsRepository(
     ): CallLogsPage = withContext(Dispatchers.IO) {
         val lookupCache = mutableMapOf<String, Pair<String?, String?>>()
         val sims = if (simsRepository.hasMultipleSims()) simsRepository.simLookup() else emptyMap()
+        val accountSubIds = if (sims.isNotEmpty()) simsRepository.accountIdToSubId() else emptyMap()
 
         context.contentResolver.query(
             CallLog.Calls.CONTENT_URI,
@@ -223,7 +226,7 @@ class CallLogsRepository(
                 // a run is represented by its first call, like groupSubsequentlyBy()
                 cursor.moveToPosition(rows.first)
                 GroupedCallLog(
-                    log = readCallLog(cursor, columns, sims, lookupCache).toDomain(context),
+                    log = readCallLog(cursor, columns, sims, accountSubIds, lookupCache).toDomain(context),
                     count = rows.last - rows.first + 1,
                     startRow = rows.first
                 )

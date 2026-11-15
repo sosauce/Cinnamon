@@ -22,7 +22,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.runBlocking
 
 // Inspired by Fossify's call manager!
 
@@ -69,7 +68,7 @@ class CallManager(
      * @param forcedHandle - if provided, uses this PhoneAccountHandle directly (for SIM picker)
      */
     @SuppressLint("MissingPermission")
-    fun startCall(number: String, forcedHandle: PhoneAccountHandle? = null): Boolean {
+    suspend fun startCall(number: String, forcedHandle: PhoneAccountHandle? = null): Boolean {
 
         if (telecomManager.isInCall) return false
         val phoneAccountHandle = resolvePhoneAccountHandle(forcedHandle)
@@ -99,10 +98,10 @@ class CallManager(
     }
 
     @SuppressLint("MissingPermission")
-    private fun resolvePhoneAccountHandle(forcedHandle: PhoneAccountHandle?): PhoneAccountHandle? {
+    private suspend fun resolvePhoneAccountHandle(forcedHandle: PhoneAccountHandle?): PhoneAccountHandle? {
         if (forcedHandle != null) return forcedHandle
 
-        val savedHandle = runBlocking { userPreferences.getDefaultPhoneHandle().first() }
+        val savedHandle = userPreferences.getDefaultPhoneHandle().first()
         if (savedHandle != null) return savedHandle
 
         return try {
