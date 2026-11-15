@@ -129,7 +129,7 @@ class MessageNotificationManager(
         }
         val pendingIntent = PendingIntent.getActivity(
             context,
-            0,
+            threadId.toInt(),
             intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
