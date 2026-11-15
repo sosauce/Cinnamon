@@ -78,9 +78,9 @@ fun ScheduleMessageDialog(
                         },
                         shapes = ButtonDefaults.shapes(),
                         enabled = timePickerState.hour >= localTime.hour
-                    ) { Text("Set") }
+                    ) { Text(stringResource(R.string.set)) }
                 },
-                title = { Text("Select time") }
+                title = { Text(stringResource(R.string.select_time)) }
             ) { TimePicker(timePickerState) }
         }
     }

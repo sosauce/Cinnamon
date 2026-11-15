@@ -8,7 +8,6 @@ import android.net.Uri
 import android.provider.BlockedNumberContract
 import android.provider.BlockedNumberContract.BlockedNumbers
 import android.provider.ContactsContract
-import android.widget.Toast
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.core.content.contentValuesOf
@@ -27,6 +26,7 @@ import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails
 import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetailsBuilder
 import com.sosauce.cinnamon.features.contacts.domain.CuteRawContact
 import com.sosauce.cinnamon.features.contacts.domain.RawContactEdit
+import com.sosauce.cinnamon.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.combine
@@ -37,6 +37,8 @@ import kotlinx.coroutines.withContext
 class ContactsRepository(
     private val context: Context
 ) {
+
+    private val deviceAccountName get() = context.getString(R.string.device)
     fun fetchLatestContacts() =
         context.contentResolver
             .observe(ContactsContract.Contacts.CONTENT_URI)
@@ -112,11 +114,11 @@ class ContactsRepository(
                     rows.add(
                         CuteContactEntity(
                             id = cursor.getLong(idCol),
-                            displayName = cursor.getString(nameCol) ?: "<unknown>",
+                            displayName = cursor.getString(nameCol) ?: context.getString(R.string.unknown),
                             isFavorite = cursor.getInt(starCol) == 1,
                             thumbnail = cursor.getString(photoCol),
                             photo = cursor.getString(hqPhotoCol),
-                            accountName = "Device",
+                            accountName = deviceAccountName,
                             phoneNumbers = emptyList()
                         )
                     )
@@ -131,7 +133,7 @@ class ContactsRepository(
         ContactsPage(
             contacts = rows.map {
                 it.copy(
-                    accountName = accountNames[it.id] ?: "Device",
+                    accountName = accountNames[it.id] ?: deviceAccountName,
                     phoneNumbers = phones[it.id] ?: emptyList()
                 )
             },
@@ -287,7 +289,7 @@ class ContactsRepository(
         )?.use { cursor ->
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(0)
-                result[id] = accountNames[id]?.ifEmpty { "Device" } ?: "Device"
+                result[id] = accountNames[id]?.ifEmpty { deviceAccountName } ?: deviceAccountName
             }
         }
 
@@ -335,11 +337,11 @@ class ContactsRepository(
                 contacts.add(
                     CuteContactEntity(
                         id = id,
-                        displayName = cursor.getString(nameCol) ?: "<unknown>",
+                        displayName = cursor.getString(nameCol) ?: context.getString(R.string.unknown),
                         isFavorite = cursor.getInt(starCol) == 1,
                         thumbnail = cursor.getString(photoCol),
                         photo = cursor.getString(hqPhotoCol),
-                        accountName = accountNames[id] ?: "Device",
+                        accountName = accountNames[id] ?: deviceAccountName,
                         phoneNumbers = allPhones[id] ?: emptyList()
                     )
                 )
@@ -684,7 +686,7 @@ class ContactsRepository(
             while (cursor.moveToNext()) {
                 val contactId = cursor.getLong(idCol)
                 if (!map.containsKey(contactId)) {
-                    map[contactId] = cursor.getString(nameCol) ?: "Device"
+                    map[contactId] = cursor.getString(nameCol) ?: deviceAccountName
                 }
             }
         }
@@ -948,9 +950,6 @@ class ContactsRepository(
             true
         } catch (e: Exception) {
             e.printStackTrace()
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Error saving contact: ${e.message ?: "Unknown error"}", Toast.LENGTH_SHORT).show()
-            }
             false
         }
     }

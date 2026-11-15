@@ -150,7 +150,6 @@ fun CallScreen(
         Box(
             Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
         ) {
             AsyncImage(
                 model = callUiState.poster,
@@ -170,7 +169,7 @@ fun CallScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxSize()
-                        .statusBarsPadding()
+                        .padding(paddingValues)
                 ) {
                     CallerInfo(
                         callUiState = callUiState,
@@ -199,8 +198,8 @@ fun CallScreen(
                     pulseScale1 = { pulseScale1.value },
                     pulseScale2 = { pulseScale2.value },
                     modifier = Modifier
+                        .padding(paddingValues)
                         .fillMaxWidth()
-                        .statusBarsPadding()
                         .padding(horizontal = 16.dp)
                         .padding(top = 32.dp)
                 )

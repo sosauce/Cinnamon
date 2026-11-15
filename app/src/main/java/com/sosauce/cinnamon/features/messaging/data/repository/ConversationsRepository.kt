@@ -339,7 +339,7 @@ class ConversationsRepository(private val context: Context) {
     private fun getParticipantDetails(number: String): Participant {
         if (number.isEmpty()) return Participant(
             rawNumber = number,
-            displayName = "<unknown>",
+            displayName = context.getString(R.string.unknown),
             photoUriString = null,
             isBlocked = false
         )

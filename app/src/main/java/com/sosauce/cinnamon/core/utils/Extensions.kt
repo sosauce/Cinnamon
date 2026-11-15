@@ -88,8 +88,12 @@ fun Long.toDate(): String {
     val formatter = DateTimeFormatter.ofPattern(pattern, locale)
 
     return when {
-        dateTime.isEqual(localDate) -> "Today"
-        dateTime.isEqual(localDate.minusDays(1)) -> "Yesterday"
+        // localized "Today" / "Yesterday" from the platform
+        dateTime.isEqual(localDate) || dateTime.isEqual(localDate.minusDays(1)) -> DateUtils.getRelativeTimeSpanString(
+            this,
+            System.currentTimeMillis(),
+            DateUtils.DAY_IN_MILLIS
+        ).toString()
         else -> dateTime.format(formatter)
     }
 }

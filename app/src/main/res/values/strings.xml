@@ -332,4 +332,9 @@
         <item quantity="one">Delete conversation</item>
         <item quantity="other">Delete conversations</item>
     </plurals>
+    <string name="set">Set</string>
+    <string name="select_time">Select time</string>
+    <string name="device">Device</string>
+    <string name="no_sim_name">No name</string>
+    <string name="no_carrier">No carrier</string>
 </resources>

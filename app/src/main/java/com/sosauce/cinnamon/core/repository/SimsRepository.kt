@@ -10,10 +10,12 @@ import android.telecom.TelecomManager
 import android.telephony.SubscriptionManager
 import androidx.compose.ui.util.fastForEach
 import androidx.core.app.ActivityCompat
+import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.features.phone.domain.CuteSimCard
 import kotlin.compareTo
 
 class SimsRepository(
+    private val context: Context,
     private val telecomManager: TelecomManager,
     private val subscriptionManager: SubscriptionManager
 ) {
@@ -28,8 +30,8 @@ class SimsRepository(
                 simCards.add(
                     CuteSimCard(
                         subId = subInfo.subscriptionId,
-                        name = subInfo.displayName?.toString() ?: "No name",
-                        carrierName = subInfo.carrierName?.toString() ?: "No carrier",
+                        name = subInfo.displayName?.toString() ?: context.getString(R.string.no_sim_name),
+                        carrierName = subInfo.carrierName?.toString() ?: context.getString(R.string.no_carrier),
                         color = subInfo.iconTint
                     )
                 )
@@ -54,8 +56,8 @@ class SimsRepository(
 
                 simCards[id] = CuteSimCard(
                     subId = id,
-                    name = subInfo.displayName?.toString() ?: "No name",
-                    carrierName = subInfo.carrierName?.toString() ?: "No carrier",
+                    name = subInfo.displayName?.toString() ?: context.getString(R.string.no_sim_name),
+                    carrierName = subInfo.carrierName?.toString() ?: context.getString(R.string.no_carrier),
                     color = subInfo.iconTint
                 )
             }

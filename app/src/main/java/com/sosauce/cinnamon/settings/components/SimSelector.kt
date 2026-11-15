@@ -5,6 +5,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.features.phone.domain.CuteSimCard
 import com.sosauce.nekobites.components.settings.SelectableTile
@@ -30,7 +31,7 @@ fun PhoneAccountHandleSelector(
     isDefaultHandle: Boolean
 ) {
     SimTile(
-        label = account.label?.toString() ?: "<unknown>",
+        label = account.label?.toString() ?: stringResource(R.string.unknown),
         color = Color(account.highlightColor),
         selected = isDefaultHandle,
         onClick = onClick
