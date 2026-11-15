@@ -231,7 +231,7 @@ fun SharedTransitionScope.DialpadScreen(
                                 .fillMaxWidth(0.5f)
                                 .align(Alignment.CenterHorizontally)
                                 .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)),
-                            enabled = textFieldState.text.isNotEmpty() || textFieldState.text.isNotBlank()
+                            enabled = textFieldState.text.isNotBlank()
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.call),
