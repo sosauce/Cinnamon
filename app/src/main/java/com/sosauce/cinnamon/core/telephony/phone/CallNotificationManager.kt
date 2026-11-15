@@ -80,7 +80,7 @@ class CallNotificationManager(
     ): Notification? {
 
         val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart
-            ?: callDetails.handle.schemeSpecificPart
+            ?: callDetails.handle?.schemeSpecificPart ?: context.getString(R.string.unknown)
 
         val request = ImageRequest.Builder(context)
             .data(numberLookup.fetchPhoto(number, false)?.toUri())
