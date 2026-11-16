@@ -8,6 +8,7 @@ import android.net.Uri
 import android.provider.BlockedNumberContract
 import android.provider.BlockedNumberContract.BlockedNumbers
 import android.provider.ContactsContract
+import android.telephony.PhoneNumberUtils
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.core.content.contentValuesOf
@@ -352,11 +353,14 @@ class ContactsRepository(
     }
 
     /**
+     * A contact merged from several sources has one row per source, so numbers are deduplicated per contact.
+     *
      * @param contactIds only fetch numbers of these contacts, all of them when null
      */
     private fun fetchAllPhoneNumbers(contactIds: Collection<Long>? = null): Map<Long, List<ContactPhone>> {
-        val map = mutableMapOf<Long, MutableList<ContactPhone>>()
-        if (contactIds?.isEmpty() == true) return map
+        // contactId -> (dedup key -> phone), insertion ordered
+        val map = mutableMapOf<Long, LinkedHashMap<String, ContactPhone>>()
+        if (contactIds?.isEmpty() == true) return emptyMap()
 
 
         context.contentResolver.query(
@@ -364,6 +368,7 @@ class ContactsRepository(
             arrayOf(
                 ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
                 ContactsContract.CommonDataKinds.Phone.NUMBER,
+                ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER,
                 ContactsContract.Data.MIMETYPE,
                 ContactsContract.CommonDataKinds.Phone.IS_PRIMARY,
             ),
@@ -380,6 +385,10 @@ class ContactsRepository(
                 cursor.getColumnIndexOrThrow(
                     ContactsContract.CommonDataKinds.Phone.NUMBER
                 )
+            val normColumn =
+                cursor.getColumnIndexOrThrow(
+                    ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER
+                )
             val typeColumn =
                 cursor.getColumnIndexOrThrow(ContactsContract.Data.MIMETYPE)
             val primColumn =
@@ -390,23 +399,39 @@ class ContactsRepository(
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val number = cursor.getString(numColumn)
+                val isDefault = cursor.getInt(primColumn) != 0
 
-                val phone = ContactPhone(
-                    number = number.beautifyNumber(),
-                    type = cursor.getInt(typeColumn),
-                    isDefault = cursor.getInt(primColumn) != 0,
-                    isBlocked = BlockedNumberContract.isBlocked(context, number)
-                )
+                // E.164 when the provider could compute it, so differently formatted copies still match
+                val key = cursor.getString(normColumn)?.ifEmpty { null }
+                    ?: PhoneNumberUtils.normalizeNumber(number)
 
-                map.getOrPut(id) { mutableListOf() }.add(phone)
+                val phones = map.getOrPut(id) { linkedMapOf() }
+                val existing = phones[key]
+
+                if (existing == null) {
+                    phones[key] = ContactPhone(
+                        number = number.beautifyNumber(),
+                        type = cursor.getInt(typeColumn),
+                        isDefault = isDefault,
+                        isBlocked = BlockedNumberContract.isBlocked(context, number)
+                    )
+                } else if (isDefault && !existing.isDefault) {
+                    phones[key] = existing.copy(isDefault = true)
+                }
             }
         }
 
-        return map
+        return map.mapValues { it.value.values.toList() }
     }
 
     private fun fetchContactDetails(contactId: Long): CuteContactDetails {
         val builder = CuteContactDetailsBuilder()
+
+        // A contact merged from several sources has one row per source, so the same info is only kept once
+        val emails = mutableMapOf<String, ContactEmail>()
+        val addresses = mutableMapOf<String, ContactAddress>()
+        val events = mutableSetOf<ContactEvent>()
+        val websites = mutableMapOf<String, String>()
 
         context.contentResolver.query(
             ContactsContract.Data.CONTENT_URI,
@@ -450,15 +475,21 @@ class ContactsRepository(
                 }
 
                 when (mime) {
-                    ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE ->
-                        builder.addEmail(
-                            ContactEmail(
+                    ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE -> {
+                        val key = data1.trim().lowercase()
+                        val existing = emails[key]
+
+                        if (existing == null) {
+                            emails[key] = ContactEmail(
                                 email = data1,
                                 type = data2,
                                 isDefault = isDefault,
                                 isBlocked = BlockedNumberContract.isBlocked(context, data1)
                             )
-                        )
+                        } else if (isDefault && !existing.isDefault) {
+                            emails[key] = existing.copy(isDefault = true)
+                        }
+                    }
 
                     ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE -> {
                         builder.setFirstName(cursor.getString(data2Column))
@@ -472,18 +503,29 @@ class ContactsRepository(
                         builder.setNote(contactNote = data1.ifEmpty { null })
 
                     ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE ->
-                        builder.addEvent(ContactEvent(data1, data2))
+                        events.add(ContactEvent(data1.trim(), data2))
 
                     ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE ->
-                        builder.addWebsite(data1)
+                        websites.getOrPut(data1.trim().trimEnd('/').lowercase()) { data1 }
 
-                    ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE ->
-                        builder.addAddress(
-                            ContactAddress(data1, data2, isDefault)
-                        )
+                    ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE -> {
+                        val key = data1.lowercase().filterNot { it.isWhitespace() }
+                        val existing = addresses[key]
+
+                        if (existing == null) {
+                            addresses[key] = ContactAddress(data1, data2, isDefault)
+                        } else if (isDefault && !existing.isDefault) {
+                            addresses[key] = existing.copy(isDefault = true)
+                        }
+                    }
                 }
             }
         }
+
+        emails.values.forEach(builder::addEmail)
+        addresses.values.forEach(builder::addAddress)
+        events.forEach(builder::addEvent)
+        websites.values.forEach(builder::addWebsite)
 
         return builder.build()
     }
