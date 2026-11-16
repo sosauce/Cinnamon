@@ -53,7 +53,9 @@ class ContactsRepository(
         combine(
             context.contentResolver.observe(ContactsContract.Data.CONTENT_URI),
             context.contentResolver.observe(BlockedNumbers.CONTENT_URI)
-        ) { _, _ -> Unit }
+        ) { _, _ ->
+            println("Something pushed new changes")
+        }
             .mapLatest {
                 fetchContactDetails(contactId)
             }

@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -32,7 +33,7 @@ fun CuteListItem(
     onClick: (() -> Unit)?,
     onLongClick: (() -> Unit)? = null,
     leadingContent: @Composable () -> Unit,
-    trailingContent: (@Composable RowScope.() -> Unit)? = null,
+    trailingContent: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
 
@@ -72,7 +73,7 @@ fun CuteListItem(
             ) { content() }
             Row(
                 verticalAlignment = Alignment.CenterVertically
-            ) { trailingContent?.invoke(this) }
+            ) { trailingContent?.invoke() }
         }
     }
 }

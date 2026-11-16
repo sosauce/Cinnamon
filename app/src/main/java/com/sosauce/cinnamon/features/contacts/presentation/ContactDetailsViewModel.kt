@@ -6,6 +6,7 @@ import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
+import com.sosauce.cinnamon.core.utils.unblock
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsEntity
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
@@ -141,6 +142,12 @@ class ContactDetailsViewModel(
                 }
             }
 
+            is ContactDetailsAction.Unblock -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    application.unblock(action.value)
+                }
+            }
+
             is ContactDetailsAction.CallNumber -> {
                 viewModelScope.launch { callManager.startCall(action.number) }
             }
@@ -168,5 +175,6 @@ sealed interface ContactDetailsAction {
     data object ShareContact : ContactDetailsAction
     data object DeleteContact : ContactDetailsAction
     data class BlockContact(val emailsToo: Boolean) : ContactDetailsAction
+    data class Unblock(val value: String) : ContactDetailsAction
     data class CallNumber(val number: String) : ContactDetailsAction
 }

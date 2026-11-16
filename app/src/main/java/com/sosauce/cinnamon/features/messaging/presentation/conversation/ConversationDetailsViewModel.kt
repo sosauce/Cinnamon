@@ -4,7 +4,6 @@ package com.sosauce.cinnamon.features.messaging.presentation.conversation
 
 import android.app.Application
 import android.net.Uri
-import android.provider.BlockedNumberContract
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
@@ -26,6 +25,7 @@ import com.sosauce.cinnamon.core.telephony.message.CuteTelephonyManager
 import com.sosauce.cinnamon.core.telephony.message.MessageNotificationManager
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
 import com.sosauce.cinnamon.core.utils.isShortCode
+import com.sosauce.cinnamon.core.utils.unblock
 import com.sosauce.cinnamon.features.messaging.data.ScheduledMessageManager
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingActions
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsDao
@@ -291,7 +291,7 @@ class ConversationDetailsViewModel(
 
 
                     if (participantToBlock.isBlocked) {
-                        BlockedNumberContract.unblock(application, rawNumber)
+                        application.unblock(rawNumber)
                     } else {
                         val success = cuteTelephonyManager.blockNumbers(
                             numbers = listOf(rawNumber)

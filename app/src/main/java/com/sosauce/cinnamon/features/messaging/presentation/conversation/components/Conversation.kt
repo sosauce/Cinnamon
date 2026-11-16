@@ -2,7 +2,6 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation.components
 
-import android.provider.BlockedNumberContract
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.basicMarquee
@@ -39,6 +38,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.DefaultGroupChatIcon
 import com.sosauce.cinnamon.core.ui.components.dialogs.BlockUnblockDialog
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
+import com.sosauce.cinnamon.core.utils.unblock
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.nekobites.components.AnimatedSelectedIcon
 
@@ -68,7 +68,7 @@ fun Conversation(
             isBlocked = true,
             onDismissRequest = { showUnblockDialog = false },
             onConfirm = {
-                BlockedNumberContract.unblock(context, blockedParticipant.rawNumber)
+                context.unblock(blockedParticipant.rawNumber)
                 showUnblockDialog = false
             }
         )

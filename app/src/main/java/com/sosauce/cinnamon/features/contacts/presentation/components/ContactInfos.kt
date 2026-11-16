@@ -7,6 +7,11 @@ import android.content.Intent
 import android.provider.ContactsContract
 import android.widget.Toast
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -17,6 +22,10 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
@@ -28,12 +37,14 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
+import com.sosauce.cinnamon.core.ui.components.dialogs.BlockUnblockDialog
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItemDefaults
 import com.sosauce.cinnamon.core.ui.components.text.HeaderText
 import com.sosauce.cinnamon.core.utils.formateEventDate
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsAction
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsState
+import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.nekobites.components.NoXFound
 
 @Composable
@@ -57,6 +68,20 @@ fun ContactInfos(
     val noteOffset = eventOffset + state.details.events.count()
     val aboutItemCount = noteOffset + if (state.details.note?.isNotEmpty() == true) 1 else 0
 
+    var valueToUnblock by remember { mutableStateOf<String?>(null) }
+
+    valueToUnblock?.let { value ->
+        BlockUnblockDialog(
+            displayName = value,
+            isBlocked = true,
+            onDismissRequest = { valueToUnblock = null },
+            onConfirm = {
+                onHandleContactDetailsAction(ContactDetailsAction.Unblock(value))
+                valueToUnblock = null
+            }
+        )
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (hasInfo) {
             Column {
@@ -76,16 +101,15 @@ fun ContactInfos(
                             InfoLeadingIcon(icon = R.drawable.phone, visible = index == 0)
                         },
                         trailingContent = {
-                            if (number.isBlocked) {
+                            AnimatedVisibility(
+                                visible = number.isBlocked,
+                                enter = scaleIn(bouncySpec()),
+                                exit = scaleOut(bouncySpec())
+                            ) {
                                 IconButton(
-                                    onClick = {
-                                        Toast.makeText(
-                                            context,
-                                            "You blocked this number",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    },
-                                    shapes = IconButtonDefaults.shapes()
+                                    onClick = { valueToUnblock = number.number },
+                                    shapes = IconButtonDefaults.shapes(),
+                                    modifier = Modifier.padding(end = 5.dp)
                                 ) {
                                     Icon(
                                         painter = painterResource(R.drawable.block),
@@ -95,7 +119,11 @@ fun ContactInfos(
                             }
                         }
                     ) {
-                        Text(number.number)
+                        Text(
+                            text = number.number,
+                            maxLines = 1,
+                            modifier = Modifier.basicMarquee()
+                        )
                         InfoTypeLabel(
                             typeLabel = ContactsContract.CommonDataKinds.Phone.getTypeLabel(
                                 resources,
@@ -134,15 +162,30 @@ fun ContactInfos(
                             InfoLeadingIcon(icon = R.drawable.email, visible = index == 0)
                         },
                         trailingContent = {
-                            if (email.isBlocked) {
-                                Icon(
-                                    painter = painterResource(R.drawable.block),
-                                    contentDescription = null
-                                )
+                            AnimatedVisibility(
+                                visible = email.isBlocked,
+                                enter = scaleIn(bouncySpec()),
+                                exit = scaleOut(bouncySpec())
+                            ) {
+                                IconButton(
+                                    onClick = { valueToUnblock = email.email },
+                                    shapes = IconButtonDefaults.shapes(),
+                                    modifier = Modifier.padding(end = 5.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.block),
+                                        contentDescription = null
+                                    )
+                                }
                             }
                         }
                     ) {
-                        Text(email.email)
+                        Text(
+                            text = email.email,
+                            maxLines = 1,
+                            modifier = Modifier
+                                .basicMarquee()
+                        )
                         InfoTypeLabel(
                             typeLabel = ContactsContract.CommonDataKinds.Email.getTypeLabel(
                                 resources,
@@ -273,9 +316,6 @@ fun ContactInfos(
     }
 }
 
-/**
- * Icon in front of a group of infos, only shown on the first item of the group
- */
 @Composable
 private fun InfoLeadingIcon(
     @DrawableRes icon: Int,
@@ -290,9 +330,6 @@ private fun InfoLeadingIcon(
     )
 }
 
-/**
- * Type of an info (Mobile, Home…), mentioning when it is the default one
- */
 @Composable
 private fun InfoTypeLabel(
     typeLabel: CharSequence,

@@ -672,6 +672,22 @@ suspend fun Context.blockNumbers(numbers: List<String>): Boolean = withContext(D
 }
 
 /**
+ * Unblocks [number] (a phone number or an email address) and notifies observers of the blocked
+ * numbers, as [BlockedNumberContract.unblock] doesn't do it on its own for some reason
+ *
+ * @return the number of blocked entries that were removed
+ */
+fun Context.unblock(number: String): Int {
+    val unblocked = BlockedNumberContract.unblock(this, number)
+
+    // this should never throw, but god knows some OEMs have proved me things I thought not possible
+    try {
+        contentResolver.notifyChange(BlockedNumberContract.BlockedNumbers.CONTENT_URI, null)
+    } catch (_: Exception) {}
+    return unblocked
+}
+
+/**
  * Default name (without extension) of a backup file, e.g. "contacts_2026-01-31_18-05-00"
  */
 fun backupFileName(prefix: String, nowMillis: Long = System.currentTimeMillis()): String {

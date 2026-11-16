@@ -95,8 +95,6 @@ fun SharedTransitionScope.ContactDetailsScreen(
     var blockEmailsToo by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     var playFavoriteAnimation by remember { mutableStateOf(false) }
-    val cookie9Sided = MaterialShapes.Cookie9Sided.toShape()
-    val context = LocalContext.current
     val moreOptionsDescription = stringResource(R.string.more_options)
     var showAccountPicker by remember { mutableStateOf(false) }
 
@@ -430,34 +428,6 @@ fun SharedTransitionScope.ContactDetailsScreen(
                                     ),
                                     animatedVisibilityScope = LocalNavAnimatedContentScope.current
                                 ),
-//                            .drawWithCache {
-//                                val path = cookie9Sided.createOutline(size, layoutDirection, this)
-//                                    .let { outline ->
-//                                        Path().apply {
-//                                            when (outline) {
-//                                                is Outline.Generic -> addPath(outline.path)
-//                                                is Outline.Rounded -> addRoundRect(outline.roundRect)
-//                                                is Outline.Rectangle -> addRect(outline.rect)
-//                                            }
-//                                        }
-//                                    }
-//                                onDrawBehind {
-//                                    withTransform(
-//                                        {
-//                                            scale(
-//                                                scaleX = 1.08f,
-//                                                scaleY = 1.08f,
-//                                                pivot = center
-//                                            )
-//                                        }
-//                                    ) {
-//                                        drawPath(
-//                                            path = path,
-//                                            color = surfaceContainerHighest
-//                                        )
-//                                    }
-//                                }
-//                            },
                             size = iconSize,
                             contactPfp = state.details.photo,
                             shape = MaterialShapes.Cookie9Sided.toShape()
