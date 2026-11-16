@@ -143,6 +143,10 @@ class CallNotificationManager(
             .setContentIntent(pendingIntent)
             .setSilent(true)
             .setUsesChronometer(true)
+            .apply {
+                // Keep the chronometer right when re-posted (call waiting swap, other call ended…)
+                if (callDetails.connectTimeMillis > 0) setWhen(callDetails.connectTimeMillis)
+            }
             .setFullScreenIntent(pendingIntent, true)
             .setStyle(
                 NotificationCompat.CallStyle.forOngoingCall(

@@ -95,12 +95,22 @@ fun CallBottomBar(
             icon = callUiState.currentAudioRoute.type.routeToIcon(),
             label = R.string.audio
         ),
-        CallAction(
-            onClick = { onCallAction(CallAction.ToggleHold) },
-            isActive = isHolding,
-            icon = R.drawable.pause_filled,
-            label = R.string.hold
-        ),
+        // With a second call, hold becomes swap (holds this call and resumes the other one)
+        if (callUiState.otherCall != null) {
+            CallAction(
+                onClick = { onCallAction(CallAction.SwapCalls) },
+                isActive = false,
+                icon = R.drawable.swap_calls,
+                label = R.string.swap
+            )
+        } else {
+            CallAction(
+                onClick = { onCallAction(CallAction.ToggleHold) },
+                isActive = isHolding,
+                icon = R.drawable.pause_filled,
+                label = R.string.hold
+            )
+        },
         CallAction(
             onClick = {
                 paneContent = if (paneContent != DialerPaneContent.DIALPAD) {

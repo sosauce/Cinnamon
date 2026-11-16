@@ -80,6 +80,9 @@ class CallingViewModel(
             is CallAction.SwitchAudioTarget -> callManager.switchAudioRoute(action.route)
             is CallAction.ToggleHold -> callManager.toggleHold()
             is CallAction.ToggleMute -> callManager.toggleMute(action.mute)
+            is CallAction.HoldAndAnswer -> callManager.holdAndAnswer()
+            is CallAction.EndAndAnswer -> callManager.endAndAnswer()
+            is CallAction.SwapCalls -> callManager.swapCalls()
         }
     }
 
@@ -101,8 +104,20 @@ data class CallingState(
     val currentAudioRoute: AudioRoute = AudioRoute(),
     val photo: Uri? = null,
     val poster: Uri? = null, // contact that may or may nor be associated with the caller
-    val activeSim: CuteSimCard = CuteSimCard()
+    val activeSim: CuteSimCard = CuteSimCard(),
+    val otherCall: OtherCall? = null // second call (call waiting / on hold), null when there's only one call
 
+)
+
+/**
+ * The call that isn't shown as the main one in the call screen.
+ */
+@Stable
+data class OtherCall(
+    val number: String = "",
+    val displayName: String = "",
+    val isHolding: Boolean = false,
+    val timeSpentInCall: Long = 0
 )
 
 sealed interface CallAction {
@@ -114,6 +129,9 @@ sealed interface CallAction {
     data object DeclineCall : CallAction
     data object ToggleHold : CallAction
     data object HangUp : CallAction
+    data object HoldAndAnswer : CallAction
+    data object EndAndAnswer : CallAction
+    data object SwapCalls : CallAction
 }
 
 sealed interface CallEvents {

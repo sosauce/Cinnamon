@@ -20,6 +20,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -134,7 +136,10 @@ fun CallScreen(
             transitionSpec = { barsContentTransform }
         ) { ringing ->
             if (ringing) {
-                IncomingBottomBar(onCallAction = onCallAction)
+                IncomingBottomBar(
+                    onCallAction = onCallAction,
+                    hasOtherCall = callUiState.otherCall != null
+                )
             } else {
                 CallBottomBar(
                     onCallAction = onCallAction,
@@ -229,6 +234,19 @@ private fun CallerInfo(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
     ) {
+        // Keep showing the last other call while the exit animation runs
+        val lastOtherCall = remember { OtherCallHolder() }
+        callUiState.otherCall?.let { lastOtherCall.value = it }
+        AnimatedVisibility(
+            visible = callUiState.otherCall != null,
+            enter = scaleIn(bouncySpec()) + fadeIn(),
+            exit = scaleOut(bouncySpec()) + fadeOut()
+        ) {
+            OtherCallPill(
+                otherCall = callUiState.otherCall ?: lastOtherCall.value,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier.size(avatarSize * 1.3f)
@@ -396,6 +414,51 @@ private fun CallStatusPill(callUiState: CallingState) {
     }
 }
 
+private class OtherCallHolder(var value: OtherCall = OtherCall())
+
+@Composable
+private fun OtherCallPill(
+    otherCall: OtherCall,
+    modifier: Modifier = Modifier
+) {
+    val colors = MaterialTheme.colorScheme
+    val container by animateColorAsState(
+        if (otherCall.isHolding) colors.surfaceContainerHigh else colors.secondaryContainer
+    )
+    val status = stringResource(if (otherCall.isHolding) R.string.on_hold else R.string.ongoing_call)
+    val name = otherCall.displayName.ifBlank { otherCall.number.ifBlank { stringResource(R.string.unknown) } }
+
+    Surface(
+        shape = CircleShape,
+        color = container,
+        contentColor = contentColorFor(container),
+        modifier = modifier
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            AnimatedContent(
+                targetState = otherCall.isHolding,
+                transitionSpec = { scaleIn(bouncySpec()) togetherWith scaleOut(bouncySpec()) }
+            ) { holding ->
+                Icon(
+                    painter = painterResource(if (holding) R.drawable.pause_filled else R.drawable.phone_filled),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "$status · $name · ${DateUtils.formatElapsedTime(otherCall.timeSpentInCall)}",
+                style = MaterialTheme.typography.labelLargeEmphasized,
+                maxLines = 1,
+                modifier = Modifier.basicMarquee()
+            )
+        }
+    }
+}
+
 @Preview(
     uiMode = Configuration.UI_MODE_NIGHT_YES,
 
@@ -432,6 +495,26 @@ private fun CallScreenPreviewOngoing() {
                 availableAudioRoutes = listOf(
                     AudioRoute(name = "Speaker"),
                     AudioRoute(name = "Earpiece")
+                )
+            )
+        )
+    }
+}
+
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun CallScreenPreviewCallWaiting() {
+    CinnamonTheme {
+        CallScreen(
+            onCallAction = {},
+            callUiState = CallingState(
+                number = "+1 555 0199",
+                displayName = "Bob Smith",
+                callState = CallState.RINGING,
+                otherCall = OtherCall(
+                    number = "+1 555 0100",
+                    displayName = "Ava Thompson",
+                    timeSpentInCall = 133
                 )
             )
         )

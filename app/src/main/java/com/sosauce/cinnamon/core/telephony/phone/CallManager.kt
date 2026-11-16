@@ -18,6 +18,7 @@ import com.sosauce.cinnamon.features.phone.domain.CuteSimCard
 import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
 import com.sosauce.cinnamon.features.phone.presentation.call.CallState
 import com.sosauce.cinnamon.features.phone.presentation.call.CallingState
+import com.sosauce.cinnamon.features.phone.presentation.call.OtherCall
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -62,6 +63,12 @@ class CallManager(
     fun answerCall() = androidCallCallback?.answerCall()
 
     fun declineCall() = androidCallCallback?.declineCall()
+
+    fun holdAndAnswer() = androidCallCallback?.holdAndAnswer()
+
+    fun endAndAnswer() = androidCallCallback?.endAndAnswer()
+
+    fun swapCalls() = androidCallCallback?.swapCalls()
 
     /**
      * @return Whether the call was successfully placed or not
@@ -206,12 +213,45 @@ class CallManager(
             it.copy(activeSim = sim)
         }
     }
+
+    /**
+     * @param number raw number of the other call, null when there's no other call
+     */
+    fun updateOtherCall(number: String?, isHolding: Boolean, timeSpentInCall: Long) {
+        _callingState.update { state ->
+            if (number == null) return@update state.copy(otherCall = null)
+
+            val current = state.otherCall
+            val beautified = number.beautifyNumber()
+            // Only hit the contacts lookup when the other call actually changed
+            val displayName = if (current != null && current.number == beautified) {
+                current.displayName
+            } else {
+                numberLookup.fetchContactDisplayName(number) ?: beautified
+            }
+            OtherCall(
+                number = beautified,
+                displayName = displayName,
+                isHolding = isHolding,
+                timeSpentInCall = timeSpentInCall
+            ).let { state.copy(otherCall = it) }
+        }
+    }
+
+    fun updateOtherCallTime(time: Long) {
+        _callingState.update {
+            it.copy(otherCall = it.otherCall?.copy(timeSpentInCall = time))
+        }
+    }
 }
 
 
 interface AndroidCallCallback {
     fun answerCall()
     fun declineCall()
+    fun holdAndAnswer()
+    fun endAndAnswer()
+    fun swapCalls()
     fun hangupOngoingCall()
     suspend fun startTone(char: Char)
     fun toggleHold()

@@ -26,6 +26,7 @@ class CallActivity : ComponentActivity() {
 
         setContent {
             val callViewModel = koinViewModel<CallingViewModel>()
+            val callUiState by callViewModel.state.collectAsStateWithLifecycle()
 
             LaunchedEffect(intent) {
                 if (intent.action == Intent.ACTION_CALL) {
@@ -34,15 +35,12 @@ class CallActivity : ComponentActivity() {
                 }
             }
 
-            CinnamonTheme {
-
-                val callUiState by callViewModel.state.collectAsStateWithLifecycle()
-
-
-
+            LaunchedEffect(callUiState) {
                 if (callUiState.callState == CallState.ENDED) {
                     finishAndRemoveTask()
                 }
+            }
+            CinnamonTheme {
 
                 CallScreen(
                     onCallAction = callViewModel::handleCallAction,
