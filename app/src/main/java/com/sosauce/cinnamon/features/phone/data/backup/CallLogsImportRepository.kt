@@ -4,9 +4,10 @@ import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.provider.CallLog
-import android.provider.OpenableColumns
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.PermissionUtils
+import com.sosauce.cinnamon.core.utils.readBackupDisplayName
+import com.sosauce.cinnamon.features.messaging.data.backup.ImportResult
 import com.sosauce.cinnamon.features.messaging.data.backup.ImportStrategy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -15,11 +16,6 @@ import kotlinx.serialization.json.Json
 data class ImportableCallLog(
     val key: Int,
     val log: BackupCallLog
-)
-
-data class CallLogsImportResult(
-    val imported: Int,
-    val skipped: Int
 )
 
 /**
@@ -52,7 +48,7 @@ class CallLogsImportRepository(
         items: List<ImportableCallLog>,
         strategy: ImportStrategy,
         onProgress: suspend (done: Int, total: Int) -> Unit = { _, _ -> }
-    ): CallLogsImportResult = withContext(Dispatchers.IO) {
+    ): ImportResult = withContext(Dispatchers.IO) {
         if (!PermissionUtils.hasCallLogWritePermission(context)) {
             throw SecurityException(context.getString(R.string.import_needs_call_log_permission))
         }
@@ -74,22 +70,10 @@ class CallLogsImportRepository(
             }
         }
 
-        CallLogsImportResult(imported = imported, skipped = skipped)
+        ImportResult(imported = imported, skipped = skipped)
     }
 
-    fun readDisplayName(uri: Uri): String {
-        return runCatching {
-            context.contentResolver.query(
-                uri,
-                arrayOf(OpenableColumns.DISPLAY_NAME),
-                null,
-                null,
-                null
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) cursor.getString(0) else null
-            }
-        }.getOrNull() ?: context.getString(R.string.backup_file_name)
-    }
+    fun readDisplayName(uri: Uri): String = context.readBackupDisplayName(uri)
 
     private fun isDuplicate(log: BackupCallLog): Boolean {
         context.contentResolver.query(

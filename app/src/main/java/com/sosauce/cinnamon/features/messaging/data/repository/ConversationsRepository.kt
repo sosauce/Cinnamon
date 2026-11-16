@@ -35,9 +35,10 @@ import kotlinx.coroutines.withContext
 class ConversationsRepository(private val context: Context) {
 
 
-    fun fetchLatestParticipantsForThreadId(threadId: Long) = context.contentResolver.observe(Telephony.Threads.CONTENT_URI)
-        .mapLatest { fetchParticipantsForThreadId(threadId) }
-        .flowOn(Dispatchers.IO)
+    fun fetchLatestParticipantsForThreadId(threadId: Long) =
+        context.contentResolver.observe(Telephony.Threads.CONTENT_URI)
+            .mapLatest { fetchParticipantsForThreadId(threadId) }
+            .flowOn(Dispatchers.IO)
 
 
     private fun fetchParticipantsForThreadId(threadId: Long): List<Participant> {
@@ -155,7 +156,10 @@ class ConversationsRepository(private val context: Context) {
         val addresses = mutableMapOf<String, String>()
         context.contentResolver.query(
             Uri.withAppendedPath(MmsSms.CONTENT_URI, "canonical-addresses"),
-            arrayOf(Telephony.CanonicalAddressesColumns._ID, Telephony.CanonicalAddressesColumns.ADDRESS),
+            arrayOf(
+                Telephony.CanonicalAddressesColumns._ID,
+                Telephony.CanonicalAddressesColumns.ADDRESS
+            ),
             null,
             null,
             null
@@ -356,7 +360,11 @@ class ConversationsRepository(private val context: Context) {
             PhoneLookup.CONTACT_ID
         )
 
-        val isBlocked = BlockedNumberContract.canCurrentUserBlockNumbers(context) && BlockedNumberContract.isBlocked(context, number)
+        val isBlocked =
+            BlockedNumberContract.canCurrentUserBlockNumbers(context) && BlockedNumberContract.isBlocked(
+                context,
+                number
+            )
 
         context.contentResolver.query(
             uri,
@@ -407,7 +415,8 @@ class ConversationsRepository(private val context: Context) {
             arrayOf(this),
             null
         )?.use { cursor ->
-            val addressColumn = cursor.getColumnIndexOrThrow(Telephony.CanonicalAddressesColumns.ADDRESS)
+            val addressColumn =
+                cursor.getColumnIndexOrThrow(Telephony.CanonicalAddressesColumns.ADDRESS)
             if (cursor.moveToFirst()) {
                 val address = cursor.getString(addressColumn)
                 return address

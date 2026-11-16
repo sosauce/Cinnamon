@@ -2,7 +2,6 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.archived
 
-import com.sosauce.cinnamon.core.ui.barsContentTransform
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
+import com.sosauce.cinnamon.core.ui.barsContentTransform
 import com.sosauce.cinnamon.core.ui.components.ConversationsSelectedBar
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
 import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar

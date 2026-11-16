@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -20,7 +19,6 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.insert
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -28,9 +26,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.toShape
@@ -59,13 +57,12 @@ import com.sosauce.cinnamon.core.ui.components.buttons.LongClickButton
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.utils.backspace
 import com.sosauce.cinnamon.core.utils.rememberFocusRequester
-import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.presentation.ContactListItem
 import com.sosauce.cinnamon.features.contacts.presentation.ContactsListItem
 import com.sosauce.cinnamon.features.contacts.presentation.components.FavoriteContact
-import com.sosauce.cinnamon.features.contacts.presentation.contactsList
 import com.sosauce.cinnamon.features.contacts.presentation.components.dialogs.NumberPickerDialog
+import com.sosauce.cinnamon.features.contacts.presentation.contactsList
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.features.phone.presentation.call.components.DisableSoftKeyboard
 import com.sosauce.nekobites.components.LoadingBox
@@ -250,6 +247,15 @@ fun SharedTransitionScope.DialpadScreen(
                 contentPadding = paddingValues,
                 modifier = Modifier.padding(horizontal = 10.dp)
             ) {
+                // calls the contact, asking which number to use when there are several
+                val onContactClick: (CuteContact) -> Unit = { contact ->
+                    if (contact.phoneNumbers.size > 1) {
+                        numberPickerContact = contact
+                    } else {
+                        onHandleCallAction(CallAction.LaunchCall(contact.phoneNumbers.first().number))
+                    }
+                }
+
                 contactsList(
                     favorites = state.favorites,
                     contacts = contacts,
@@ -312,13 +318,7 @@ fun SharedTransitionScope.DialpadScreen(
                             modifier = Modifier.animateItem(),
                             contact = contact,
                             isSelected = false,
-                            onClick = {
-                                if (contact.phoneNumbers.size > 1) {
-                                    numberPickerContact = contact
-                                } else {
-                                    onHandleCallAction(CallAction.LaunchCall(contact.phoneNumbers.first().number))
-                                }
-                            },
+                            onClick = { onContactClick(contact) },
                             onLongClick = {},
                             showNumber = true
                         )
@@ -328,13 +328,7 @@ fun SharedTransitionScope.DialpadScreen(
                         modifier = Modifier.animateItem(),
                         contact = contact,
                         isSelected = false,
-                        onClick = {
-                            if (contact.phoneNumbers.size > 1) {
-                                numberPickerContact = contact
-                            } else {
-                                onHandleCallAction(CallAction.LaunchCall(contact.phoneNumbers.first().number))
-                            }
-                        },
+                        onClick = { onContactClick(contact) },
                         showNumber = true
                     )
                 }

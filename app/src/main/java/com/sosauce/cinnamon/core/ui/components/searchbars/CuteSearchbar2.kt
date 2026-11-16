@@ -119,8 +119,7 @@ fun CuteSearchbar2(
                                                     contentDescription = stringResource(R.string.clear_search)
                                                 )
                                             }
-                                        }
-                                        else {
+                                        } else {
                                             sortingMenu?.invoke()
                                         }
                                     }

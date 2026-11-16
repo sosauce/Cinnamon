@@ -126,13 +126,17 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         // M3 Expressive blur background via tonal surface in CallBubble
         try {
             callOverlayManager.observe(scope)
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         audioManager.abandonAudioFocusRequest(audioFocus)
-        try { callOverlayManager.hideOverlay() } catch (_: Exception) {}
+        try {
+            callOverlayManager.hideOverlay()
+        } catch (_: Exception) {
+        }
         handler.removeCallbacks(runnable)
         handler.removeCallbacks(pendingAnswerTimeout)
         job.cancel()
@@ -160,7 +164,11 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
             startActivity(intent)
         } catch (e: Exception) {
             // Fallback: rely on notification fullScreenIntent
-            android.util.Log.w("CallService", "launchCallActivity failed, relying on fullScreenIntent", e)
+            android.util.Log.w(
+                "CallService",
+                "launchCallActivity failed, relying on fullScreenIntent",
+                e
+            )
         }
     }
 
@@ -184,7 +192,8 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
                 try {
                     @Suppress("MissingPermission")
                     val tm = getSystemService(android.telecom.TelecomManager::class.java)
-                    val firstHandle = tm.callCapablePhoneAccounts?.firstOrNull() as? android.telecom.PhoneAccountHandle
+                    val firstHandle =
+                        tm.callCapablePhoneAccounts?.firstOrNull() as? android.telecom.PhoneAccountHandle
                     if (firstHandle != null) {
                         call.phoneAccountSelected(firstHandle, false)
                     } else {
@@ -307,14 +316,21 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
             val useFullScreen = if (type == NotificationType.INCOMING) {
                 // Check incoming call popup setting — if disabled, show bubble/notification only, not full-screen
                 try {
-                    applicationContext.dataStore.data.first()[com.sosauce.cinnamon.core.datastore.PreferencesKeys.INCOMING_CALL_FULLSCREEN] ?: true
-                } catch (_: Exception) { true }
+                    applicationContext.dataStore.data.first()[com.sosauce.cinnamon.core.datastore.PreferencesKeys.INCOMING_CALL_FULLSCREEN]
+                        ?: true
+                } catch (_: Exception) {
+                    true
+                }
             } else true
 
             val notification: Notification? = when (type) {
-                NotificationType.INCOMING -> callNotificationManager.createIncomingNotification(call.details, useFullScreen) {
+                NotificationType.INCOMING -> callNotificationManager.createIncomingNotification(
+                    call.details,
+                    useFullScreen
+                ) {
                     primaryCall == call && call.currentState() == Call.STATE_RINGING
                 }
+
                 NotificationType.OUTGOING -> callNotificationManager.createOutgoingNotification(call.details)
                 NotificationType.ONGOING -> callNotificationManager.createOngoingNotification(call.details)
             }
@@ -395,7 +411,9 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         val subId = call.details.accountHandle?.let { simsRepository.subIdFor(it) } ?: -1
         val activeSubInfo = try {
             subscriptionManager.getActiveSubscriptionInfo(subId)
-        } catch (_: SecurityException) { null }
+        } catch (_: SecurityException) {
+            null
+        }
         return CuteSimCard(
             subId = activeSubInfo?.subscriptionId ?: subId,
             name = activeSubInfo?.displayName?.toString() ?: "SIM $subId",

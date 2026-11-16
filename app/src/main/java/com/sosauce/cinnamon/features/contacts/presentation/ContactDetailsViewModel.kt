@@ -34,7 +34,6 @@ class ContactDetailsViewModel(
 ) : AndroidViewModel(application) {
 
 
-
     private val _events = Channel<ContactDetailsEvent>()
     val events = _events.receiveAsFlow()
 
@@ -133,13 +132,15 @@ class ContactDetailsViewModel(
             is ContactDetailsAction.BlockContact -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     val contact = state.value.contact
-                    val emails = if (action.emailsToo) state.value.details.emails.fastMap { it.email } else emptyList()
+                    val emails =
+                        if (action.emailsToo) state.value.details.emails.fastMap { it.email } else emptyList()
                     contactsRepository.blockContact(
                         phones = contact.phoneNumbers.fastMap { it.number },
                         emails = emails
                     )
                 }
             }
+
             is ContactDetailsAction.CallNumber -> {
                 viewModelScope.launch { callManager.startCall(action.number) }
             }

@@ -10,12 +10,6 @@ import android.telecom.Call
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.graphics.drawable.IconCompat
-import androidx.core.net.toUri
-import coil3.imageLoader
-import coil3.request.ImageRequest
-import coil3.request.transformations
-import coil3.toBitmap
-import coil3.transform.CircleCropTransformation
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.system.receivers.CallReceiver
@@ -36,7 +30,12 @@ class CallNotificationManager(
         addFlags(Intent.FLAG_ACTIVITY_NO_USER_ACTION)
     }
 
-    val pendingIntent = PendingIntent.getActivity(context, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+    val pendingIntent = PendingIntent.getActivity(
+        context,
+        1,
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
 
 
     private val declineIntent = Intent(context, CallReceiver::class.java).apply {
@@ -82,13 +81,7 @@ class CallNotificationManager(
         val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart
             ?: callDetails.handle?.schemeSpecificPart ?: context.getString(R.string.unknown)
 
-        val request = ImageRequest.Builder(context)
-            .data(numberLookup.fetchPhoto(number, false)?.toUri())
-            .transformations(CircleCropTransformation())
-            .build()
-        val result = context.imageLoader.execute(request)
-        val bitmap = result.image?.toBitmap()
-        val personIcon = bitmap?.let { IconCompat.createWithBitmap(it) }
+        val personIcon = numberLookup.fetchPersonIcon(number)
 
         if (!isStillRinging()) return null
 
@@ -101,10 +94,7 @@ class CallNotificationManager(
             .setFullScreenIntent(pendingIntent, useFullScreen)
             .setStyle(
                 NotificationCompat.CallStyle.forIncomingCall(
-                    Person.Builder()
-                        .setIcon(personIcon)
-                        .setName(numberLookup.fetchContactDisplayName(number) ?: number)
-                        .build(),
+                    callerPerson(number, personIcon),
                     declinePendingIntent,
                     acceptPendingIntent
 
@@ -122,16 +112,9 @@ class CallNotificationManager(
         callDetails: Call.Details
     ): Notification {
 
-        val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart
-            ?: callDetails.handle.schemeSpecificPart
+        val number = callDetails.callerNumber()
 
-        val request = ImageRequest.Builder(context)
-            .data(numberLookup.fetchPhoto(number, false)?.toUri())
-            .transformations(CircleCropTransformation())
-            .build()
-        val result = context.imageLoader.execute(request)
-        val bitmap = result.image?.toBitmap()
-        val personIcon = bitmap?.let { IconCompat.createWithBitmap(it) }
+        val personIcon = numberLookup.fetchPersonIcon(number)
 
 
         val builder = NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
@@ -150,10 +133,7 @@ class CallNotificationManager(
             .setFullScreenIntent(pendingIntent, true)
             .setStyle(
                 NotificationCompat.CallStyle.forOngoingCall(
-                    Person.Builder()
-                        .setIcon(personIcon)
-                        .setName(numberLookup.fetchContactDisplayName(number) ?: number)
-                        .build(),
+                    callerPerson(number, personIcon),
                     hangupPendingIntent
 
                 )
@@ -171,16 +151,9 @@ class CallNotificationManager(
         callDetails: Call.Details
     ): Notification {
 
-        val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart
-            ?: callDetails.handle.schemeSpecificPart
+        val number = callDetails.callerNumber()
 
-        val request = ImageRequest.Builder(context)
-            .data(numberLookup.fetchPhoto(number, false)?.toUri())
-            .transformations(CircleCropTransformation())
-            .build()
-        val result = context.imageLoader.execute(request)
-        val bitmap = result.image?.toBitmap()
-        val personIcon = bitmap?.let { IconCompat.createWithBitmap(it) }
+        val personIcon = numberLookup.fetchPersonIcon(number)
 
 
         val builder = NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
@@ -193,10 +166,7 @@ class CallNotificationManager(
             .setFullScreenIntent(pendingIntent, false)
             .setStyle(
                 NotificationCompat.CallStyle.forOngoingCall(
-                    Person.Builder()
-                        .setIcon(personIcon)
-                        .setName(numberLookup.fetchContactDisplayName(number) ?: number)
-                        .build(),
+                    callerPerson(number, personIcon),
                     hangupPendingIntent
 
                 )
@@ -209,11 +179,23 @@ class CallNotificationManager(
     }
 
 
+    private fun Call.Details.callerNumber(): String =
+        gatewayInfo?.originalAddress?.schemeSpecificPart ?: handle.schemeSpecificPart
+
+    /**
+     * Who the call is with, named after the matching contact when there is one
+     */
+    private fun callerPerson(number: String, icon: IconCompat?): Person = Person.Builder()
+        .setIcon(icon)
+        .setName(numberLookup.fetchContactDisplayName(number) ?: number)
+        .build()
+
     companion object {
         private const val DECLINE_CALL_CODE = 0
         private const val ACCEPT_CALL_CODE = 1
         private const val HANGUP_ONGOING_CALL_CODE = 2
         const val CALLS_CHANNEL_ID = "calls_silent_id"
+
         // Old channel that used the ringtone as its sound, deleted on startup
         const val LEGACY_CALLS_CHANNEL_ID = "calls_id"
         const val CALLS_GROUP = "calls_group"

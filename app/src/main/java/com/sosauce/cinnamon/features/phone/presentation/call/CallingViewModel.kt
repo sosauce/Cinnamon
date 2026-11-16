@@ -3,7 +3,6 @@
 package com.sosauce.cinnamon.features.phone.presentation.call
 
 import android.app.Application
-import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.Stable
 import androidx.core.net.toUri
@@ -20,7 +19,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -40,7 +38,8 @@ class CallingViewModel(
     init {
         viewModelScope.launch(Dispatchers.IO) {
             state.mapLatest { it.number }.distinctUntilChanged().collectLatest { number ->
-                val poster = contactSettingsDao.getContactPoster(number.getContactId(application.applicationContext))
+                val poster =
+                    contactSettingsDao.getContactPoster(number.getContactId(application.applicationContext))
                 _state.update {
                     it.copy(
                         photo = numberLookup.fetchPhoto(number, true)?.toUri(),
@@ -77,6 +76,7 @@ class CallingViewModel(
                     callManager.startTone(action.char)
                 }
             }
+
             is CallAction.SwitchAudioTarget -> callManager.switchAudioRoute(action.route)
             is CallAction.ToggleHold -> callManager.toggleHold()
             is CallAction.ToggleMute -> callManager.toggleMute(action.mute)

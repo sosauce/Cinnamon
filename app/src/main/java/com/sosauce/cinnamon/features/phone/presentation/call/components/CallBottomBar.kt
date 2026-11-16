@@ -11,33 +11,24 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledIconToggleButton
-import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.IconToggleButton
-import androidx.compose.material3.IconToggleButtonShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -50,11 +41,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
@@ -62,7 +51,6 @@ import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.features.phone.presentation.call.CallState
 import com.sosauce.cinnamon.features.phone.presentation.call.CallingState
 import com.sosauce.cinnamon.features.phone.presentation.call.DialerPaneContent
-import com.sosauce.nekobites.animations.AnimatedFab
 import com.sosauce.nekobites.animations.bouncySpec
 
 @Composable
@@ -140,8 +128,14 @@ fun CallBottomBar(
         AnimatedContent(
             targetState = paneContent,
             transitionSpec = {
-                (slideInVertically(bouncySpec()) { it / 2 } + fadeIn() + scaleIn(bouncySpec(), initialScale = 0.96f)) togetherWith
-                    (slideOutVertically(bouncySpec()) { it / 2 } + fadeOut() + scaleOut(bouncySpec(), targetScale = 0.96f))
+                (slideInVertically(bouncySpec()) { it / 2 } + fadeIn() + scaleIn(
+                    bouncySpec(),
+                    initialScale = 0.96f
+                )) togetherWith
+                        (slideOutVertically(bouncySpec()) { it / 2 } + fadeOut() + scaleOut(
+                            bouncySpec(),
+                            targetScale = 0.96f
+                        ))
             }
         ) { target ->
             when (target) {
@@ -157,6 +151,7 @@ fun CallBottomBar(
                                 DialerPaneContent.DIALPAD -> Dialpad(
                                     onSendTone = { onCallAction(CallAction.StartTone(it)) },
                                 )
+
                                 DialerPaneContent.AUDIO_SWITCHER -> AudioSwitcher(
                                     onCallAction = onCallAction,
                                     routes = callUiState.availableAudioRoutes,

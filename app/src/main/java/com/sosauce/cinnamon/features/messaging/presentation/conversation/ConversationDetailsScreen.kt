@@ -6,21 +6,8 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation
 
-import com.sosauce.cinnamon.core.ui.components.CuteHero
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.lazy.LazyItemScope
-import androidx.compose.foundation.text.input.TextFieldState
-import androidx.paging.LoadState
-import androidx.paging.compose.LazyPagingItems
-import androidx.paging.compose.itemContentType
-import androidx.paging.compose.itemKey
-import com.sosauce.cinnamon.features.messaging.domain.listKey
-import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.topbars.ConversationSearchTopBar
-import com.sosauce.sweetselect.SweetSelectState
-import kotlin.math.abs
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.SizeTransform
@@ -40,14 +27,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -70,12 +59,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
 import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
@@ -83,10 +75,12 @@ import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.datastore.rememberChatZoomScale
 import com.sosauce.cinnamon.core.datastore.rememberEnablePinchToZoom
 import com.sosauce.cinnamon.core.telephony.message.ActiveThreadId
+import com.sosauce.cinnamon.core.ui.components.CuteHero
 import com.sosauce.cinnamon.core.utils.isEmoji
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingActions
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import com.sosauce.cinnamon.features.messaging.domain.MessageType
+import com.sosauce.cinnamon.features.messaging.domain.listKey
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.TextingUnavailableBar
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.TextingUnavailableReason
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bottombar.ConversationBottomBar
@@ -94,14 +88,16 @@ import com.sosauce.cinnamon.features.messaging.presentation.conversation.compone
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bubble.MmsBubble
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bubble.SandwichPosition
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bubble.TextBubble
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.topbars.ConversationSearchTopBar
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.topbars.ConversationTopBar
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.topbars.SelectedTopBar
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.nekobites.components.LoadingBox
+import com.sosauce.sweetselect.SweetSelectState
 import com.sosauce.sweetselect.rememberSweetSelectState
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import net.engawapg.lib.zoomable.ExperimentalZoomableApi
+import kotlin.math.abs
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -253,9 +249,11 @@ fun SharedTransitionScope.ConversationDetailsScreen(
                     state.isShortCode -> TextingUnavailableBar(
                         reason = TextingUnavailableReason.SHORT_CODE
                     )
+
                     state.participants.firstOrNull()?.isBlocked == true -> TextingUnavailableBar(
                         reason = TextingUnavailableReason.BLOCKED
                     )
+
                     else -> {
                         ConversationBottomBar(
                             state = state,
@@ -307,23 +305,25 @@ fun SharedTransitionScope.ConversationDetailsScreen(
                         // Date headers are drawn inside the oldest message of each day so that
                         // list indexes always map 1:1 to messages (needed to jump to search results).
 
-                        val messageItem: @Composable LazyItemScope.(Int, CuteMessage) -> Unit = { listIndex, message ->
-                            val older = messageAt(listIndex + 1)
-                            val newer = messageAt(listIndex - 1)
-                            val isOldest = listIndex == totalCount - 1
+                        val messageItem: @Composable LazyItemScope.(Int, CuteMessage) -> Unit =
+                            { listIndex, message ->
+                                val older = messageAt(listIndex + 1)
+                                val newer = messageAt(listIndex - 1)
+                                val isOldest = listIndex == totalCount - 1
 
-                            ConversationMessageItem(
-                                message = message,
-                                older = older,
-                                newer = newer,
-                                showDateHeader = older?.let { it.date != message.date } ?: isOldest,
-                                sweetSelectState = sweetSelectState,
-                                isGroupChat = isGroupChat,
-                                highlightQuery = highlightQuery,
-                                isFocusedMatch = focusedMatchKey == message.listKey,
-                                onHandleConversationActions = onHandleConversationActions
-                            )
-                        }
+                                ConversationMessageItem(
+                                    message = message,
+                                    older = older,
+                                    newer = newer,
+                                    showDateHeader = older?.let { it.date != message.date }
+                                        ?: isOldest,
+                                    sweetSelectState = sweetSelectState,
+                                    isGroupChat = isGroupChat,
+                                    highlightQuery = highlightQuery,
+                                    isFocusedMatch = focusedMatchKey == message.listKey,
+                                    onHandleConversationActions = onHandleConversationActions
+                                )
+                            }
 
                         itemsIndexed(
                             items = state.scheduledMessages,
@@ -343,7 +343,9 @@ fun SharedTransitionScope.ConversationDetailsScreen(
                                 messageItem(scheduledCount + index, message)
                             } else {
                                 // placeholder while the page loads
-                                Spacer(Modifier.fillMaxWidth().height(56.dp))
+                                Spacer(Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp))
                             }
                         }
 
@@ -371,6 +373,7 @@ fun SharedTransitionScope.ConversationDetailsScreen(
         }
     }
 }
+
 private enum class TopBarMode { DEFAULT, SELECTION, SEARCH }
 
 // Past this many items a smooth scroll gets slow, so we jump instead

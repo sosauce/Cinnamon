@@ -11,7 +11,6 @@ import com.sosauce.cinnamon.features.messaging.data.repository.ConversationsRepo
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 

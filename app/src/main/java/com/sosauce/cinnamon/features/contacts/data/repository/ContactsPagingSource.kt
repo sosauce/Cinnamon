@@ -2,9 +2,10 @@ package com.sosauce.cinnamon.features.contacts.data.repository
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.sosauce.cinnamon.core.utils.offsetRefreshKey
+import com.sosauce.cinnamon.core.utils.toOffsetAndLimit
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContactEntity
 import kotlinx.coroutines.CancellationException
-import kotlin.math.max
 
 /**
  * Offset-based paging over contacts sorted by name, restricted by [extraSelection].
@@ -19,16 +20,7 @@ class ContactsPagingSource(
 ) : PagingSource<Int, CuteContactEntity>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, CuteContactEntity> {
-        val key = params.key ?: 0
-
-        val (offset, limit) = when (params) {
-            is LoadParams.Prepend -> {
-                val start = max(0, key - params.loadSize)
-                start to (key - start)
-            }
-
-            else -> max(0, key) to params.loadSize
-        }
+        val (offset, limit) = params.toOffsetAndLimit()
 
         return try {
             val page = contactsRepository.getContactsPage(extraSelection, ascending, offset, limit)
@@ -48,8 +40,6 @@ class ContactsPagingSource(
         }
     }
 
-    override fun getRefreshKey(state: PagingState<Int, CuteContactEntity>): Int? {
-        val anchor = state.anchorPosition ?: return null
-        return max(0, anchor - state.config.initialLoadSize / 2)
-    }
+    override fun getRefreshKey(state: PagingState<Int, CuteContactEntity>): Int? =
+        state.offsetRefreshKey()
 }

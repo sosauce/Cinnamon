@@ -30,7 +30,8 @@ fun SettingsPhone() {
             emptyMap()
         }
     }
-    val defaultPhoneHandle by simsViewModel.fetchLatestDefaultPhoneHandle().collectAsStateWithLifecycle(null)
+    val defaultPhoneHandle by simsViewModel.fetchLatestDefaultPhoneHandle()
+        .collectAsStateWithLifecycle(null)
 
     SettingsGroup(title = stringResource(R.string.sim_card)) {
         if (allHandles.isEmpty()) {

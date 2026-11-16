@@ -5,14 +5,12 @@ import android.net.Uri
 import android.provider.CallLog
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.PermissionUtils
+import com.sosauce.cinnamon.core.utils.backupFileName
 import com.sosauce.cinnamon.features.phone.data.model.CuteCallLogEntity
 import com.sosauce.cinnamon.features.phone.data.repository.CallLogsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
  * Builds a JSON-serializable snapshot of the selected call log entries and
@@ -68,10 +66,8 @@ class CallLogsBackupRepository(
             } ?: error("Unable to open output stream for backup destination")
         }
 
-    fun defaultFileName(nowMillis: Long = System.currentTimeMillis()): String {
-        val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
-        return "calls_${formatter.format(Date(nowMillis))}"
-    }
+    fun defaultFileName(nowMillis: Long = System.currentTimeMillis()): String =
+        backupFileName("calls", nowMillis)
 
     private fun CuteCallLogEntity.toBackupCall(): BackupCallLog {
         return BackupCallLog(

@@ -16,6 +16,7 @@ data class CuteMessage(
     val isScheduled: Boolean,
     val delivered: Boolean
 )
+
 /**
  * Unique key of a message across SMS, MMS and scheduled messages (ids can collide between them).
  */

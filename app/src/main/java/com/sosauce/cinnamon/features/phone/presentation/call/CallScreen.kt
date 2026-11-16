@@ -20,8 +20,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -35,7 +33,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -55,12 +52,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -73,7 +67,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.glance.color.DynamicThemeColorProviders.primaryContainer
 import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
@@ -272,7 +265,10 @@ private fun CallerInfo(
                         scaleY = pulseScale1()
                         rotationZ = spin
                     }
-                    .background(colors.primaryContainer.copy(alpha = 0.09f), MaterialShapes.Cookie12Sided.toShape())
+                    .background(
+                        colors.primaryContainer.copy(alpha = 0.09f),
+                        MaterialShapes.Cookie12Sided.toShape()
+                    )
             )
             Box {
                 Avatar(
@@ -381,6 +377,7 @@ private fun CallStatusPill(callUiState: CallingState) {
                 append(callUiState.activeSim.name)
             }
         }
+
         CallState.DIALING -> AnnotatedString(stringResource(R.string.ringing))
         CallState.ENDED -> AnnotatedString(stringResource(R.string.call_ended))
         CallState.ONGOING -> AnnotatedString(DateUtils.formatElapsedTime(callUiState.timeSpentInCall))
@@ -425,8 +422,10 @@ private fun OtherCallPill(
     val container by animateColorAsState(
         if (otherCall.isHolding) colors.surfaceContainerHigh else colors.secondaryContainer
     )
-    val status = stringResource(if (otherCall.isHolding) R.string.on_hold else R.string.ongoing_call)
-    val name = otherCall.displayName.ifBlank { otherCall.number.ifBlank { stringResource(R.string.unknown) } }
+    val status =
+        stringResource(if (otherCall.isHolding) R.string.on_hold else R.string.ongoing_call)
+    val name =
+        otherCall.displayName.ifBlank { otherCall.number.ifBlank { stringResource(R.string.unknown) } }
 
     Surface(
         shape = CircleShape,
@@ -462,7 +461,7 @@ private fun OtherCallPill(
 @Preview(
     uiMode = Configuration.UI_MODE_NIGHT_YES,
 
-)
+    )
 @Composable
 private fun CallScreenPreviewRinging() {
     CinnamonTheme {

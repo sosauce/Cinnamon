@@ -3,7 +3,6 @@
 package com.sosauce.cinnamon.core.ui
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -39,10 +38,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.appVersion
 import com.sosauce.nekobites.components.Spacer
-import androidx.core.net.toUri
 
 @Composable
 fun CrashScreen(
@@ -69,11 +68,15 @@ fun CrashScreen(
                 Button(
                     onClick = {
 
-                        val text = "Device information: SDK v${Build.VERSION.SDK_INT} \n\n $crashLog"
+                        val text =
+                            "Device information: SDK v${Build.VERSION.SDK_INT} \n\n $crashLog"
                         val mailtoUri = "mailto:".toUri()
                             .buildUpon()
                             .appendQueryParameter("to", "sosauce_dev@protonmail.com")
-                            .appendQueryParameter("subject", "[Crash] Cinnamon v${context.appVersion}")
+                            .appendQueryParameter(
+                                "subject",
+                                "[Crash] Cinnamon v${context.appVersion}"
+                            )
                             .appendQueryParameter("body", text)
                             .build()
 
@@ -81,7 +84,12 @@ fun CrashScreen(
                             data = mailtoUri
                         }
 
-                        context.startActivity(Intent.createChooser(emailIntent,"Choose an Email client : "))
+                        context.startActivity(
+                            Intent.createChooser(
+                                emailIntent,
+                                "Choose an Email client : "
+                            )
+                        )
                         onClose()
 
 
@@ -91,8 +99,13 @@ fun CrashScreen(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         contentColor = contentColorFor(MaterialTheme.colorScheme.secondaryContainer)
                     ),
-                    modifier = Modifier.weight(1f).size(IconButtonDefaults.mediumContainerSize(
-                        IconButtonDefaults.IconButtonWidthOption.Wide))
+                    modifier = Modifier
+                        .weight(1f)
+                        .size(
+                            IconButtonDefaults.mediumContainerSize(
+                                IconButtonDefaults.IconButtonWidthOption.Wide
+                            )
+                        )
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.email),
@@ -108,8 +121,13 @@ fun CrashScreen(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = contentColorFor(MaterialTheme.colorScheme.primaryContainer)
                     ),
-                    modifier = Modifier.weight(1f).size(IconButtonDefaults.mediumContainerSize(
-                        IconButtonDefaults.IconButtonWidthOption.Wide))
+                    modifier = Modifier
+                        .weight(1f)
+                        .size(
+                            IconButtonDefaults.mediumContainerSize(
+                                IconButtonDefaults.IconButtonWidthOption.Wide
+                            )
+                        )
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.close),
@@ -166,7 +184,7 @@ fun CrashScreen(
                 Box(
                     modifier = Modifier
                         .background(
-                        MaterialTheme.colorScheme.surfaceContainer,
+                            MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(24.dp)
                         )
                         .horizontalScroll(rememberScrollState())
@@ -192,6 +210,8 @@ private fun CrashScreenPreview() {
     CinnamonTheme {
 
 
-        CrashScreen("java.lang.RuntimeException: Can't create handler inside thread Thread[DefaultDispatcher-worker-1,5,main] that has not called Looper.prepare()\n\tat android.os.Handler.<init>(Handler.java:261)\n\tat android.os.Handler.<init>(Handler.java:165)\n\tat android.view.ViewRootImpl\$ViewRootHandler.<init>(ViewRootImpl.java:7373)\n\tat android.view.ViewRootImpl.<init>(ViewRootImpl.java:7789)\n\tat android.view.ViewRootImpl.<init>(ViewRootImpl.java:1402)\n\tat android.view.WindowManagerGlobal.addView(WindowManagerGlobal.java:504)\n\tat android.view.WindowManagerImpl.addView(WindowManagerImpl.java:189)\n\tat com.sosauce.cinnamon.core.system.services.CallOverlayManager.showOverlay(CallOverlayManager.kt:107)\n\tat com.sosauce.cinnamon.core.system.services.CallOverlayManager\$observe\$4.invokeSuspend(CallOverlayManager.kt:58)\n\tat com.sosauce.cinnamon.core.system.services.CallOverlayManager\$observe\$4.invoke(CallOverlayManager.kt:8)\n\tat com.sosauce.cinnamon.core.system.services.CallOverlayManager\$observe\$4.invoke(CallOverlayManager.kt:4)\n\tat kotlinx.coroutines.flow.FlowKt__TransformKt\$onEach\$\$inlined\$unsafeTransform\$1\$2.emit(Emitters.kt:217)\n\tat kotlinx.coroutines.flow.FlowKt__ZipKt\$combine\$1\$1.invokeSuspend(Zip.kt:29)\n\tat kotlinx.coroutines.flow.FlowKt__ZipKt\$combine\$1\$1.invoke(Zip.kt:13)\n\tat kotlinx.coroutines.flow.FlowKt__ZipKt\$combine\$1\$1.invoke(Zip.kt:6)\n\tat kotlinx.coroutines.flow.internal.CombineKt\$combineInternal\$2.invokeSuspend(Combine.kt:73)\n\tat kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)\n\tat kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)\n\tat kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)\n\tat kotlinx.coroutines.scheduling.CoroutineScheduler\$Worker.executeTask(CoroutineScheduler.kt:807)\n\tat kotlinx.coroutines.scheduling.CoroutineScheduler\$Worker.runWorker(CoroutineScheduler.kt:717)\n\tat kotlinx.coroutines.scheduling.CoroutineScheduler\$Worker.run(CoroutineScheduler.kt:704)", {})
+        CrashScreen(
+            "java.lang.RuntimeException: Can't create handler inside thread Thread[DefaultDispatcher-worker-1,5,main] that has not called Looper.prepare()\n\tat android.os.Handler.<init>(Handler.java:261)\n\tat android.os.Handler.<init>(Handler.java:165)\n\tat android.view.ViewRootImpl\$ViewRootHandler.<init>(ViewRootImpl.java:7373)\n\tat android.view.ViewRootImpl.<init>(ViewRootImpl.java:7789)\n\tat android.view.ViewRootImpl.<init>(ViewRootImpl.java:1402)\n\tat android.view.WindowManagerGlobal.addView(WindowManagerGlobal.java:504)\n\tat android.view.WindowManagerImpl.addView(WindowManagerImpl.java:189)\n\tat com.sosauce.cinnamon.core.system.services.CallOverlayManager.showOverlay(CallOverlayManager.kt:107)\n\tat com.sosauce.cinnamon.core.system.services.CallOverlayManager\$observe\$4.invokeSuspend(CallOverlayManager.kt:58)\n\tat com.sosauce.cinnamon.core.system.services.CallOverlayManager\$observe\$4.invoke(CallOverlayManager.kt:8)\n\tat com.sosauce.cinnamon.core.system.services.CallOverlayManager\$observe\$4.invoke(CallOverlayManager.kt:4)\n\tat kotlinx.coroutines.flow.FlowKt__TransformKt\$onEach\$\$inlined\$unsafeTransform\$1\$2.emit(Emitters.kt:217)\n\tat kotlinx.coroutines.flow.FlowKt__ZipKt\$combine\$1\$1.invokeSuspend(Zip.kt:29)\n\tat kotlinx.coroutines.flow.FlowKt__ZipKt\$combine\$1\$1.invoke(Zip.kt:13)\n\tat kotlinx.coroutines.flow.FlowKt__ZipKt\$combine\$1\$1.invoke(Zip.kt:6)\n\tat kotlinx.coroutines.flow.internal.CombineKt\$combineInternal\$2.invokeSuspend(Combine.kt:73)\n\tat kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)\n\tat kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)\n\tat kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)\n\tat kotlinx.coroutines.scheduling.CoroutineScheduler\$Worker.executeTask(CoroutineScheduler.kt:807)\n\tat kotlinx.coroutines.scheduling.CoroutineScheduler\$Worker.runWorker(CoroutineScheduler.kt:717)\n\tat kotlinx.coroutines.scheduling.CoroutineScheduler\$Worker.run(CoroutineScheduler.kt:704)",
+            {})
     }
 }

@@ -4,14 +4,12 @@ import android.content.Context
 import android.net.Uri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.PermissionUtils
+import com.sosauce.cinnamon.core.utils.backupFileName
 import com.sosauce.cinnamon.features.messaging.data.repository.ConversationsRepository
 import com.sosauce.cinnamon.features.messaging.data.repository.MessagesRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class MessageBackupRepository(
     private val context: Context,
@@ -103,8 +101,6 @@ class MessageBackupRepository(
             } ?: error("Unable to open output stream for backup destination")
         }
 
-    fun defaultFileName(nowMillis: Long = System.currentTimeMillis()): String {
-        val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
-        return "backup_${formatter.format(Date(nowMillis))}"
-    }
+    fun defaultFileName(nowMillis: Long = System.currentTimeMillis()): String =
+        backupFileName("backup", nowMillis)
 }

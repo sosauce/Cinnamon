@@ -8,8 +8,6 @@ import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.Contact
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsEntity
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
 import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
-import com.sosauce.cinnamon.features.contacts.domain.CuteContact
-import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails
 import com.sosauce.cinnamon.features.contacts.domain.RawContactEdit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -53,13 +51,15 @@ class EditContactViewModel(
                         isLoading = false
                     )
                 }
-                contactSettingsDao.getContactSettings(rawContact.contactId).collectLatest { settings ->
-                    _state.update {
-                        it.copy(
-                            settings = settings ?: ContactSettingsEntity(contactId = rawContact.contactId)
-                        )
+                contactSettingsDao.getContactSettings(rawContact.contactId)
+                    .collectLatest { settings ->
+                        _state.update {
+                            it.copy(
+                                settings = settings
+                                    ?: ContactSettingsEntity(contactId = rawContact.contactId)
+                            )
+                        }
                     }
-                }
             }
         } else {
             // creating
@@ -123,10 +123,12 @@ data class EditContactState(
     val settings: ContactSettingsEntity = ContactSettingsEntity(),
     val isCreateInsteadOfEdit: Boolean
 )
+
 sealed interface EditContactEvent {
-    data object Success: EditContactEvent
-    data object Error: EditContactEvent
+    data object Success : EditContactEvent
+    data object Error : EditContactEvent
 }
+
 sealed interface EditContactAction {
     data class SaveEditedContact(
         val editedRawContact: RawContactEdit

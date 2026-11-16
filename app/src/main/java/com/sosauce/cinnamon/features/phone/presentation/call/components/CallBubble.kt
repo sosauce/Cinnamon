@@ -96,18 +96,18 @@ fun CallBubble(
                     )
                     // Pulsing dot for ongoing/ringing
                     if (isRinging || isDialing || isOngoing) {
+                        val dotColor = when {
+                            isRinging -> MaterialTheme.colorScheme.tertiary
+                            isOngoing -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.secondary
+                        }
+
                         Box(
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
                                 .size(14.dp)
                                 .clip(CircleShape)
-                                .background(
-                                    when {
-                                        isRinging -> MaterialTheme.colorScheme.tertiary
-                                        isOngoing -> MaterialTheme.colorScheme.primary
-                                        else -> MaterialTheme.colorScheme.secondary
-                                    }
-                                )
+                                .background(dotColor)
                                 .padding(2.dp)
                                 .background(MaterialTheme.colorScheme.surface, CircleShape)
                         ) {
@@ -115,13 +115,7 @@ fun CallBubble(
                                 modifier = Modifier
                                     .size(8.dp)
                                     .clip(CircleShape)
-                                    .background(
-                                        when {
-                                            isRinging -> MaterialTheme.colorScheme.tertiary
-                                            isOngoing -> MaterialTheme.colorScheme.primary
-                                            else -> MaterialTheme.colorScheme.secondary
-                                        }
-                                    )
+                                    .background(dotColor)
                                     .align(Alignment.Center)
                             )
                         }

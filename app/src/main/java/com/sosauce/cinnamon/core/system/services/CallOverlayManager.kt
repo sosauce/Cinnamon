@@ -3,25 +3,24 @@ package com.sosauce.cinnamon.core.system.services
 import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
-import android.os.Build
 import android.provider.Settings
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ComposeView
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sosauce.cinnamon.app.CinnamonApplication
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
 import com.sosauce.cinnamon.core.ui.CinnamonTheme
 import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
 import com.sosauce.cinnamon.features.phone.presentation.call.CallState
 import com.sosauce.cinnamon.features.phone.presentation.call.components.CallBubble
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import androidx.core.net.toUri
-import com.sosauce.cinnamon.app.CinnamonApplication
-import kotlinx.coroutines.flow.combine
 
 /**
  * Manages system overlay bubble shown over other apps during a call.
@@ -69,6 +68,7 @@ class CallOverlayManager(
                             // Permission not granted — don't crash, will show when granted
                         }
                     }
+
                     CallState.ENDED -> hideOverlay()
                     else -> {
                         if (isShowing) hideOverlay()
@@ -89,10 +89,10 @@ class CallOverlayManager(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
-                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+                        WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                        WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
                 PixelFormat.TRANSLUCENT
             ).apply {
                 gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
@@ -117,7 +117,8 @@ class CallOverlayManager(
         if (!isShowing) return
         try {
             composeView?.let { windowManager.removeView(it) }
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
         composeView = null
         isShowing = false
     }

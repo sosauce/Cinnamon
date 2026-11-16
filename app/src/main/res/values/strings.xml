@@ -327,7 +327,8 @@
     <plurals name="plural_files_too_large_mms">
         <item quantity="one">File is too large to be sent by MMS! (carrier limit)</item>
         <item quantity="other">%d files too large to be sent by MMS! (carrier limit)</item>
-    </plurals>>
+    </plurals>
+    >
     <plurals name="matching_messages">
         <item quantity="one">%d message</item>
         <item quantity="other">%d messages</item>

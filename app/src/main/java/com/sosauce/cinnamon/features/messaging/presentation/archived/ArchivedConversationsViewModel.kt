@@ -12,6 +12,7 @@ import com.sosauce.cinnamon.features.messaging.data.model.toCuteConversation
 import com.sosauce.cinnamon.features.messaging.data.repository.ConversationsRepository
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationsAction
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.perform
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -28,7 +29,8 @@ class ArchivedConversationsViewModel(
         userPreferences.archivedConversations,
         conversationsRepository.fetchLatestConversations()
     ) { archived, conversations ->
-        val archivedConversations = conversations.fastFilter { archived.contains(it.threadId.toString()) }
+        val archivedConversations =
+            conversations.fastFilter { archived.contains(it.threadId.toString()) }
 
         ArchivedState(
             isLoading = false,
@@ -41,24 +43,8 @@ class ArchivedConversationsViewModel(
     )
 
     fun handleThreadsAction(action: ConversationsAction) {
-        when (action) {
-            is ConversationsAction.ArchiveConversations -> {
-                viewModelScope.launch {
-                    userPreferences.toggleArchiveThreads(action.threadIds)
-                }
-            }
-
-            is ConversationsAction.PinConversations -> {
-                viewModelScope.launch {
-                    userPreferences.pinThreads(action.threadIds)
-                }
-            }
-
-            is ConversationsAction.DeleteConversations -> {
-                viewModelScope.launch {
-                    conversationsRepository.deleteThreads(action.threadIds)
-                }
-            }
+        viewModelScope.launch {
+            action.perform(userPreferences, conversationsRepository)
         }
     }
 

@@ -2,6 +2,7 @@
 
 package com.sosauce.cinnamon.core.ui.components
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -18,6 +18,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
@@ -28,16 +29,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.utils.LocalScreen
-import com.sosauce.nekobites.helpers.rememberInteractionSource
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.dialogs.DeleteConversationsDialog
+import com.sosauce.nekobites.helpers.rememberInteractionSource
 import com.sosauce.sweetselect.SweetSelectState
 
 @Composable
@@ -114,6 +115,63 @@ fun <T> SelectedBarSurface(
 }
 
 
+/**
+ * Action shown as a button in a selected bar
+ *
+ * @param tint tint of the icon, the default content color when null
+ */
+data class SelectedBarAction(
+    @DrawableRes val icon: Int,
+    val tint: Color? = null,
+    val onClick: () -> Unit
+)
+
+/**
+ * Connected buttons of a selected bar, one per action
+ */
+@Composable
+fun SelectedBarActions(
+    actions: List<SelectedBarAction>
+) {
+    val interactionSources = List(actions.size) { rememberInteractionSource() }
+
+    ButtonGroup(
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        overflowIndicator = {}
+    ) {
+        actions.forEachIndexed { index, action ->
+            customItem(
+                buttonGroupContent = {
+                    Button(
+                        onClick = action.onClick,
+                        interactionSource = interactionSources[index],
+                        shape = RoundedCornerShape(
+                            topStart = if (index == 0) 50.dp else 4.dp,
+                            bottomStart = if (index == 0) 50.dp else 4.dp,
+                            topEnd = if (index == actions.lastIndex) 50.dp else 4.dp,
+                            bottomEnd = if (index == actions.lastIndex) 50.dp else 4.dp
+                        ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+                        ),
+                        modifier = Modifier
+                            .animateWidth(interactionSources[index])
+                            .weight(1f)
+                    ) {
+                        Icon(
+                            painter = painterResource(action.icon),
+                            contentDescription = null,
+                            tint = action.tint ?: LocalContentColor.current
+                        )
+                    }
+                },
+                menuContent = {}
+            )
+        }
+    }
+}
+
 @Composable
 fun ConversationsSelectedBar(
     modifier: Modifier = Modifier,
@@ -125,7 +183,6 @@ fun ConversationsSelectedBar(
 ) {
 
     var showDeleteConversationsDialog by remember { mutableStateOf(false) }
-    val interactionSources = List(3) { rememberInteractionSource() }
     val screen = LocalScreen.current
 
     if (showDeleteConversationsDialog) {
@@ -144,90 +201,23 @@ fun ConversationsSelectedBar(
         items = items,
         multiSelectState = multiSelectState
     ) {
-        ButtonGroup(
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            overflowIndicator = {}
-        ) {
-            customItem(
-                buttonGroupContent = {
-                    Button(
-                        onClick = onPinThreads,
-                        interactionSource = interactionSources[0],
-                        shape = RoundedCornerShape(
-                            topStart = 50.dp,
-                            bottomStart = 50.dp,
-                            topEnd = 4.dp,
-                            bottomEnd = 4.dp
-                        ),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                        ),
-                        modifier = Modifier
-                            .animateWidth(interactionSources[0])
-                            .weight(1f)
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.pin_filled),
-                            contentDescription = null
-                        )
-                    }
-                },
-                menuContent = {}
+        SelectedBarActions(
+            actions = listOf(
+                SelectedBarAction(
+                    icon = R.drawable.pin_filled,
+                    onClick = onPinThreads
+                ),
+                SelectedBarAction(
+                    icon = if (screen is Screen.ArchivedThreads) R.drawable.unarchive else R.drawable.archive,
+                    onClick = onArchiveThreads
+                ),
+                SelectedBarAction(
+                    icon = R.drawable.delete_filled,
+                    tint = MaterialTheme.colorScheme.error,
+                    onClick = { showDeleteConversationsDialog = true }
+                )
             )
-            customItem(
-                buttonGroupContent = {
-                    Button(
-                        onClick = onArchiveThreads,
-                        interactionSource = interactionSources[1],
-                        shape = RoundedCornerShape(4.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                        ),
-                        modifier = Modifier
-                            .animateWidth(interactionSources[1])
-                            .weight(1f)
-                    ) {
-                        val icon =
-                            if (screen is Screen.ArchivedThreads) R.drawable.unarchive else R.drawable.archive
-                        Icon(
-                            painter = painterResource(icon),
-                            contentDescription = null
-                        )
-                    }
-                },
-                menuContent = {}
-            )
-            customItem(
-                buttonGroupContent = {
-                    Button(
-                        onClick = { showDeleteConversationsDialog = true },
-                        interactionSource = interactionSources[2],
-                        shape = RoundedCornerShape(
-                            topStart = 4.dp,
-                            bottomStart = 4.dp,
-                            topEnd = 50.dp,
-                            bottomEnd = 50.dp
-                        ),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                        ),
-                        modifier = Modifier
-                            .animateWidth(interactionSources[2])
-                            .weight(1f)
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.delete_filled),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
-                },
-                menuContent = {}
-            )
-        }
+        )
     }
 }
 
@@ -239,73 +229,23 @@ fun ContactsSelectedBar(
     onToggleFavorite: () -> Unit,
     onDeleteContacts: () -> Unit
 ) {
-
-    val interactionSources = List(2) { rememberInteractionSource() }
-
     SelectedBarSurface(
         modifier = modifier,
         items = items,
         multiSelectState = multiSelectState
     ) {
-        ButtonGroup(
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            overflowIndicator = {}
-        ) {
-            customItem(
-                buttonGroupContent = {
-                    Button(
-                        onClick = onToggleFavorite,
-                        interactionSource = interactionSources[0],
-                        shape = RoundedCornerShape(
-                            topStart = 50.dp,
-                            bottomStart = 50.dp,
-                            topEnd = 4.dp,
-                            bottomEnd = 4.dp
-                        ),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                        ),
-                        modifier = Modifier
-                            .animateWidth(interactionSources[0])
-                            .weight(1f)
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.favorite_filled),
-                            contentDescription = null
-                        )
-                    }
-                },
-                menuContent = {}
+        SelectedBarActions(
+            actions = listOf(
+                SelectedBarAction(
+                    icon = R.drawable.favorite_filled,
+                    onClick = onToggleFavorite
+                ),
+                SelectedBarAction(
+                    icon = R.drawable.delete_filled,
+                    tint = MaterialTheme.colorScheme.error,
+                    onClick = onDeleteContacts
+                )
             )
-            customItem(
-                buttonGroupContent = {
-                    Button(
-                        onClick = onDeleteContacts,
-                        interactionSource = interactionSources[1],
-                        shape = RoundedCornerShape(
-                            topStart = 4.dp,
-                            bottomStart = 4.dp,
-                            topEnd = 50.dp,
-                            bottomEnd = 50.dp
-                        ),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                        ),
-                        modifier = Modifier
-                            .animateWidth(interactionSources[1])
-                            .weight(1f)
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.delete_filled),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
-                },
-                menuContent = {}
-            )
-        }
+        )
     }
 }

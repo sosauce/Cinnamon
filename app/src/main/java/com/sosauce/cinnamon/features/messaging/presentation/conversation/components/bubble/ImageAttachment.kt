@@ -21,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -33,8 +32,6 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.about.ImagePage
 import com.sosauce.nekobites.animations.AnimatedFab
-import net.engawapg.lib.zoomable.rememberZoomState
-import net.engawapg.lib.zoomable.zoomable
 
 @Composable
 fun ImageAttachment(

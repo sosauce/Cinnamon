@@ -1,18 +1,15 @@
 package com.sosauce.cinnamon.core.telephony.message
 
 import android.app.PendingIntent
-import android.content.ContentProviderOperation
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
-import android.provider.BlockedNumberContract
-import android.provider.BlockedNumberContract.BlockedNumbers
 import android.provider.Telephony
-import android.telephony.SmsMessage
 import android.telephony.SmsManager
+import android.telephony.SmsMessage
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastMap
@@ -26,16 +23,16 @@ import com.sosauce.cinnamon.core.system.receivers.CuteMmsSentReceiver
 import com.sosauce.cinnamon.core.system.receivers.DeliveryReportsReceiver
 import com.sosauce.cinnamon.core.system.receivers.SmsSentReceiver
 import com.sosauce.cinnamon.core.telephony.PhoneNumberNormalizer
-import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
+import com.sosauce.cinnamon.core.utils.blockNumbers
 import com.sosauce.cinnamon.core.utils.getFileName
-import java.io.ByteArrayOutputStream
+import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
-import java.util.concurrent.atomic.AtomicInteger
-import androidx.core.graphics.scale
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.roundToInt
 
 class CuteTelephonyManager(
@@ -150,9 +147,10 @@ class CuteTelephonyManager(
 
         val deliveryReportPendings = if (userPreferences.enableDeliveryReports.first()) {
             parts.map {
-                val deliveryReportIntent = Intent(context, DeliveryReportsReceiver::class.java).apply {
-                    data = messageUri
-                }
+                val deliveryReportIntent =
+                    Intent(context, DeliveryReportsReceiver::class.java).apply {
+                        data = messageUri
+                    }
                 PendingIntent.getBroadcast(
                     context,
                     pendingIntentRequestCodes.getAndIncrement(),
@@ -163,7 +161,13 @@ class CuteTelephonyManager(
         } else null
 
         if (parts.size == 1) {
-            smsManager.sendTextMessage(address, null, message, sentIntents.first(), deliveryReportPendings?.firstOrNull())
+            smsManager.sendTextMessage(
+                address,
+                null,
+                message,
+                sentIntents.first(),
+                deliveryReportPendings?.firstOrNull()
+            )
         } else {
             smsManager.sendMultipartTextMessage(
                 address,
@@ -209,6 +213,7 @@ class CuteTelephonyManager(
                             compressionThreshold = compressionThreshold
                         )
                     }
+
                     else -> null
                 }
                 val bytes = imageBytes ?: it.readBytes()
@@ -241,16 +246,18 @@ class CuteTelephonyManager(
             ensureActive()
 
             withContext(Dispatchers.Default) {
-                val bitmap = BitmapFactory.decodeByteArray(inputBytes, 0, inputBytes.size) ?: return@withContext inputBytes
+                val bitmap = BitmapFactory.decodeByteArray(inputBytes, 0, inputBytes.size)
+                    ?: return@withContext inputBytes
 
                 ensureActive()
 
-                val compressFormat = when(mimeType) {
+                val compressFormat = when (mimeType) {
                     "image/png" -> Bitmap.CompressFormat.PNG
                     "image/jpeg" -> Bitmap.CompressFormat.JPEG
-                    "image/webp" -> if(Build.VERSION.SDK_INT >= 30) {
+                    "image/webp" -> if (Build.VERSION.SDK_INT >= 30) {
                         Bitmap.CompressFormat.WEBP_LOSSLESS
                     } else Bitmap.CompressFormat.WEBP
+
                     else -> Bitmap.CompressFormat.JPEG
                 }
 
@@ -263,7 +270,7 @@ class CuteTelephonyManager(
                         outputBytes = outputStream.toByteArray()
                         quality -= (quality * 0.1).roundToInt()
                     }
-                } while(isActive &&
+                } while (isActive &&
                     outputBytes.size > compressionThreshold &&
                     quality > 5 &&
                     compressFormat != Bitmap.CompressFormat.PNG
@@ -302,22 +309,6 @@ class CuteTelephonyManager(
      * It can also take emails
      * @return Whether blocking was successful
      */
-    suspend fun blockNumbers(numbers: List<String>): Boolean = withContext(Dispatchers.IO) {
-        val ops = ArrayList<ContentProviderOperation>()
-
-        numbers.fastForEach { number ->
-            ops.add(
-                ContentProviderOperation.newInsert(BlockedNumbers.CONTENT_URI)
-                    .withValue(BlockedNumbers.COLUMN_ORIGINAL_NUMBER, number)
-                    .build()
-            )
-        }
-        return@withContext try {
-            context.contentResolver.applyBatch(BlockedNumberContract.AUTHORITY, ops)
-            true
-        } catch (_: Exception) {
-            false
-        }
-    }
+    suspend fun blockNumbers(numbers: List<String>): Boolean = context.blockNumbers(numbers)
 
 }

@@ -2,6 +2,7 @@
 
 package com.sosauce.cinnamon.features.contacts.presentation.components
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ButtonGroup
@@ -9,8 +10,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,7 +27,6 @@ import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsAction
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsState
 import com.sosauce.cinnamon.features.contacts.presentation.components.dialogs.NumberPickerDialog
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -104,7 +102,11 @@ fun ContactActionsRow(
                         onNavigate(Screen.ConversationDetails(threadId))
                     }
 
-                    NumberPickerAction.CALL -> onHandleContactDetailsAction(ContactDetailsAction.CallNumber(number))
+                    NumberPickerAction.CALL -> onHandleContactDetailsAction(
+                        ContactDetailsAction.CallNumber(
+                            number
+                        )
+                    )
                 }
             },
             phoneNumbers = state.contact.phoneNumbers.fastMap { it.number }

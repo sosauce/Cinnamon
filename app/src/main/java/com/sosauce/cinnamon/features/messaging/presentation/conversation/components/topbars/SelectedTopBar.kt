@@ -5,31 +5,27 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation.components.topbars
 
-import com.sosauce.nekobites.animations.bouncySpec
-import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.Button
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.size
-import androidx.compose.animation.togetherWith
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.AnimatedContent
 import android.content.ClipData
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -53,9 +49,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
+import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions
 import com.sosauce.nekobites.animations.AnimatedCounter
+import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.sweetselect.SweetSelectState
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import kotlinx.coroutines.Dispatchers
@@ -161,7 +159,8 @@ fun SelectedTopBar(
             Row {
                 IconButton(
                     onClick = {
-                        val message = sweetSelectState.selectedItems.firstOrNull()?.body ?: return@IconButton
+                        val message =
+                            sweetSelectState.selectedItems.firstOrNull()?.body ?: return@IconButton
                         println("forward, selected top bar: $message")
                         onNavigate(
                             Screen.Forwarding(message)
@@ -176,7 +175,8 @@ fun SelectedTopBar(
                 }
                 IconButton(
                     onClick = {
-                        val message = sweetSelectState.selectedItems.firstOrNull()?.body ?: return@IconButton
+                        val message =
+                            sweetSelectState.selectedItems.firstOrNull()?.body ?: return@IconButton
                         scope.launch(Dispatchers.IO) {
                             clipboard.setClipEntry(
                                 ClipEntry(

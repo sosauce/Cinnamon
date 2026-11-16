@@ -21,8 +21,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -55,17 +53,8 @@ class ContactsViewModel(
     /**
      * Ids of the contacts matching the search query, null when not searching
      */
-    private val searchResults: Flow<Set<Long>?> = searchQuery
-        .flatMapLatest { query ->
-            if (query.isBlank()) {
-                flowOf(null)
-            } else {
-                // refresh results when contacts change
-                contactsRepository
-                    .observeContactChanges()
-                    .mapLatest { contactsRepository.searchContactIds(query) }
-            }
-        }
+    private val searchResults: Flow<Set<Long>?> = contactsRepository
+        .searchResults(searchQuery)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     /**
@@ -126,6 +115,7 @@ class ContactsViewModel(
                 contactsRepository.deleteContacts(action.ids)
                 contactSettingsDao.deleteContactsSettings(action.ids)
             }
+
             is ContactsAction.ToggleFavorite -> viewModelScope.launch(Dispatchers.IO) {
                 contactsRepository.toggleFavorite(action.contacts)
             }

@@ -2,7 +2,7 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation.components.dialogs
 
-import androidx.compose.foundation.Image
+import androidx.annotation.DrawableRes
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -16,26 +16,66 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import com.sosauce.cinnamon.R
 
+/**
+ * Confirmation before deleting several conversations at once
+ */
 @Composable
 fun DeleteConversationsDialog(
     onDismissRequest: () -> Unit,
     onDelete: () -> Unit,
     numberOfConversations: Int
 ) {
+    DeleteConfirmationDialog(
+        icon = R.drawable.delete_filled,
+        title = {
+            Text(
+                text = pluralStringResource(
+                    R.plurals.plural_delete_conversations,
+                    numberOfConversations
+                ),
+                textAlign = TextAlign.Center
+            )
+        },
+        text = "Are you sure you want to delete $numberOfConversations conversations ? This cannot be undone!",
+        onDismissRequest = onDismissRequest,
+        onDelete = onDelete
+    )
+}
+
+/**
+ * Confirmation before deleting the conversation that's currently open
+ */
+@Composable
+fun DeleteConversationDialog(
+    onDismissRequest: () -> Unit,
+    onDelete: () -> Unit
+) {
+    DeleteConfirmationDialog(
+        icon = R.drawable.delete,
+        title = { Text(stringResource(R.string.delete_convo)) },
+        text = stringResource(R.string.delete_convo_u_sure),
+        onDismissRequest = onDismissRequest,
+        onDelete = onDelete
+    )
+}
+
+@Composable
+private fun DeleteConfirmationDialog(
+    @DrawableRes icon: Int,
+    title: @Composable () -> Unit,
+    text: String,
+    onDismissRequest: () -> Unit,
+    onDelete: () -> Unit
+) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
         icon = {
             Icon(
-                painter = painterResource(R.drawable.delete_filled),
+                painter = painterResource(icon),
                 contentDescription = null
             )
         },
-        title = {
-            Text(
-                text = pluralStringResource(R.plurals.plural_delete_conversations, numberOfConversations),
-                textAlign = TextAlign.Center
-            )
-        },
+        title = title,
         confirmButton = {
             TextButton(
                 onClick = onDelete,
@@ -52,8 +92,6 @@ fun DeleteConversationsDialog(
                 Text(stringResource(R.string.cancel))
             }
         },
-        text = {
-            Text("Are you sure you want to delete $numberOfConversations conversations ? This cannot be undone!")
-        }
+        text = { Text(text) }
     )
 }

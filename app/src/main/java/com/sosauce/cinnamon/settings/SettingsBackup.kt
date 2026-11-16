@@ -1,7 +1,5 @@
 package com.sosauce.cinnamon.settings
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,10 +11,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.core.utils.PermissionUtils
 import com.sosauce.cinnamon.settings.components.CallLogsBackupDialog
 import com.sosauce.cinnamon.settings.components.CallLogsImportDialog
 import com.sosauce.cinnamon.settings.components.ContactsBackupDialog

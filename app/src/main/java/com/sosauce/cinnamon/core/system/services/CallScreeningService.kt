@@ -30,13 +30,7 @@ class CuteCallScreeningService : CallScreeningService() {
 
                 Connection.VERIFICATION_STATUS_PASSED -> {
                     // Network verification passed, likely a valid call.
-                    val response = CallResponse.Builder()
-                        .setDisallowCall(false)
-                        .setRejectCall(false)
-                        .setSilenceCall(false)
-                        .setSkipCallLog(false)
-                        .setSkipNotification(false)
-                        .build()
+                    val response = allowCallResponse()
 
                     respondToCall(callDetails, response)
                 }
@@ -44,28 +38,24 @@ class CuteCallScreeningService : CallScreeningService() {
                 else -> {
                     // Network could not perform verification.
                     // This branch matches Connection.VERIFICATION_STATUS_NOT_VERIFIED.
-                    val response = CallResponse.Builder()
-                        .setDisallowCall(false)
-                        .setRejectCall(false)
-                        .setSilenceCall(false)
-                        .setSkipCallLog(false)
-                        .setSkipNotification(false)
-                        .build()
+                    val response = allowCallResponse()
 
                     respondToCall(callDetails, response)
                 }
             }
         } else {
             // Outgoing — always allow, but ensure we don't block outgoing via screening
-            val response = CallResponse.Builder()
-                .setDisallowCall(false)
-                .setRejectCall(false)
-                .setSilenceCall(false)
-                .setSkipCallLog(false)
-                .setSkipNotification(false)
-                .build()
+            val response = allowCallResponse()
             respondToCall(callDetails, response)
         }
     }
+
+    private fun allowCallResponse(): CallResponse = CallResponse.Builder()
+        .setDisallowCall(false)
+        .setRejectCall(false)
+        .setSilenceCall(false)
+        .setSkipCallLog(false)
+        .setSkipNotification(false)
+        .build()
 
 }

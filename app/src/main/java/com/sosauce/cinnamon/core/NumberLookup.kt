@@ -3,6 +3,13 @@ package com.sosauce.cinnamon.core
 import android.content.Context
 import android.net.Uri
 import android.provider.ContactsContract
+import androidx.core.graphics.drawable.IconCompat
+import androidx.core.net.toUri
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.request.transformations
+import coil3.toBitmap
+import coil3.transform.CircleCropTransformation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -24,9 +31,13 @@ class NumberLookup(
 
         if (number.isEmpty()) return@withContext null
 
-        val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number))
+        val uri = Uri.withAppendedPath(
+            ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+            Uri.encode(number)
+        )
 
-        val photoQuality = if (fullQuality) ContactsContract.PhoneLookup.PHOTO_URI else ContactsContract.PhoneLookup.PHOTO_THUMBNAIL_URI
+        val photoQuality =
+            if (fullQuality) ContactsContract.PhoneLookup.PHOTO_URI else ContactsContract.PhoneLookup.PHOTO_THUMBNAIL_URI
 
         context.contentResolver.query(
             uri,
@@ -47,6 +58,20 @@ class NumberLookup(
     }
 
     /**
+     * Round thumbnail of the contact associated with [number], meant for a notification's person
+     * @return null if there is no photo
+     */
+    suspend fun fetchPersonIcon(number: String): IconCompat? {
+        val request = ImageRequest.Builder(context)
+            .data(fetchPhoto(number, false)?.toUri())
+            .transformations(CircleCropTransformation())
+            .build()
+        val bitmap = context.imageLoader.execute(request).image?.toBitmap()
+
+        return bitmap?.let { IconCompat.createWithBitmap(it) }
+    }
+
+    /**
      * Combined lookup for [fetchContactDisplayName] + [fetchPhoto] in a single
      * `PhoneLookup` query. The key must always be the raw number string.
      *
@@ -59,9 +84,13 @@ class NumberLookup(
     ): Pair<String?, String?> = withContext(Dispatchers.IO) {
         if (number.isEmpty()) return@withContext null to null
 
-        val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number))
+        val uri = Uri.withAppendedPath(
+            ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+            Uri.encode(number)
+        )
 
-        val photoQuality = if (fullQuality) ContactsContract.PhoneLookup.PHOTO_URI else ContactsContract.PhoneLookup.PHOTO_THUMBNAIL_URI
+        val photoQuality =
+            if (fullQuality) ContactsContract.PhoneLookup.PHOTO_URI else ContactsContract.PhoneLookup.PHOTO_THUMBNAIL_URI
 
         context.contentResolver.query(
             uri,
@@ -89,7 +118,10 @@ class NumberLookup(
     fun fetchContactDisplayName(
         number: String
     ): String? {
-        val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number))
+        val uri = Uri.withAppendedPath(
+            ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+            Uri.encode(number)
+        )
 
         context.contentResolver.query(
             uri,

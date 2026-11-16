@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,7 +24,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -70,23 +68,20 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.ContentFrame
 import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.buttons.WavySlider
 import com.sosauce.cinnamon.core.utils.ImageUtils
-import com.sosauce.cinnamon.core.utils.toMediaTime
 import com.sosauce.cinnamon.features.messaging.data.model.AttachmentType
 import com.sosauce.cinnamon.features.messaging.data.model.CuteAttachment
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bubble.VideoPlaybackRow
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bubble.createLoopingVideoPlayer
 import com.sosauce.nekobites.animations.AnimatedCounter
-import com.sosauce.nekobites.animations.AnimatedDrawable
-import com.sosauce.nekobites.animations.AnimatedDrawableFile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
@@ -164,7 +159,11 @@ fun MediaViewerDialog(
 
                     val canSave = currentMedia?.attachmentType == AttachmentType.IMAGE
                     Box(
-                        modifier = Modifier.size(IconButtonDefaults.smallContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
+                        modifier = Modifier.size(
+                            IconButtonDefaults.smallContainerSize(
+                                IconButtonDefaults.IconButtonWidthOption.Wide
+                            )
+                        )
                     ) {
                         androidx.compose.animation.AnimatedVisibility(
                             visible = canSave,
@@ -176,7 +175,11 @@ fun MediaViewerDialog(
                                 contentDescription = stringResource(R.string.save),
                                 onClick = {
                                     currentMedia?.let {
-                                        onHandleConversationActions(ConversationActions.DownloadMmsImage(it.uri))
+                                        onHandleConversationActions(
+                                            ConversationActions.DownloadMmsImage(
+                                                it.uri
+                                            )
+                                        )
                                     }
                                 }
                             )
@@ -301,7 +304,9 @@ private fun VideoPage(
                 model = remember(video) { ImageUtils.videoFrameRequester(video, context) },
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
-                onSuccess = { state -> aspectRatio = state.painter.intrinsicSize.aspectRatioOrNull() },
+                onSuccess = { state ->
+                    aspectRatio = state.painter.intrinsicSize.aspectRatioOrNull()
+                },
                 modifier = Modifier
                     .aspectRatioOrFill(aspectRatio)
                     .clip(PageShape)
@@ -312,14 +317,7 @@ private fun VideoPage(
     }
 
     val exoPlayer = remember(video) {
-        ExoPlayer.Builder(context.applicationContext)
-            .build()
-            .apply {
-                repeatMode = Player.REPEAT_MODE_ONE
-                playWhenReady = true
-                setMediaItem(MediaItem.fromUri(video))
-                prepare()
-            }
+        createLoopingVideoPlayer(context, video)
     }
     var isPlaying by remember { mutableStateOf(false) }
     var currentPosition by remember { mutableLongStateOf(0) }
@@ -335,7 +333,8 @@ private fun VideoPage(
 
             override fun onVideoSizeChanged(videoSize: VideoSize) {
                 if (videoSize.width > 0 && videoSize.height > 0) {
-                    videoAspectRatio = videoSize.width * videoSize.pixelWidthHeightRatio / videoSize.height
+                    videoAspectRatio =
+                        videoSize.width * videoSize.pixelWidthHeightRatio / videoSize.height
                 }
             }
 
@@ -398,33 +397,12 @@ private fun VideoPage(
                     },
                     isPlaying = isPlaying
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = (tempSliderValue?.toLong() ?: currentPosition).toMediaTime(),
-                        style = MaterialTheme.typography.labelLargeEmphasized,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f)
-                    )
-                    FilledIconButton(
-                        onClick = { if (isPlaying) exoPlayer.pause() else exoPlayer.play() },
-                        shapes = IconButtonDefaults.shapes(),
-                        modifier = Modifier.size(
-                            IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)
-                        )
-                    ) {
-                        AnimatedDrawable(
-                            drawable = AnimatedDrawableFile.PLAY,
-                            atEnd = isPlaying
-                        )
-                    }
-                    Text(
-                        text = duration.toMediaTime(),
-                        style = MaterialTheme.typography.labelLargeEmphasized,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                VideoPlaybackRow(
+                    position = tempSliderValue?.toLong() ?: currentPosition,
+                    duration = duration,
+                    isPlaying = isPlaying,
+                    onPlayPause = { if (isPlaying) exoPlayer.pause() else exoPlayer.play() }
+                )
             }
         }
     }

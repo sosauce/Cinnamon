@@ -51,8 +51,11 @@ fun PaletteTile(
     ) {
         DynamicMaterialExpressiveTheme(state = state, animate = true) {
             val scheme = MaterialTheme.colorScheme
-            val quarters = listOf(scheme.primary, scheme.secondary, scheme.tertiary, scheme.primaryContainer)
-            Canvas(Modifier.fillMaxSize().padding(10.dp)) {
+            val quarters =
+                listOf(scheme.primary, scheme.secondary, scheme.tertiary, scheme.primaryContainer)
+            Canvas(Modifier
+                .fillMaxSize()
+                .padding(10.dp)) {
                 val d = size.minDimension
                 quarters.fastForEachIndexed { i, color ->
                     drawArc(

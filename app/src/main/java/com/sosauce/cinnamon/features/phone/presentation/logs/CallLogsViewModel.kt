@@ -9,12 +9,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.InvalidatingPagingSourceFactory
 import androidx.paging.Pager
-import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.insertSeparators
 import androidx.paging.map
 import com.sosauce.cinnamon.core.datastore.UserPreferences
+import com.sosauce.cinnamon.core.utils.listPagingConfig
 import com.sosauce.cinnamon.features.phone.data.model.GroupedCallLog
 import com.sosauce.cinnamon.features.phone.data.repository.CallLogsPagingSource
 import com.sosauce.cinnamon.features.phone.data.repository.CallLogsRepository
@@ -108,12 +108,7 @@ class CallLogsViewModel(
             pagingSourceFactory = factory
 
             Pager(
-                config = PagingConfig(
-                    pageSize = PAGE_SIZE,
-                    initialLoadSize = PAGE_SIZE,
-                    prefetchDistance = PAGE_SIZE / 2,
-                    enablePlaceholders = false
-                ),
+                config = listPagingConfig(PAGE_SIZE),
                 pagingSourceFactory = factory
             ).flow.map { pagingData ->
                 pagingData

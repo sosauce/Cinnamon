@@ -29,7 +29,7 @@ fun CuteConversationEntity.toCuteConversation(draft: String? = null): CuteConver
 
 fun CuteMessageEntity.toCuteMessage(context: Context): CuteMessage {
 
-    val type = when(type) {
+    val type = when (type) {
         Telephony.Sms.MESSAGE_TYPE_INBOX -> MessageType.RECEIVED
         Telephony.Sms.MESSAGE_TYPE_OUTBOX -> MessageType.SENDING
         Telephony.Sms.MESSAGE_TYPE_SENT -> MessageType.SENT

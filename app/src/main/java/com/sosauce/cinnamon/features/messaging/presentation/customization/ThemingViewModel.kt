@@ -8,8 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingActions
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsDao
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsEntity
+import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.perform
 import com.sosauce.cinnamon.features.messaging.data.model.toConversationSettings
-import com.sosauce.cinnamon.features.messaging.data.model.toEntity
 import com.sosauce.cinnamon.features.messaging.domain.ConversationSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,7 +25,8 @@ class ThemingViewModel(
 ) : ViewModel() {
 
     val state = conversationSettingsDao.getConversationSettings(threadId).mapLatest {
-        val settings = (it ?: ConversationSettingsEntity(threadId = threadId)).toConversationSettings()
+        val settings =
+            (it ?: ConversationSettingsEntity(threadId = threadId)).toConversationSettings()
         ThemingState(
             isLoading = false,
             settings = settings
@@ -37,19 +38,8 @@ class ThemingViewModel(
     )
 
     fun handleConversationSettingsActions(action: ConversationSettingActions) {
-        when (action) {
-            is ConversationSettingActions.UpsertConversationSettings -> {
-                viewModelScope.launch(Dispatchers.IO) {
-                    val entity = action.conversationSettings.toEntity()
-                    conversationSettingsDao.upsertConversation(entity)
-                }
-            }
-
-            is ConversationSettingActions.UpsertDraft -> {
-                viewModelScope.launch(Dispatchers.IO) {
-                    conversationSettingsDao.upsertDraft(threadId, action.draft)
-                }
-            }
+        viewModelScope.launch(Dispatchers.IO) {
+            action.perform(conversationSettingsDao, threadId)
         }
     }
 

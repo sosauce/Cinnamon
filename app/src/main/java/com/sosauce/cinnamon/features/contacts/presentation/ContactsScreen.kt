@@ -2,25 +2,18 @@
 
 package com.sosauce.cinnamon.features.contacts.presentation
 
-import com.sosauce.cinnamon.core.ui.components.searchbars.MainSearchbar
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,10 +24,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
@@ -45,6 +36,7 @@ import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.datastore.rememberSortContactsAscending
 import com.sosauce.cinnamon.core.ui.components.ContactsSelectedBar
 import com.sosauce.cinnamon.core.ui.components.menus.SortingDropdownMenu
+import com.sosauce.cinnamon.core.ui.components.searchbars.MainSearchbar
 import com.sosauce.cinnamon.core.utils.LazyListKeys
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
@@ -139,6 +131,15 @@ fun SharedTransitionScope.ContactsScreen(
             LazyColumn(
                 contentPadding = paddingValues
             ) {
+                // selects the contact while in selection mode, opens it otherwise
+                val onContactClick: (CuteContact) -> Unit = { contact ->
+                    if (sweetSelectState.isInSelectionMode) {
+                        sweetSelectState.toggle(contact)
+                    } else {
+                        onNavigate(Screen.ContactDetails(contact.id))
+                    }
+                }
+
                 contactsList(
                     favorites = state.favorites,
                     contacts = contacts,
@@ -157,13 +158,7 @@ fun SharedTransitionScope.ContactsScreen(
                             modifier = Modifier.animateItem(),
                             contact = contact,
                             isSelected = isSelected,
-                            onClick = {
-                                if (sweetSelectState.isInSelectionMode) {
-                                    sweetSelectState.toggle(contact)
-                                } else {
-                                    onNavigate(Screen.ContactDetails(contact.id))
-                                }
-                            },
+                            onClick = { onContactClick(contact) },
                             onLongClick = { sweetSelectState.toggle(contact) },
                             showNumber = false
                         )
@@ -176,13 +171,7 @@ fun SharedTransitionScope.ContactsScreen(
                         modifier = Modifier.animateItem(),
                         contact = contact,
                         isSelected = isSelected,
-                        onClick = {
-                            if (sweetSelectState.isInSelectionMode) {
-                                sweetSelectState.toggle(contact)
-                            } else {
-                                onNavigate(Screen.ContactDetails(contact.id))
-                            }
-                        },
+                        onClick = { onContactClick(contact) },
                         onLongClick = { sweetSelectState.toggle(contact) },
                         showNumber = false
                     )

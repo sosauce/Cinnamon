@@ -6,16 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
 import android.widget.Toast
-import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.ui.Alignment
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -26,7 +18,6 @@ import androidx.compose.runtime.retain.RetainedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,10 +26,12 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.rememberInitialScreenBlocking
 import com.sosauce.cinnamon.core.ui.ChatColor
+import com.sosauce.cinnamon.core.ui.navBackTransition
+import com.sosauce.cinnamon.core.ui.navForwardTransition
 import com.sosauce.cinnamon.core.utils.LocalScreen
 import com.sosauce.cinnamon.core.utils.rememberHazeState
 import com.sosauce.cinnamon.core.utils.tabToScreen
@@ -74,7 +67,6 @@ import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailScree
 import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailViewModel
 import com.sosauce.cinnamon.settings.SettingsScreen
 import com.sosauce.nekobites.helpers.ObserveAsEvents
-import androidx.paging.compose.collectAsLazyPagingItems
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -105,24 +97,9 @@ fun Nav(
                     rememberSaveableStateHolderNavEntryDecorator(),
                     rememberViewModelStoreNavEntryDecorator()
                 ),
-                transitionSpec = {
-                    ContentTransform(
-                        targetContentEnter = slideInHorizontally { it } + fadeIn(),
-                        initialContentExit = slideOutHorizontally { -it / 4 } + fadeOut()
-                    )
-                },
-                predictivePopTransitionSpec = {
-                    ContentTransform(
-                        targetContentEnter = slideInHorizontally { -it / 4 } + fadeIn(),
-                        initialContentExit = slideOutHorizontally { it } + fadeOut()
-                    )
-                },
-                popTransitionSpec = {
-                    ContentTransform(
-                        targetContentEnter = slideInHorizontally { -it / 4 } + fadeIn(),
-                        initialContentExit = slideOutHorizontally { it } + fadeOut()
-                    )
-                },
+                transitionSpec = { navForwardTransition() },
+                predictivePopTransitionSpec = { navBackTransition() },
+                popTransitionSpec = { navBackTransition() },
                 entryProvider = entryProvider {
 
                     entry<Screen.Contacts> {
@@ -148,7 +125,7 @@ fun Nav(
 
 
                         ObserveAsEvents(viewModel.events) { event ->
-                            when(event) {
+                            when (event) {
                                 is ContactDetailsEvent.Error -> {
                                     Toast.makeText(
                                         context,
@@ -156,6 +133,7 @@ fun Nav(
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
+
                                 is ContactDetailsEvent.Success -> backStack.navigateBack()
                             }
                         }
@@ -388,6 +366,7 @@ fun Nav(
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
+
                                 is EditContactEvent.Success -> backStack.navigateBack()
                             }
                         }

@@ -22,8 +22,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -36,7 +34,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.material3.toShape
@@ -70,6 +67,7 @@ import com.sosauce.cinnamon.features.messaging.domain.isGroupChat
 import com.sosauce.cinnamon.features.messaging.domain.name
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationDetailsState
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.dialogs.DeleteConversationDialog
 import com.sosauce.nekobites.components.LoadingBox
 
 @Composable
@@ -110,31 +108,12 @@ fun AboutConversationScreen(
     }
 
     if (showDeleteDialog) {
-        AlertDialog(
+        DeleteConversationDialog(
             onDismissRequest = { showDeleteDialog = false },
-            icon = {
-                Icon(
-                    painter = painterResource(R.drawable.delete),
-                    contentDescription = null
-                )
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDeleteDialog = false },
-                    shapes = ButtonDefaults.shapes()
-                ) { Text(stringResource(R.string.cancel)) }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteDialog = false
-                        onDeleteConversation()
-                    },
-                    shapes = ButtonDefaults.shapes()
-                ) { Text(stringResource(R.string.delete)) }
-            },
-            text = { Text(stringResource(R.string.delete_convo_u_sure)) },
-            title = { Text(stringResource(R.string.delete_convo)) },
+            onDelete = {
+                showDeleteDialog = false
+                onDeleteConversation()
+            }
         )
     }
 
@@ -281,7 +260,8 @@ fun AboutConversationScreen(
                                             maxLines = 1,
                                             modifier = Modifier.basicMarquee()
                                         )
-                                        val beautifiedNumber = participant.rawNumber.beautifyNumber()
+                                        val beautifiedNumber =
+                                            participant.rawNumber.beautifyNumber()
                                         if (beautifiedNumber != participant.displayName) {
                                             Text(
                                                 text = beautifiedNumber,
@@ -315,7 +295,10 @@ fun AboutConversationScreen(
                             dangerActions.fastForEachIndexed { index, action ->
                                 CuteListItem(
                                     onClick = action.onClick,
-                                    shape = CuteListItemDefaults.getItemShape(index, dangerActions.size),
+                                    shape = CuteListItemDefaults.getItemShape(
+                                        index,
+                                        dangerActions.size
+                                    ),
                                     backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                                     leadingContent = {
                                         Icon(

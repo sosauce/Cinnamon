@@ -94,6 +94,7 @@ class CuteContactDetailsBuilder {
     fun setNote(contactNote: String?) {
         note = contactNote
     }
+
     fun setCompany(contactCompany: String?) {
         company = contactCompany
     }

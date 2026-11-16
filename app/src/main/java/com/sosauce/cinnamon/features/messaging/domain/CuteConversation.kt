@@ -1,6 +1,5 @@
 package com.sosauce.cinnamon.features.messaging.domain
 
-import androidx.compose.runtime.Stable
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.core.net.toUri

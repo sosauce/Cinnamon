@@ -11,7 +11,6 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -27,9 +26,6 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,13 +43,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.ContentFrame
 import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
@@ -61,12 +54,9 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.buttons.WavySlider
 import com.sosauce.cinnamon.core.utils.ImageUtils
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
-import com.sosauce.nekobites.helpers.rememberInteractionSource
-import com.sosauce.cinnamon.core.utils.toMediaTime
-import com.sosauce.nekobites.animations.AnimatedDrawable
-import com.sosauce.nekobites.animations.AnimatedDrawableFile
 import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.nekobites.animations.rememberAnimatedShape
+import com.sosauce.nekobites.helpers.rememberInteractionSource
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -89,14 +79,7 @@ fun VideoAttachment(
     if (showFullscreen) {
 
         val exoPlayer = retain {
-            ExoPlayer.Builder(context.applicationContext)
-                .build()
-                .apply {
-                    repeatMode = Player.REPEAT_MODE_ONE
-                    playWhenReady = true
-                    setMediaItem(MediaItem.fromUri(video))
-                    prepare()
-                }
+            createLoopingVideoPlayer(context, video)
         }
         var isPlaying by remember { mutableStateOf(false) }
         var position by remember { mutableLongStateOf(0) }
@@ -202,35 +185,12 @@ fun VideoAttachment(
                                 isPlaying = isPlaying
                             )
                         }
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = (tempSliderValue?.toLong() ?: position).toMediaTime(),
-                                style = MaterialTheme.typography.labelLargeEmphasized,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.weight(1f)
-                            )
-                            FilledIconButton(
-                                onClick = { if (isPlaying) exoPlayer.pause() else exoPlayer.play() },
-                                shapes = IconButtonDefaults.shapes(),
-                                modifier = Modifier.size(
-                                    IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)
-                                )
-                            ) {
-                                AnimatedDrawable(
-                                    drawable = AnimatedDrawableFile.PLAY,
-                                    atEnd = isPlaying
-                                )
-                            }
-                            Text(
-                                text = duration.toMediaTime(),
-                                style = MaterialTheme.typography.labelLargeEmphasized,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.End,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
+                        VideoPlaybackRow(
+                            position = tempSliderValue?.toLong() ?: position,
+                            duration = duration,
+                            isPlaying = isPlaying,
+                            onPlayPause = { if (isPlaying) exoPlayer.pause() else exoPlayer.play() }
+                        )
                     }
                 }
             ) { pv ->

@@ -5,33 +5,22 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation.components.topbars
 
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuGroup
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.DropdownMenuPopup
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,25 +28,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEachIndexed
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
 import com.sosauce.cinnamon.core.ui.components.DefaultGroupChatIcon
 import com.sosauce.cinnamon.core.ui.components.dialogs.BlockUnblockDialog
+import com.sosauce.cinnamon.core.ui.components.menus.MoreOptionsMenu
 import com.sosauce.cinnamon.core.ui.components.toolbars.ToolbarSkeleton
-import com.sosauce.cinnamon.core.utils.getItemShape
 import com.sosauce.cinnamon.features.messaging.domain.isGroupChat
 import com.sosauce.cinnamon.features.messaging.domain.name
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationDetailsState
-import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.ConversationIcon
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bottombar.MoreOptions
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.dialogs.DeleteConversationDialog
 import com.sosauce.nekobites.animations.AnimatedDrawable
 import com.sosauce.nekobites.animations.AnimatedDrawableFile
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
@@ -77,23 +64,23 @@ fun ConversationTopBar(
     val isSoloParticipantBlocked = state.participants.firstOrNull()?.isBlocked == true
     val name = state.participants.name()
     val actions = listOf(
-        MoreActions(
+        MoreOptions(
             onClick = { onHandleConversationActions(ConversationActions.OpenSearch) },
             text = R.string.search,
             icon = R.drawable.search
         ),
-        MoreActions(
+        MoreOptions(
             onClick = { onNavigate(Screen.ConversationTheming(state.threadId)) },
             text = R.string.customize,
             icon = R.drawable.palette
         ),
-        MoreActions(
+        MoreOptions(
             onClick = { showBlockDialog = true },
             text = if (isSoloParticipantBlocked) R.string.unblock else R.string.block,
             icon = R.drawable.block,
             tint = MaterialTheme.colorScheme.error
         ),
-        MoreActions(
+        MoreOptions(
             onClick = { showDeleteDialog = true },
             text = R.string.delete,
             icon = R.drawable.delete,
@@ -114,31 +101,12 @@ fun ConversationTopBar(
         )
     }
     if (showDeleteDialog) {
-        AlertDialog(
+        DeleteConversationDialog(
             onDismissRequest = { showDeleteDialog = false },
-            icon = {
-                Icon(
-                    painter = painterResource(R.drawable.delete),
-                    contentDescription = stringResource(R.string.delete)
-                )
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDeleteDialog = false },
-                    shapes = ButtonDefaults.shapes()
-                ) { Text(stringResource(R.string.cancel)) }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onDeleteConversation()
-                        onNavigateUp()
-                    },
-                    shapes = ButtonDefaults.shapes()
-                ) { Text(stringResource(R.string.delete)) }
-            },
-            text = { Text(stringResource(R.string.delete_convo_u_sure)) },
-            title = { Text(stringResource(R.string.delete_convo)) },
+            onDelete = {
+                onDeleteConversation()
+                onNavigateUp()
+            }
         )
     }
 
@@ -225,46 +193,12 @@ fun ConversationTopBar(
                     atEnd = showMoreMenu,
                     drawable = AnimatedDrawableFile.MORE_VERT
                 )
-                DropdownMenuPopup(
+                MoreOptionsMenu(
                     expanded = showMoreMenu,
                     onDismissRequest = { showMoreMenu = false },
-                ) {
-                    DropdownMenuGroup(
-                        shapes = MenuDefaults.groupShapes()
-                    ) {
-                        actions.fastForEachIndexed { index, action ->
-                            DropdownMenuItem(
-                                onClick = {
-                                    action.onClick()
-                                    showMoreMenu = false
-                                },
-                                shape = MenuDefaults.getItemShape(index, actions.lastIndex),
-                                text = {
-                                    Text(
-                                        text = stringResource(action.text),
-                                        style = MaterialTheme.typography.bodyLargeEmphasized,
-                                        color = action.tint ?: LocalContentColor.current
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        painter = painterResource(action.icon),
-                                        contentDescription = null,
-                                        tint = action.tint ?: LocalContentColor.current
-                                    )
-                                }
-                            )
-                        }
-                    }
-                }
+                    options = actions
+                )
             }
         }
     }
 }
-
-data class MoreActions(
-    val onClick: () -> Unit,
-    val text: Int,
-    val icon: Int,
-    val tint: Color? = null
-)

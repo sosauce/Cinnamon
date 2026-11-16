@@ -2,8 +2,6 @@
 
 package com.sosauce.cinnamon.features.contacts.presentation
 
-import androidx.compose.foundation.shape.CircleShape
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
@@ -18,38 +16,26 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ContainedLoadingIndicator
-import androidx.compose.material3.DropdownMenuGroup
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.DropdownMenuPopup
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -64,15 +50,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.draw.innerShadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -80,9 +57,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
-import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.zIndex
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import coil3.compose.AsyncImage
@@ -91,9 +66,6 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.skydoves.cloudy.cloudy
-import com.skydoves.cloudy.liquidGlass
-import com.skydoves.cloudy.rememberSky
-import com.skydoves.cloudy.sky
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
@@ -101,13 +73,11 @@ import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurfa
 import com.sosauce.cinnamon.core.ui.components.dialogs.BlockUnblockDialog
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItemDefaults
+import com.sosauce.cinnamon.core.ui.components.menus.MoreOptionsMenu
 import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
-import com.sosauce.cinnamon.core.utils.beautifyNumber
-import com.sosauce.cinnamon.core.utils.getItemShape
 import com.sosauce.cinnamon.features.contacts.presentation.components.ContactActionsRow
 import com.sosauce.cinnamon.features.contacts.presentation.components.ContactInfos
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bottombar.MoreOptions
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.nekobites.animations.AnimatedDrawable
 import com.sosauce.nekobites.animations.AnimatedDrawableFile
 import com.sosauce.nekobites.components.LoadingBox
@@ -179,7 +149,10 @@ fun SharedTransitionScope.ContactDetailsScreen(
                                     )
                                 )
                             },
-                            shape = CuteListItemDefaults.getItemShape(index, state.rawContacts.count()),
+                            shape = CuteListItemDefaults.getItemShape(
+                                index,
+                                state.rawContacts.count()
+                            ),
                             backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                             leadingContent = {
                                 Text(
@@ -329,42 +302,11 @@ fun SharedTransitionScope.ContactDetailsScreen(
                                     drawable = AnimatedDrawableFile.MORE_VERT
                                 )
                             }
-                            DropdownMenuPopup(
+                            MoreOptionsMenu(
                                 expanded = showMoreOptions,
-                                onDismissRequest = { showMoreOptions = false }
-                            ) {
-                                DropdownMenuGroup(
-                                    shapes = MenuDefaults.groupShapes()
-                                ) {
-                                    moreOptions.fastForEachIndexed { index, option ->
-                                        DropdownMenuItem(
-                                            onClick = {
-                                                option.onClick()
-                                                showMoreOptions = false
-                                            },
-                                            shape = MenuDefaults.getItemShape(
-                                                index,
-                                                moreOptions.lastIndex
-                                            ),
-                                            leadingIcon = {
-                                                Icon(
-                                                    painter = painterResource(option.icon),
-                                                    contentDescription = null,
-                                                    tint = option.tint
-                                                        ?: LocalContentColor.current
-                                                )
-                                            },
-                                            text = {
-                                                Text(
-                                                    text = stringResource(option.text),
-                                                    color = option.tint
-                                                        ?: LocalContentColor.current
-                                                )
-                                            }
-                                        )
-                                    }
-                                }
-                            }
+                                onDismissRequest = { showMoreOptions = false },
+                                options = moreOptions
+                            )
                         }
                     }
                 }
@@ -483,7 +425,9 @@ fun SharedTransitionScope.ContactDetailsScreen(
                             firstLetter = state.contact.displayName.firstOrNull(),
                             modifier = Modifier
                                 .sharedElement(
-                                    sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_PFP),
+                                    sharedContentState = rememberSharedContentState(
+                                        SharedTransitionKeys.CONTACT_PFP
+                                    ),
                                     animatedVisibilityScope = LocalNavAnimatedContentScope.current
                                 ),
 //                            .drawWithCache {

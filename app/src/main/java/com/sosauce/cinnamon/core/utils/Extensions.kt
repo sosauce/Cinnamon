@@ -2,14 +2,17 @@
 
 package com.sosauce.cinnamon.core.utils
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.role.RoleManager
+import android.content.ContentProviderOperation
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.database.ContentObserver
 import android.net.Uri
 import android.os.Build
+import android.provider.BlockedNumberContract
 import android.provider.ContactsContract.PhoneLookup
 import android.provider.OpenableColumns
 import android.provider.Telephony
@@ -21,7 +24,6 @@ import android.text.format.DateFormat
 import android.text.format.DateUtils
 import android.util.Patterns
 import androidx.annotation.FloatRange
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,40 +31,37 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.delete
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MenuDefaults
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.core.net.toUri
 import com.materialkolor.PaletteStyle
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
-import com.sosauce.cinnamon.core.datastore.rememberIsLandscape
 import dev.chrisbanes.haze.HazeState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
+import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.MonthDay
 import java.time.Year
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Date
 import java.util.Locale
 
 
@@ -94,6 +93,7 @@ fun Long.toDate(): String {
             System.currentTimeMillis(),
             DateUtils.DAY_IN_MILLIS
         ).toString()
+
         else -> dateTime.format(formatter)
     }
 }
@@ -346,36 +346,38 @@ fun Long.toShortDate(context: Context): String {
 
 }
 
-fun Context.createDefaultSmsIntent(): Intent {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        val roleManager = getSystemService(RoleManager::class.java)
-        val isRoleAvailable = roleManager.isRoleAvailable(RoleManager.ROLE_SMS)
-        return if (isRoleAvailable) {
-            roleManager.createRequestRoleIntent(RoleManager.ROLE_SMS)
-        } else {
-            Intent()
-        }
-    } else {
-        return Intent(Sms.Intents.ACTION_CHANGE_DEFAULT).apply {
-            putExtra(Sms.Intents.EXTRA_PACKAGE_NAME, packageName)
-        }
+@SuppressLint("InlinedApi")
+fun Context.createDefaultSmsIntent(): Intent = createRoleIntent(RoleManager.ROLE_SMS) {
+    Intent(Sms.Intents.ACTION_CHANGE_DEFAULT).apply {
+        putExtra(Sms.Intents.EXTRA_PACKAGE_NAME, packageName)
     }
 }
 
+@SuppressLint("InlinedApi")
+fun Context.createDefaultDialerIntent(): Intent = createRoleIntent(RoleManager.ROLE_DIALER) {
+    Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER).apply {
+        putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName)
+    }
+}
 
-fun Context.createDefaultDialerIntent(): Intent {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+/**
+ * Intent asking the user to grant [role] to this app. Before Android 10 there is no
+ * RoleManager, so [legacyIntent] is used instead.
+ * An empty intent is returned when the role doesn't exist on this device.
+ */
+private inline fun Context.createRoleIntent(
+    role: String,
+    legacyIntent: () -> Intent
+): Intent {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         val roleManager = getSystemService(RoleManager::class.java)
-        val isRoleAvailable = roleManager.isRoleAvailable(RoleManager.ROLE_DIALER)
-        return if (isRoleAvailable) {
-            roleManager.createRequestRoleIntent(RoleManager.ROLE_DIALER)
+        if (roleManager.isRoleAvailable(role)) {
+            roleManager.createRequestRoleIntent(role)
         } else {
             Intent()
         }
     } else {
-        return Intent(Sms.Intents.ACTION_CHANGE_DEFAULT).apply {
-            putExtra(Sms.Intents.EXTRA_PACKAGE_NAME, packageName)
-        }
+        legacyIntent()
     }
 }
 
@@ -512,28 +514,6 @@ fun rememberHazeState(): HazeState {
 }
 
 
-@Composable
-fun anyDarkColorScheme(): ColorScheme {
-    val context = LocalContext.current
-
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        dynamicDarkColorScheme(context)
-    } else {
-        darkColorScheme()
-    }
-}
-
-@Composable
-fun anyLightColorScheme(): ColorScheme {
-    val context = LocalContext.current
-
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        dynamicLightColorScheme(context)
-    } else {
-        lightColorScheme()
-    }
-}
-
 fun Modifier.selfAlignHorizontally(
     align: Alignment.Horizontal = Alignment.CenterHorizontally,
     @FloatRange fraction: Float = 1f
@@ -630,7 +610,6 @@ fun TextFieldState.backspace() {
 }
 
 
-
 fun String.isShortCode(): Boolean {
     return !Patterns.EMAIL_ADDRESS.matcher(this).matches() && any { it.isLetter() }
 }
@@ -651,4 +630,51 @@ fun String.toPaletteStyle(): PaletteStyle {
 @Composable
 fun ColumnScope.Spacer(height: Dp) {
     Spacer(Modifier.height(height))
+}
+
+/**
+ * Display name of a file picked for a backup import, falls back to a generic label
+ */
+fun Context.readBackupDisplayName(uri: Uri): String {
+    return runCatching {
+        contentResolver.query(
+            uri,
+            arrayOf(OpenableColumns.DISPLAY_NAME),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else null
+        }
+    }.getOrNull() ?: getString(R.string.backup_file_name)
+}
+
+/**
+ * Adds [numbers] to the system blocked numbers, it can also take emails
+ * @return Whether blocking was successful
+ */
+suspend fun Context.blockNumbers(numbers: List<String>): Boolean = withContext(Dispatchers.IO) {
+    val ops = ArrayList<ContentProviderOperation>()
+
+    numbers.forEach { number ->
+        ops.add(
+            ContentProviderOperation.newInsert(BlockedNumberContract.BlockedNumbers.CONTENT_URI)
+                .withValue(BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER, number)
+                .build()
+        )
+    }
+    return@withContext try {
+        contentResolver.applyBatch(BlockedNumberContract.AUTHORITY, ops)
+        true
+    } catch (_: Exception) {
+        false
+    }
+}
+
+/**
+ * Default name (without extension) of a backup file, e.g. "contacts_2026-01-31_18-05-00"
+ */
+fun backupFileName(prefix: String, nowMillis: Long = System.currentTimeMillis()): String {
+    val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
+    return "${prefix}_${formatter.format(Date(nowMillis))}"
 }

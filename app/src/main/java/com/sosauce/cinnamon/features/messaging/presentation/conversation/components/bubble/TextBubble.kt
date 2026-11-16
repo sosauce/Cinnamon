@@ -17,7 +17,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sosauce.cinnamon.core.utils.isEmoji
@@ -114,6 +113,7 @@ fun TextBubbleContent(
         )
     }
 }
+
 private fun String.highlightOccurrences(
     query: String?,
     style: SpanStyle

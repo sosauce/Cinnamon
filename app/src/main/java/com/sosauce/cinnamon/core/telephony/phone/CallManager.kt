@@ -8,7 +8,6 @@ import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import androidx.core.net.toUri
-import androidx.core.os.bundleOf
 import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.core.telephony.PhoneNumberNormalizer
@@ -20,7 +19,6 @@ import com.sosauce.cinnamon.features.phone.presentation.call.CallState
 import com.sosauce.cinnamon.features.phone.presentation.call.CallingState
 import com.sosauce.cinnamon.features.phone.presentation.call.OtherCall
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 
@@ -203,7 +201,8 @@ class CallManager(
         _callingState.update {
             it.copy(
                 number = number.beautifyNumber(),
-                displayName = numberLookup.fetchContactDisplayName(number) ?: number.beautifyNumber()
+                displayName = numberLookup.fetchContactDisplayName(number)
+                    ?: number.beautifyNumber()
             )
         }
     }

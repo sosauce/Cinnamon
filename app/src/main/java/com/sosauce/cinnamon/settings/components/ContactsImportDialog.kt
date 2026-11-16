@@ -1,28 +1,7 @@
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
-
 package com.sosauce.cinnamon.settings.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.features.messaging.data.backup.ImportStrategy
 import com.sosauce.cinnamon.settings.ContactsImportSession
@@ -37,154 +16,21 @@ fun ContactsImportDialog(
     onDismiss: () -> Unit,
     onStartImport: () -> Unit
 ) {
-    val busy = session.isParsing || session.isImporting
-    val preview = session.preview
-
-    AlertDialog(
-        onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text(stringResource(R.string.import_contacts)) },
-        icon = {
-            Icon(
-                painter = painterResource(R.drawable.migrate),
-                contentDescription = null
-            )
+    ImportDialog(
+        title = stringResource(R.string.import_contacts),
+        icon = R.drawable.migrate,
+        session = session,
+        previewSummary = { preview ->
+            stringResource(R.string.import_preview_contacts, preview.size)
         },
-        text = {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item {
-                    Text(
-                        text = session.fileName,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.bodySmallEmphasized.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                }
-
-                if (preview == null) {
-                    item {
-                        BackupProgressIndicator(
-                            done = null,
-                            total = null,
-                            labelOverride = stringResource(R.string.import_parsing)
-                        )
-                    }
-                } else {
-                    item {
-                        Text(
-                            text = stringResource(R.string.import_preview_contacts, preview.size),
-                            style = MaterialTheme.typography.bodyMediumEmphasized
-                        )
-                    }
-
-                    item {
-                        ImportStrategySelector(
-                            strategy = session.strategy,
-                            enabled = !session.isImporting,
-                            onStrategyChange = onStrategyChange
-                        )
-                    }
-
-                    item {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row {
-                                TextButton(
-                                    onClick = onSelectAll,
-                                    enabled = !session.isImporting,
-                                    shapes = ButtonDefaults.shapes()
-                                ) {
-                                    Text(stringResource(R.string.select_all))
-                                }
-                                TextButton(
-                                    onClick = onClearSelection,
-                                    enabled = session.selectedKeys.isNotEmpty() && !session.isImporting,
-                                    shapes = ButtonDefaults.shapes()
-                                ) {
-                                    Text(stringResource(R.string.unselect_all))
-                                }
-                            }
-                            Text(
-                                text = "${session.selectedKeys.size}/${preview.size}",
-                                style = MaterialTheme.typography.bodySmallEmphasized.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            )
-                        }
-                    }
-
-                    items(
-                        items = preview,
-                        key = { it.key }
-                    ) { contact ->
-                        val selected = contact.key in session.selectedKeys
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Checkbox(
-                                checked = selected,
-                                onCheckedChange = { onToggleContact(contact.key, it) },
-                                enabled = !session.isImporting
-                            )
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = contact.displayName,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = MaterialTheme.typography.bodyMediumEmphasized
-                                )
-                                if (contact.detailLine.isNotBlank()) {
-                                    Text(
-                                        text = contact.detailLine,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        style = MaterialTheme.typography.bodySmallEmphasized.copy(
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    if (session.isImporting) {
-                        item {
-                            BackupProgressIndicator(
-                                done = session.progressDone,
-                                total = session.progressTotal
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = onStartImport,
-                enabled = preview != null &&
-                        session.selectedKeys.isNotEmpty() &&
-                        !session.isImporting &&
-                        !session.isParsing,
-                shapes = ButtonDefaults.shapes()
-            ) {
-                Text(stringResource(R.string.import_start))
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                enabled = !busy,
-                shapes = ButtonDefaults.shapes()
-            ) {
-                Text(stringResource(R.string.cancel))
-            }
-        }
+        itemKey = { it.key },
+        itemTitle = { it.displayName },
+        itemSubtitle = { it.detailLine },
+        onToggle = onToggleContact,
+        onSelectAll = onSelectAll,
+        onClearSelection = onClearSelection,
+        onStrategyChange = onStrategyChange,
+        onDismiss = onDismiss,
+        onStartImport = onStartImport
     )
 }

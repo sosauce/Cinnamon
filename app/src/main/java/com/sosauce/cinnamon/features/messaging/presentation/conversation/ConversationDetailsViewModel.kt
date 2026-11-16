@@ -21,20 +21,6 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.sosauce.cinnamon.features.messaging.data.model.SearchableMessage
-import com.sosauce.cinnamon.features.messaging.data.repository.ThreadMessagesPagingSource
-import com.sosauce.cinnamon.features.messaging.domain.listKey
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
-import kotlin.time.Duration.Companion.milliseconds
 import com.sosauce.cinnamon.core.MediaManager
 import com.sosauce.cinnamon.core.telephony.message.CuteTelephonyManager
 import com.sosauce.cinnamon.core.telephony.message.MessageNotificationManager
@@ -44,26 +30,39 @@ import com.sosauce.cinnamon.features.messaging.data.ScheduledMessageManager
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingActions
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsDao
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsEntity
+import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.perform
 import com.sosauce.cinnamon.features.messaging.data.local.scheduledMessages.ScheduledMessageEntity
 import com.sosauce.cinnamon.features.messaging.data.local.scheduledMessages.ScheduledMessagesDao
+import com.sosauce.cinnamon.features.messaging.data.model.SearchableMessage
 import com.sosauce.cinnamon.features.messaging.data.model.toConversationSettings
-import com.sosauce.cinnamon.features.messaging.data.model.toCuteConversation
-import com.sosauce.cinnamon.features.messaging.data.model.toEntity
 import com.sosauce.cinnamon.features.messaging.data.repository.ConversationsRepository
 import com.sosauce.cinnamon.features.messaging.data.repository.MessagesRepository
+import com.sosauce.cinnamon.features.messaging.data.repository.ThreadMessagesPagingSource
 import com.sosauce.cinnamon.features.messaging.domain.ConversationSettings
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import com.sosauce.cinnamon.features.messaging.domain.Participant
+import com.sosauce.cinnamon.features.messaging.domain.listKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class ConversationDetailsViewModel(
     private val application: Application,
@@ -161,7 +160,10 @@ class ConversationDetailsViewModel(
                             matches
                                 .indexOfFirst { it.key == search.currentMatch?.key }
                                 .takeIf { it >= 0 }
-                                ?: search.currentIndex.coerceIn(0, (matches.size - 1).coerceAtLeast(0))
+                                ?: search.currentIndex.coerceIn(
+                                    0,
+                                    (matches.size - 1).coerceAtLeast(0)
+                                )
                         } else 0
 
                         search.copy(
@@ -204,7 +206,9 @@ class ConversationDetailsViewModel(
 
     private val settings = conversationSettingsDao
         .getConversationSettings(threadId)
-        .mapLatest { (it ?: ConversationSettingsEntity(threadId = threadId)).toConversationSettings() }
+        .mapLatest {
+            (it ?: ConversationSettingsEntity(threadId = threadId)).toConversationSettings()
+        }
 
     private val _state = MutableStateFlow(
         ConversationDetailsState(
@@ -243,18 +247,8 @@ class ConversationDetailsViewModel(
         viewModelScope.launch(Dispatchers.IO) { messagesRepository.deleteConversation(threadId) }
 
     fun handleConversationSettingsActions(action: ConversationSettingActions) {
-        when (action) {
-            is ConversationSettingActions.UpsertConversationSettings -> {
-                viewModelScope.launch(Dispatchers.IO) {
-                    conversationSettingsDao.upsertConversation(action.conversationSettings.toEntity())
-                }
-            }
-
-            is ConversationSettingActions.UpsertDraft -> {
-                viewModelScope.launch(Dispatchers.IO) {
-                    conversationSettingsDao.upsertDraft(threadId, action.draft)
-                }
-            }
+        viewModelScope.launch(Dispatchers.IO) {
+            action.perform(conversationSettingsDao, threadId)
         }
     }
 
@@ -291,8 +285,8 @@ class ConversationDetailsViewModel(
                     if (state.value.participants.size > 1) return@launch // can't block group chats (unless we block everyone but why)
 
 
-
-                    val participantToBlock = state.value.participants.singleOrNull() ?: return@launch
+                    val participantToBlock =
+                        state.value.participants.singleOrNull() ?: return@launch
                     val rawNumber = participantToBlock.rawNumber
 
 
@@ -329,14 +323,23 @@ class ConversationDetailsViewModel(
                     )
                     if (scheduledMessages.isNotEmpty()) {
                         viewModelScope.launch(Dispatchers.IO) {
-                            scheduledMessages.fastMap { scheduledMessagesDao.getScheduledMessageById(it.id) }
+                            scheduledMessages.fastMap {
+                                scheduledMessagesDao.getScheduledMessageById(
+                                    it.id
+                                )
+                            }
                                 .fastForEach { scheduledMessageManager.delete(it) }
                         }
 
                     }
                 }
             }
-            is ConversationActions.CallNumber -> viewModelScope.launch { callManager.startCall(action.number) }
+
+            is ConversationActions.CallNumber -> viewModelScope.launch {
+                callManager.startCall(
+                    action.number
+                )
+            }
 
             is ConversationActions.OpenSearch -> _search.update { it.copy(isActive = true) }
 
@@ -355,7 +358,11 @@ class ConversationDetailsViewModel(
 
             is ConversationActions.ShowOlderSearchMatch -> _search.update { search ->
                 search.copy(
-                    currentIndex = (search.currentIndex + 1).coerceAtMost((search.matches.size - 1).coerceAtLeast(0))
+                    currentIndex = (search.currentIndex + 1).coerceAtMost(
+                        (search.matches.size - 1).coerceAtLeast(
+                            0
+                        )
+                    )
                 )
             }
 

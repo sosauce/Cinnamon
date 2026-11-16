@@ -9,7 +9,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -54,11 +53,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberSliderState
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -287,7 +284,9 @@ fun ConversationTheming(
                         .fillMaxHeight()
                         .padding(16.dp)
                 ) {
-                    preview(Modifier.fillMaxHeight().aspectRatio(0.72f))
+                    preview(Modifier
+                        .fillMaxHeight()
+                        .aspectRatio(0.72f))
                 }
                 Column(
                     modifier = Modifier
@@ -374,7 +373,10 @@ private fun ChatPreview(
                             .offset(x = 40.dp, y = (-30).dp)
                             .size(160.dp)
                             .graphicsLayer { rotationZ = spin }
-                            .background(colors.primaryContainer.copy(alpha = 0.5f), MaterialShapes.Cookie12Sided.toShape())
+                            .background(
+                                colors.primaryContainer.copy(alpha = 0.5f),
+                                MaterialShapes.Cookie12Sided.toShape()
+                            )
                     )
                     Box(
                         Modifier
@@ -382,7 +384,10 @@ private fun ChatPreview(
                             .offset(x = (-30).dp, y = 30.dp)
                             .size(110.dp)
                             .graphicsLayer { rotationZ = -spin }
-                            .background(colors.tertiaryContainer.copy(alpha = 0.5f), MaterialShapes.Cookie9Sided.toShape())
+                            .background(
+                                colors.tertiaryContainer.copy(alpha = 0.5f),
+                                MaterialShapes.Cookie9Sided.toShape()
+                            )
                     )
                 }
                 Column(
@@ -392,10 +397,25 @@ private fun ChatPreview(
                         .align(Alignment.BottomCenter)
                         .padding(12.dp)
                 ) {
-                    PreviewBubble(R.string.preview_received_1, MessageType.RECEIVED, SandwichPosition.TOP, colors.surfaceContainerHigh)
-                    PreviewBubble(R.string.preview_received_2, MessageType.RECEIVED, SandwichPosition.BOTTOM, colors.surfaceContainerHigh)
+                    PreviewBubble(
+                        R.string.preview_received_1,
+                        MessageType.RECEIVED,
+                        SandwichPosition.TOP,
+                        colors.surfaceContainerHigh
+                    )
+                    PreviewBubble(
+                        R.string.preview_received_2,
+                        MessageType.RECEIVED,
+                        SandwichPosition.BOTTOM,
+                        colors.surfaceContainerHigh
+                    )
                     Spacer(Modifier.height(6.dp))
-                    PreviewBubble(R.string.preview_sent, MessageType.SENT, SandwichPosition.SOLO, colors.primary)
+                    PreviewBubble(
+                        R.string.preview_sent,
+                        MessageType.SENT,
+                        SandwichPosition.SOLO,
+                        colors.primary
+                    )
                     Spacer(Modifier.height(8.dp))
                     Surface(
                         shape = CircleShape,

@@ -5,13 +5,10 @@ package com.sosauce.cinnamon.features.messaging.presentation.conversation.compon
 import android.annotation.SuppressLint
 import android.net.Uri
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -58,17 +55,14 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.extractor.DefaultExtractorsFactory
-import androidx.media3.extractor.mp3.Mp3Extractor
 import androidx.media3.ui.compose.buttons.PlayPauseButton
 import com.sosauce.cinnamon.core.ui.components.buttons.WavySlider
-import com.sosauce.nekobites.helpers.rememberInteractionSource
 import com.sosauce.cinnamon.core.utils.toMediaTime
 import com.sosauce.nekobites.animations.AnimatedDrawable
 import com.sosauce.nekobites.animations.AnimatedDrawableFile
 import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.nekobites.animations.rememberAnimatedShape
+import com.sosauce.nekobites.helpers.rememberInteractionSource
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 

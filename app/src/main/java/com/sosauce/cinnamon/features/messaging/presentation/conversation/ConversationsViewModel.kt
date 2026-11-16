@@ -10,17 +10,17 @@ import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sosauce.cinnamon.core.datastore.UserPreferences
-import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsDao
 import androidx.paging.InvalidatingPagingSourceFactory
 import androidx.paging.Pager
-import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
+import com.sosauce.cinnamon.core.datastore.UserPreferences
+import com.sosauce.cinnamon.core.utils.listPagingConfig
+import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsDao
 import com.sosauce.cinnamon.features.messaging.data.model.CuteConversationEntity
-import com.sosauce.cinnamon.features.messaging.data.repository.ConversationsPagingSource
 import com.sosauce.cinnamon.features.messaging.data.model.toCuteConversation
+import com.sosauce.cinnamon.features.messaging.data.repository.ConversationsPagingSource
 import com.sosauce.cinnamon.features.messaging.data.repository.ConversationsRepository
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -71,7 +71,12 @@ class ConversationsViewModel(
                 // refresh results when conversations change
                 conversationsRepository
                     .observeConversationChanges()
-                    .mapLatest { conversationsRepository.searchThreads(query, searchMessageContent) }
+                    .mapLatest {
+                        conversationsRepository.searchThreads(
+                            query,
+                            searchMessageContent
+                        )
+                    }
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -92,7 +97,8 @@ class ConversationsViewModel(
         }
     }
 
-    private var pagingSourceFactory: InvalidatingPagingSourceFactory<Int, CuteConversationEntity>? = null
+    private var pagingSourceFactory: InvalidatingPagingSourceFactory<Int, CuteConversationEntity>? =
+        null
 
     // true once the first page of conversations has been loaded, never goes back to false
     // so later refreshes (new messages, searching) keep the list visible
@@ -133,12 +139,7 @@ class ConversationsViewModel(
             pagingSourceFactory = factory
 
             Pager(
-                config = PagingConfig(
-                    pageSize = PAGE_SIZE,
-                    initialLoadSize = PAGE_SIZE,
-                    prefetchDistance = PAGE_SIZE / 2,
-                    enablePlaceholders = false
-                ),
+                config = listPagingConfig(PAGE_SIZE),
                 pagingSourceFactory = factory
             ).flow.map { pagingData ->
                 pagingData.map { entity ->
@@ -190,26 +191,9 @@ class ConversationsViewModel(
     )
 
     fun handleThreadsAction(action: ConversationsAction) {
-        when (action) {
-            is ConversationsAction.ArchiveConversations -> {
-                viewModelScope.launch {
-                    userPreferences.toggleArchiveThreads(action.threadIds)
-                }
-            }
-
-            is ConversationsAction.PinConversations -> {
-                viewModelScope.launch {
-                    userPreferences.pinThreads(action.threadIds)
-                }
-            }
-
-            is ConversationsAction.DeleteConversations -> {
-                viewModelScope.launch {
-                    conversationsRepository.deleteThreads(action.threadIds)
-                }
-            }
+        viewModelScope.launch {
+            action.perform(userPreferences, conversationsRepository)
         }
-
     }
 
     companion object {
@@ -236,4 +220,23 @@ sealed interface ConversationsAction {
     data class ArchiveConversations(val threadIds: List<Long>) : ConversationsAction
     data class PinConversations(val threadIds: List<Long>) : ConversationsAction
     data class DeleteConversations(val threadIds: List<Long>) : ConversationsAction
+}
+
+/**
+ * Runs this action, shared by every screen listing conversations
+ */
+suspend fun ConversationsAction.perform(
+    userPreferences: UserPreferences,
+    conversationsRepository: ConversationsRepository
+) {
+    when (this) {
+        is ConversationsAction.ArchiveConversations -> userPreferences.toggleArchiveThreads(
+            threadIds
+        )
+
+        is ConversationsAction.PinConversations -> userPreferences.pinThreads(threadIds)
+        is ConversationsAction.DeleteConversations -> conversationsRepository.deleteThreads(
+            threadIds
+        )
+    }
 }

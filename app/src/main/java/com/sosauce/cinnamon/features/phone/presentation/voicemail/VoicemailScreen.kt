@@ -2,7 +2,6 @@
 
 package com.sosauce.cinnamon.features.phone.presentation.voicemail
 
-import com.sosauce.cinnamon.core.ui.barsContentTransform
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,6 +31,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
+import com.sosauce.cinnamon.core.ui.barsContentTransform
 import com.sosauce.cinnamon.core.ui.components.SelectedBarSurface
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButton
 import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar

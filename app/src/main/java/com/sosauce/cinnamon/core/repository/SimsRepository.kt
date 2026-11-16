@@ -1,9 +1,7 @@
 package com.sosauce.cinnamon.core.repository
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Build
 import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
@@ -11,10 +9,8 @@ import android.telecom.TelecomManager
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import androidx.compose.ui.util.fastForEach
-import androidx.core.app.ActivityCompat
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.features.phone.domain.CuteSimCard
-import kotlin.compareTo
 
 class SimsRepository(
     private val context: Context,
@@ -32,7 +28,9 @@ class SimsRepository(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val subId = try {
                 telephonyManager.getSubscriptionId(handle)
-            } catch (_: Exception) { SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+            } catch (_: Exception) {
+                SubscriptionManager.INVALID_SUBSCRIPTION_ID
+            }
             if (subId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) return subId
         }
         handle.id.toIntOrNull()?.let { return it }
@@ -40,7 +38,9 @@ class SimsRepository(
             subscriptionManager.activeSubscriptionInfoList
                 ?.firstOrNull { !it.iccId.isNullOrEmpty() && it.iccId == handle.id }
                 ?.subscriptionId
-        } catch (_: SecurityException) { null }
+        } catch (_: SecurityException) {
+            null
+        }
     }
 
     /**
@@ -52,7 +52,9 @@ class SimsRepository(
             telecomManager.callCapablePhoneAccounts.orEmpty()
                 .mapNotNull { handle -> subIdFor(handle)?.let { handle.id to it } }
                 .toMap()
-        } catch (_: SecurityException) { emptyMap() }
+        } catch (_: SecurityException) {
+            emptyMap()
+        }
     }
 
 
@@ -65,8 +67,10 @@ class SimsRepository(
                 simCards.add(
                     CuteSimCard(
                         subId = subInfo.subscriptionId,
-                        name = subInfo.displayName?.toString() ?: context.getString(R.string.no_sim_name),
-                        carrierName = subInfo.carrierName?.toString() ?: context.getString(R.string.no_carrier),
+                        name = subInfo.displayName?.toString()
+                            ?: context.getString(R.string.no_sim_name),
+                        carrierName = subInfo.carrierName?.toString()
+                            ?: context.getString(R.string.no_carrier),
                         color = subInfo.iconTint
                     )
                 )
@@ -91,8 +95,10 @@ class SimsRepository(
 
                 simCards[id] = CuteSimCard(
                     subId = id,
-                    name = subInfo.displayName?.toString() ?: context.getString(R.string.no_sim_name),
-                    carrierName = subInfo.carrierName?.toString() ?: context.getString(R.string.no_carrier),
+                    name = subInfo.displayName?.toString()
+                        ?: context.getString(R.string.no_sim_name),
+                    carrierName = subInfo.carrierName?.toString()
+                        ?: context.getString(R.string.no_carrier),
                     color = subInfo.iconTint
                 )
             }
@@ -110,14 +116,17 @@ class SimsRepository(
                 val account = telecomManager.getPhoneAccount(handle) ?: return@fastForEach
                 map[account] = handle
             }
-        } catch (_: SecurityException) {}
+        } catch (_: SecurityException) {
+        }
         return map
     }
 
     fun hasMultipleSims(): Boolean {
         return try {
             subscriptionManager.activeSubscriptionInfoCount > 1
-        } catch (_: SecurityException) { false }
+        } catch (_: SecurityException) {
+            false
+        }
     }
 
 

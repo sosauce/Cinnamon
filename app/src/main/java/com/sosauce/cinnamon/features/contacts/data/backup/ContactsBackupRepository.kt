@@ -10,6 +10,7 @@ import androidx.compose.ui.util.fastFilter
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.PermissionUtils
+import com.sosauce.cinnamon.core.utils.backupFileName
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContactEntity
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
 import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails
@@ -30,9 +31,6 @@ import ezvcard.property.Url
 import ezvcard.util.PartialDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
  * Builds a standard multi-vCard (`.vcf`, vCard 3.0) snapshot of the selected
@@ -80,10 +78,8 @@ class ContactsBackupRepository(
             } ?: error("Unable to open output stream for backup destination")
         }
 
-    fun defaultFileName(nowMillis: Long = System.currentTimeMillis()): String {
-        val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
-        return "contacts_${formatter.format(Date(nowMillis))}"
-    }
+    fun defaultFileName(nowMillis: Long = System.currentTimeMillis()): String =
+        backupFileName("contacts", nowMillis)
 
     private fun buildVCard(entity: CuteContactEntity, details: CuteContactDetails?): ezvcard.VCard {
         val vcard = ezvcard.VCard()

@@ -66,7 +66,10 @@ fun rememberUseSystemFont() =
 
 @Composable
 fun rememberPaletteStyle() =
-    rememberPreference(key = PreferencesKeys.PALETTE_STYLE, defaultValue = CutePaletteStyle.TONAL_SPOT)
+    rememberPreference(
+        key = PreferencesKeys.PALETTE_STYLE,
+        defaultValue = CutePaletteStyle.TONAL_SPOT
+    )
 
 @Composable
 fun rememberPinnedConversations() =
@@ -77,12 +80,16 @@ fun rememberArchivedConversations() =
     rememberPreference(key = PreferencesKeys.ARCHIVED_CONVOS, defaultValue = emptySet())
 
 @Composable
-fun rememberMmsMaxSizeLimit() = rememberPreference(PreferencesKeys.MMS_MAX_SIZE_LIMIT, MmsSize.FILE_SIZE_600_KB)
+fun rememberMmsMaxSizeLimit() =
+    rememberPreference(PreferencesKeys.MMS_MAX_SIZE_LIMIT, MmsSize.FILE_SIZE_600_KB)
 
 
 @Composable
 fun rememberDefaultMessagesSim() =
-    rememberPreference(PreferencesKeys.DEFAULT_MESSAGES_SIM, SubscriptionManager.getDefaultSmsSubscriptionId())
+    rememberPreference(
+        PreferencesKeys.DEFAULT_MESSAGES_SIM,
+        SubscriptionManager.getDefaultSmsSubscriptionId()
+    )
 
 @Composable
 fun rememberShowCharCount() = rememberPreference(PreferencesKeys.SHOW_CHAR_COUNT, false)
@@ -91,20 +98,24 @@ fun rememberShowCharCount() = rememberPreference(PreferencesKeys.SHOW_CHAR_COUNT
 fun rememberSendGroupAsMms() = rememberPreference(PreferencesKeys.SEND_GROUP_AS_MMS, false)
 
 @Composable
-fun rememberEnableDeliveryReports() = rememberPreference(PreferencesKeys.ENABLE_DELIVERY_REPORTS, false)
+fun rememberEnableDeliveryReports() =
+    rememberPreference(PreferencesKeys.ENABLE_DELIVERY_REPORTS, false)
 
 @Composable
 fun rememberSendLongAsMms() = rememberPreference(PreferencesKeys.SEND_LONG_AS_MMS, false)
 
 
 @Composable
-fun rememberGroupSubsequentCalls() = rememberPreference(PreferencesKeys.GROUP_SUBSEQUENT_CALLS, false)
+fun rememberGroupSubsequentCalls() =
+    rememberPreference(PreferencesKeys.GROUP_SUBSEQUENT_CALLS, false)
 
 @Composable
-fun rememberSortConversationsAscending() = rememberPreference(PreferencesKeys.SORT_CONVERSATIONS_ASCENDING, true)
+fun rememberSortConversationsAscending() =
+    rememberPreference(PreferencesKeys.SORT_CONVERSATIONS_ASCENDING, true)
 
 @Composable
-fun rememberSortContactsAscending() = rememberPreference(PreferencesKeys.SORT_CONTACTS_ASCENDING, true)
+fun rememberSortContactsAscending() =
+    rememberPreference(PreferencesKeys.SORT_CONTACTS_ASCENDING, true)
 
 @Composable
 fun rememberEnableT9Dialing() = rememberPreference(PreferencesKeys.ENABLE_T9_DIALING, true)
@@ -113,7 +124,8 @@ fun rememberEnableT9Dialing() = rememberPreference(PreferencesKeys.ENABLE_T9_DIA
 fun rememberSortLogsAscending() = rememberPreference(PreferencesKeys.SORT_LOGS_ASCENDING, true)
 
 @Composable
-fun rememberIncomingCallFullscreen() = rememberPreference(PreferencesKeys.INCOMING_CALL_FULLSCREEN, true)
+fun rememberIncomingCallFullscreen() =
+    rememberPreference(PreferencesKeys.INCOMING_CALL_FULLSCREEN, true)
 
 @Composable
 fun rememberChatZoomScale() = rememberPreference(PreferencesKeys.CHAT_ZOOM_SCALE, 1f)
@@ -122,7 +134,8 @@ fun rememberChatZoomScale() = rememberPreference(PreferencesKeys.CHAT_ZOOM_SCALE
 fun rememberEnablePinchToZoom() = rememberPreference(PreferencesKeys.ENABLE_PINCH_TO_ZOOM, false)
 
 @Composable
-fun rememberSearchMessageContent() = rememberPreference(PreferencesKeys.SEARCH_MESSAGE_CONTENT, true)
+fun rememberSearchMessageContent() =
+    rememberPreference(PreferencesKeys.SEARCH_MESSAGE_CONTENT, true)
 
 @Composable
 fun rememberInitialScreen() = rememberPreference(DEFAULT_TAB, DefaultTabOption.MESSAGES)

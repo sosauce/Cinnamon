@@ -11,8 +11,7 @@ import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class MarkAsReadReceiver: BroadcastReceiver(), KoinComponent {
-
+class MarkAsReadReceiver : BroadcastReceiver(), KoinComponent {
 
 
     override fun onReceive(context: Context?, intent: Intent) {

@@ -124,43 +124,18 @@ private fun MmsAttachmentRouter(
         vcardName != null -> {
             val contactName = vcardName.orEmpty()
 
-            Box(
-                modifier = Modifier
-                    .clip(BubbleShape(sandwichPosition, messageType))
-                    .background(bubbleColor)
-                    .clickable {
-                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(
-                                details.uri,
-                                context.contentResolver.getType(details.uri)
-                            )
-                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        }
-                        context.startActivity(intent)
-                    }
-            ) {
-                Row(
-                    modifier = Modifier.padding(all = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+            FileAttachment(
+                details = details,
+                bubbleColor = bubbleColor,
+                sandwichPosition = sandwichPosition,
+                messageType = messageType,
+                title = contactName,
+                leadingContent = {
                     DefaultContactIcon(
                         firstLetter = contactName.firstOrNull()
                     )
-                    Column {
-                        Text(
-                            text = contactName,
-                            maxLines = 1,
-                            modifier = Modifier.basicMarquee(),
-                            style = MaterialTheme.typography.bodyMediumEmphasized
-                        )
-                        Text(
-                            text = Formatter.formatFileSize(context, details.size),
-                            style = MaterialTheme.typography.labelSmallEmphasized
-                        )
-                    }
                 }
-            }
+            )
         }
 
         else -> FileAttachment(
@@ -177,7 +152,11 @@ private fun FileAttachment(
     details: CuteAttachment.AttachmentDetails,
     bubbleColor: Color,
     sandwichPosition: SandwichPosition,
-    messageType: MessageType
+    messageType: MessageType,
+    title: String = details.filename,
+    leadingContent: @Composable () -> Unit = {
+        Icon(painter = painterResource(R.drawable.file), contentDescription = null)
+    }
 ) {
     val context = LocalContext.current
 
@@ -198,10 +177,10 @@ private fun FileAttachment(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(painter = painterResource(R.drawable.file), contentDescription = null)
+            leadingContent()
             Column {
                 Text(
-                    text = details.filename,
+                    text = title,
                     maxLines = 1,
                     modifier = Modifier.basicMarquee(),
                     style = MaterialTheme.typography.bodyMediumEmphasized

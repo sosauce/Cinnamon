@@ -2,7 +2,6 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation.components.topbars
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn

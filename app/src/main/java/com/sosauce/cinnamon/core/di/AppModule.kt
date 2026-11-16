@@ -1,8 +1,6 @@
 package com.sosauce.cinnamon.core.di
 
 import android.app.NotificationManager
-import android.content.Context
-import android.content.Context.NOTIFICATION_SERVICE
 import android.telecom.TelecomManager
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
@@ -71,7 +69,8 @@ val appModule = module {
             context = androidContext(),
             klass = ConversationSettingsDatabase::class.java,
             name = "conversationSettingsEntity.db"
-        ).addMigrations(MIGRATION_1_2_CONVERSATION_SETTINGS, MIGRATION_2_3_CONVERSATION_SETTINGS).build().dao
+        ).addMigrations(MIGRATION_1_2_CONVERSATION_SETTINGS, MIGRATION_2_3_CONVERSATION_SETTINGS)
+            .build().dao
     }
 
     single<ScheduledMessagesDao> {
@@ -79,7 +78,8 @@ val appModule = module {
             context = androidContext(),
             klass = ScheduledMessagesDatabase::class.java,
             name = "scheduledMessages.db"
-        ).addMigrations(MIGRATION_1_2_SCHEDULED_MESSAGE, MIGRATION_2_3_SCHEDULED_MESSAGE).build().dao
+        ).addMigrations(MIGRATION_1_2_SCHEDULED_MESSAGE, MIGRATION_2_3_SCHEDULED_MESSAGE)
+            .build().dao
     }
 
     single<ContactSettingsDao> {

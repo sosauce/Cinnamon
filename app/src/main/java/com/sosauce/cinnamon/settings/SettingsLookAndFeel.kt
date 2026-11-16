@@ -20,10 +20,10 @@ import com.sosauce.cinnamon.core.datastore.rememberAppTheme
 import com.sosauce.cinnamon.core.datastore.rememberIncomingCallFullscreen
 import com.sosauce.cinnamon.core.datastore.rememberPaletteStyle
 import com.sosauce.cinnamon.core.datastore.rememberUseSystemFont
+import com.sosauce.cinnamon.core.ui.anyDarkColorScheme
+import com.sosauce.cinnamon.core.ui.anyLightColorScheme
 import com.sosauce.cinnamon.core.utils.CutePaletteStyle
 import com.sosauce.cinnamon.core.utils.CuteTheme
-import com.sosauce.cinnamon.core.utils.anyDarkColorScheme
-import com.sosauce.cinnamon.core.utils.anyLightColorScheme
 import com.sosauce.cinnamon.settings.components.PaletteTile
 import com.sosauce.nekobites.components.settings.SelectableTile
 import com.sosauce.nekobites.components.settings.SettingsGroup

@@ -2,26 +2,16 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bottombar
 
-import com.sosauce.nekobites.animations.rememberAnimatedShape
-import androidx.compose.material3.contentColorFor
-import androidx.compose.material3.MaterialShapes
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.clickable
-import androidx.compose.animation.animateColorAsState
 import android.net.Uri
-import android.widget.Toast
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 import android.telephony.SmsMessage
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -37,37 +27,47 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorPosition
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.retain.RetainedEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -75,23 +75,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
-import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.window.Popup
@@ -107,7 +104,9 @@ import com.sosauce.cinnamon.features.messaging.presentation.conversation.Convers
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.dialogs.ScheduleMessageDialog
 import com.sosauce.nekobites.animations.AnimatedCounter
 import com.sosauce.nekobites.animations.bouncySpec
+import com.sosauce.nekobites.animations.rememberAnimatedShape
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -138,8 +137,12 @@ fun ConversationBottomBar(
         scope.launch {
             val (tooLarge, sendable) = uris.partition { viewModel.isTooLargeForMms(it) }
             if (tooLarge.isNotEmpty()) {
-                val error = resources.getQuantityString(R.plurals.plural_files_too_large_mms, tooLarge.count(), tooLarge.count())
-                Toast.makeText(context,error, Toast.LENGTH_SHORT).show()
+                val error = resources.getQuantityString(
+                    R.plurals.plural_files_too_large_mms,
+                    tooLarge.count(),
+                    tooLarge.count()
+                )
+                Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
             }
             viewModel.addAttachments(sendable)
         }
@@ -201,10 +204,10 @@ fun ConversationBottomBar(
     }
 
     if (showSchedulerDialog) {
-       ScheduleMessageDialog(
+        ScheduleMessageDialog(
             onDismissRequest = { showSchedulerDialog = false },
             onSetScheduledTime = viewModel::setScheduledTime
-       )
+        )
     }
 
     Column(
@@ -482,9 +485,9 @@ private fun CharCounter(message: String) {
     val segmentCount = SmsMessage.calculateLength(message, false)[0]
     CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodySmallEmphasized) {
         Row {
-           AnimatedCounter(count = charCount, textStyle = LocalTextStyle.current)
+            AnimatedCounter(count = charCount, textStyle = LocalTextStyle.current)
             Text("/")
-           AnimatedCounter(count = segmentCount, textStyle = LocalTextStyle.current)
+            AnimatedCounter(count = segmentCount, textStyle = LocalTextStyle.current)
         }
     }
 }

@@ -2,7 +2,6 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.starter
 
-import android.provider.ContactsContract
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.snapshotFlow
@@ -14,7 +13,8 @@ import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.presentation.ContactsListItem
 import com.sosauce.cinnamon.features.contacts.presentation.ContactsPager
-import com.sosauce.cinnamon.features.contacts.presentation.toContactIdSelection
+import com.sosauce.cinnamon.features.contacts.presentation.searchResults
+import com.sosauce.cinnamon.features.contacts.presentation.toPhoneContactsSelection
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -23,10 +23,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlin.time.Duration.Companion.milliseconds
@@ -46,29 +44,15 @@ class StartConversationViewModel(
     /**
      * Ids of the contacts matching the search query, null when not searching
      */
-    private val searchResults: Flow<Set<Long>?> = searchQuery
-        .flatMapLatest { query ->
-            if (query.isBlank()) {
-                flowOf(null)
-            } else {
-                // refresh results when contacts change
-                contactsRepository
-                    .observeContactChanges()
-                    .mapLatest { contactsRepository.searchContactIds(query) }
-            }
-        }
+    private val searchResults: Flow<Set<Long>?> = contactsRepository
+        .searchResults(searchQuery)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val pager = ContactsPager(
         contactsRepository = contactsRepository,
         scope = viewModelScope,
         // only contacts that can be texted
-        selection = searchResults.map { results ->
-            listOfNotNull(
-                "${ContactsContract.Contacts.HAS_PHONE_NUMBER} = 1",
-                results?.toContactIdSelection()
-            ).joinToString(" AND ")
-        },
+        selection = searchResults.map { it.toPhoneContactsSelection() },
         sortAscending = flowOf(true)
     )
 

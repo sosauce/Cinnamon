@@ -4,10 +4,10 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
-import android.provider.OpenableColumns
 import android.provider.Telephony
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.PermissionUtils
+import com.sosauce.cinnamon.core.utils.readBackupDisplayName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -17,7 +17,10 @@ enum class ImportStrategy {
     IMPORT_ALL
 }
 
-data class SmsImportResult(
+/**
+ * Outcome of an import, shared by the messages, contacts and call logs imports
+ */
+data class ImportResult(
     val imported: Int,
     val skipped: Int
 )
@@ -44,7 +47,6 @@ class MessagesImportRepository(
         Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
 
 
-
     suspend fun parseBackup(uri: Uri): MessageBackupFile = withContext(Dispatchers.IO) {
         val text = context.contentResolver.openInputStream(uri)?.use { stream ->
             stream.readBytes().toString(Charsets.UTF_8)
@@ -56,7 +58,7 @@ class MessagesImportRepository(
         conversations: List<BackupConversation>,
         strategy: ImportStrategy,
         onProgress: (done: Int, total: Int) -> Unit = { _, _ -> }
-    ): SmsImportResult = withContext(Dispatchers.IO) {
+    ): ImportResult = withContext(Dispatchers.IO) {
         if (!PermissionUtils.hasSmsPermission(context)) {
             throw SecurityException(context.getString(R.string.backup_needs_sms_permission))
         }
@@ -98,22 +100,10 @@ class MessagesImportRepository(
             }
         }
 
-        SmsImportResult(imported = imported, skipped = skipped)
+        ImportResult(imported = imported, skipped = skipped)
     }
 
-    fun readDisplayName(uri: Uri): String {
-        return runCatching {
-            context.contentResolver.query(
-                uri,
-                arrayOf(OpenableColumns.DISPLAY_NAME),
-                null,
-                null,
-                null
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) cursor.getString(0) else null
-            }
-        }.getOrNull() ?: context.getString(R.string.backup_file_name)
-    }
+    fun readDisplayName(uri: Uri): String = context.readBackupDisplayName(uri)
 
     private fun isSmsDuplicate(message: BackupMessage, numbers: List<String>): Boolean {
         val address = numbers.firstOrNull() ?: return false

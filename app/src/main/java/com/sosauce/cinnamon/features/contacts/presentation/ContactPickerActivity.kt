@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.features.contacts.presentation.components.FavoriteContact
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound

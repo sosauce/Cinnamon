@@ -2,13 +2,6 @@
 
 package com.sosauce.cinnamon.features.contacts.presentation.editor
 
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.animateColorAsState
 import android.net.Uri
 import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -18,13 +11,19 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalGridApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -52,12 +51,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -67,11 +65,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.retain.retain
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -81,11 +80,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.core.net.toUri
-import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
-import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.core.utils.copyMutate
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsActions
 import com.sosauce.cinnamon.features.contacts.domain.ContactAddress
@@ -96,7 +93,6 @@ import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.nekobites.components.LoadingBox
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -107,7 +103,6 @@ fun SharedTransitionScope.EditContactScreen(
     onHandleContactSettingsAction: (ContactSettingsActions) -> Unit,
     onHandeEditContactAction: (EditContactAction) -> Unit
 ) {
-
 
 
     val context = LocalContext.current
@@ -145,9 +140,10 @@ fun SharedTransitionScope.EditContactScreen(
     ) {
 
         var rawContact by retain { mutableStateOf(state.rawContact) }
-        val pfpPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-            uri?.let { rawContact = rawContact.copy(photoString = it.toString()) }
-        }
+        val pfpPicker =
+            rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+                uri?.let { rawContact = rawContact.copy(photoString = it.toString()) }
+            }
 
         Scaffold(
             bottomBar = {
@@ -203,7 +199,10 @@ fun SharedTransitionScope.EditContactScreen(
                         }
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally),
+                            horizontalArrangement = Arrangement.spacedBy(
+                                20.dp,
+                                Alignment.CenterHorizontally
+                            ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             ContactImagePickerTile(
@@ -441,17 +440,17 @@ fun SharedTransitionScope.EditContactScreen(
 
                 rawContact.note?.let { note ->
                     FieldGroup {
-                    ContactEditTextField(
-                        value = note,
-                        label = R.string.notes,
-                        leadingIcon = R.drawable.note,
-                        onValueChange = {
-                            rawContact = rawContact.copy(note = it)
-                        },
-                        onClickRemove = {
-                            rawContact = rawContact.copy(note = null)
-                        }
-                    )
+                        ContactEditTextField(
+                            value = note,
+                            label = R.string.notes,
+                            leadingIcon = R.drawable.note,
+                            onValueChange = {
+                                rawContact = rawContact.copy(note = it)
+                            },
+                            onClickRemove = {
+                                rawContact = rawContact.copy(note = null)
+                            }
+                        )
                     }
 
                 }
@@ -606,7 +605,13 @@ private fun ContactEditTextField(
     ) {
         TextField(
             state = state,
-            label = { Text(text = stringResource(label), maxLines = 1, modifier = Modifier.basicMarquee()) },
+            label = {
+                Text(
+                    text = stringResource(label),
+                    maxLines = 1,
+                    modifier = Modifier.basicMarquee()
+                )
+            },
             leadingIcon = {
                 Icon(
                     painter = painterResource(leadingIcon),
@@ -702,7 +707,10 @@ private fun ContactImagePickerTile(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
                                 .size(if (isPoster) 52.dp else 66.dp)
-                                .background(colors.primaryContainer, MaterialShapes.Cookie9Sided.toShape())
+                                .background(
+                                    colors.primaryContainer,
+                                    MaterialShapes.Cookie9Sided.toShape()
+                                )
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.add_photo),

@@ -2,6 +2,8 @@ package com.sosauce.cinnamon.features.messaging.data.repository
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.sosauce.cinnamon.core.utils.offsetRefreshKey
+import com.sosauce.cinnamon.core.utils.toOffsetAndLimit
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import kotlinx.coroutines.CancellationException
 import kotlin.math.max
@@ -20,16 +22,7 @@ class ThreadMessagesPagingSource(
     override val jumpingSupported: Boolean = true
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, CuteMessage> {
-        val key = params.key ?: 0
-
-        val (offset, limit) = when (params) {
-            is LoadParams.Prepend -> {
-                val start = max(0, key - params.loadSize)
-                start to (key - start)
-            }
-
-            else -> max(0, key) to params.loadSize
-        }
+        val (offset, limit) = params.toOffsetAndLimit()
 
         return try {
             var start = offset
@@ -60,8 +53,6 @@ class ThreadMessagesPagingSource(
         }
     }
 
-    override fun getRefreshKey(state: PagingState<Int, CuteMessage>): Int? {
-        val anchor = state.anchorPosition ?: return null
-        return max(0, anchor - state.config.initialLoadSize / 2)
-    }
+    override fun getRefreshKey(state: PagingState<Int, CuteMessage>): Int? =
+        state.offsetRefreshKey()
 }

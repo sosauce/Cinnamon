@@ -1,7 +1,7 @@
 package com.sosauce.cinnamon.core.ui.components.buttons
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -99,7 +99,8 @@ fun WavySlider(
             LinearWavyProgressIndicator(
                 modifier = Modifier.fillMaxWidth(),
                 progress = {
-                    val rangeLength = sliderState.trackRange.endInclusive - sliderState.trackRange.start
+                    val rangeLength =
+                        sliderState.trackRange.endInclusive - sliderState.trackRange.start
                     if (rangeLength > 0f) {
                         (sliderState.value - sliderState.trackRange.start) / rangeLength
                     } else 0f

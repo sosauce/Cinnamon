@@ -93,6 +93,7 @@ class MmsReceiver : MmsReceivedReceiver(), KoinComponent {
                                     val text = cursor.getString(textColumn).orEmpty()
                                     append(text)
                                 }
+
                                 mimeType.startsWith("image/") && imageUri == null -> {
                                     imageUri = ContentUris.withAppendedId(uri, partId)
                                 }

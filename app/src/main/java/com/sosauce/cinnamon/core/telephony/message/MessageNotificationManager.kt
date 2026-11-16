@@ -9,13 +9,6 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
-import androidx.core.graphics.drawable.IconCompat
-import androidx.core.net.toUri
-import coil3.imageLoader
-import coil3.request.ImageRequest
-import coil3.request.transformations
-import coil3.toBitmap
-import coil3.transform.CircleCropTransformation
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.MainActivity
 import com.sosauce.cinnamon.core.NumberLookup
@@ -67,14 +60,7 @@ class MessageNotificationManager(
                 ?.addMessage(messageStyle)
             notificationManager.notify(
                 threadId.toInt(),
-                NotificationCompat.Builder(context, INCOMING_MESSAGES_CHANNEL_ID)
-                    .setContentIntent(contentIntent)
-                    .setChannelId(INCOMING_MESSAGES_CHANNEL_ID)
-                    .setSmallIcon(R.drawable.app_icon)
-                    .setPriority(NotificationCompat.PRIORITY_MAX)
-                    .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-                    .setStyle(activeStyle)
-                    .addAction(replyAction(threadId))
+                messageNotificationBuilder(threadId, activeStyle)
                     .build()
             )
         }
@@ -96,14 +82,9 @@ class MessageNotificationManager(
 
         if (ActiveThreadId.threadId == threadId) return
 
-        val request = ImageRequest.Builder(context)
-            .data(numberLookup.fetchPhoto(number ?: "", false)?.toUri())
-            .transformations(CircleCropTransformation())
-            .build()
-        val result = context.imageLoader.execute(request)
-        val bitmap = result.image?.toBitmap()
-        val personIcon = bitmap?.let { IconCompat.createWithBitmap(it) }
-        val name = number?.let { numberLookup.fetchContactDisplayName(it) ?: it } ?: context.getString(R.string.unknown)
+        val personIcon = numberLookup.fetchPersonIcon(number ?: "")
+        val name = number?.let { numberLookup.fetchContactDisplayName(it) ?: it }
+            ?: context.getString(R.string.unknown)
 
 
         val person = Person.Builder()
@@ -141,33 +122,36 @@ class MessageNotificationManager(
 
             notificationManager.notify(
                 threadId.toInt(),
-                NotificationCompat.Builder(context, INCOMING_MESSAGES_CHANNEL_ID)
-                    .setContentIntent(contentIntent)
-                    .setChannelId(INCOMING_MESSAGES_CHANNEL_ID)
-                    .setSmallIcon(R.drawable.app_icon)
-                    .setPriority(NotificationCompat.PRIORITY_MAX)
-                    .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-                    .setStyle(activeStyle)
-                    .addAction(replyAction(threadId))
+                messageNotificationBuilder(threadId, activeStyle)
                     .setContentIntent(pendingIntent)
                     .setAutoCancel(true)
                     .build()
             )
         } ?: notificationManager.notify(
             threadId.toInt(),
-            NotificationCompat.Builder(context, INCOMING_MESSAGES_CHANNEL_ID)
-                .setContentIntent(contentIntent)
-                .setChannelId(INCOMING_MESSAGES_CHANNEL_ID)
-                .setSmallIcon(R.drawable.app_icon)
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-                .setStyle(notificationStyle)
-                .addAction(replyAction(threadId))
+            messageNotificationBuilder(threadId, notificationStyle)
                 .addAction(markAsReadAction(threadId))
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
                 .build()
         )
+    }
+
+    /**
+     * What every message notification has in common, including its reply action
+     */
+    private fun messageNotificationBuilder(
+        threadId: Long,
+        style: NotificationCompat.Style?
+    ): NotificationCompat.Builder {
+        return NotificationCompat.Builder(context, INCOMING_MESSAGES_CHANNEL_ID)
+            .setContentIntent(contentIntent)
+            .setChannelId(INCOMING_MESSAGES_CHANNEL_ID)
+            .setSmallIcon(R.drawable.app_icon)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setStyle(style)
+            .addAction(replyAction(threadId))
     }
 
     private fun replyAction(
@@ -176,7 +160,8 @@ class MessageNotificationManager(
         val replyIntent = Intent(context, MessageReplyReceiver::class.java).apply {
             putExtra(THREAD_ID, threadId)
         }
-        val replyPendingIntent = PendingIntent.getBroadcast(context, threadId.toInt(), replyIntent, flag)
+        val replyPendingIntent =
+            PendingIntent.getBroadcast(context, threadId.toInt(), replyIntent, flag)
 
         val remoteInput = RemoteInput.Builder(RESULT_KEY)
             .setLabel(context.getString(R.string.type_here))
@@ -195,7 +180,8 @@ class MessageNotificationManager(
         val readIntent = Intent(context, MarkAsReadReceiver::class.java).apply {
             putExtra(THREAD_ID, threadId)
         }
-        val readPendingIntent = PendingIntent.getBroadcast(context, threadId.toInt(), readIntent, flag)
+        val readPendingIntent =
+            PendingIntent.getBroadcast(context, threadId.toInt(), readIntent, flag)
 
         return NotificationCompat.Action.Builder(
             0,

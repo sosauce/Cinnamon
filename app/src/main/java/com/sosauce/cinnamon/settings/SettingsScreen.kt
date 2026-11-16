@@ -3,12 +3,7 @@
 package com.sosauce.cinnamon.settings
 
 import androidx.annotation.DrawableRes
-import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -37,13 +32,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -60,9 +52,9 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.SettingsScreens
 import com.sosauce.cinnamon.app.navigation.navigateBack
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButton
-import com.sosauce.nekobites.utils.groupedShape
+import com.sosauce.cinnamon.core.ui.navBackTransition
+import com.sosauce.cinnamon.core.ui.navForwardTransition
 import com.sosauce.cinnamon.core.utils.GITHUB_RELEASES
-import com.sosauce.nekobites.helpers.rememberInteractionSource
 import com.sosauce.cinnamon.settings.components.SettingsNavigation
 import com.sosauce.nekobites.animations.rememberAnimatedShape
 import com.sosauce.nekobites.components.settings.AboutCard
@@ -89,24 +81,9 @@ fun SettingsScreen(
                 rememberSaveableStateHolderNavEntryDecorator(),
                 rememberViewModelStoreNavEntryDecorator()
             ),
-            transitionSpec = {
-                ContentTransform(
-                    targetContentEnter = slideInHorizontally { it } + fadeIn(),
-                    initialContentExit = slideOutHorizontally { -it / 4 } + fadeOut()
-                )
-            },
-            predictivePopTransitionSpec = {
-                ContentTransform(
-                    targetContentEnter = slideInHorizontally { -it / 4 } + fadeIn(),
-                    initialContentExit = slideOutHorizontally { it } + fadeOut()
-                )
-            },
-            popTransitionSpec = {
-                ContentTransform(
-                    targetContentEnter = slideInHorizontally { -it / 4 } + fadeIn(),
-                    initialContentExit = slideOutHorizontally { it } + fadeOut()
-                )
-            },
+            transitionSpec = { navForwardTransition() },
+            predictivePopTransitionSpec = { navBackTransition() },
+            popTransitionSpec = { navBackTransition() },
             entryProvider = entryProvider {
                 entry<SettingsScreens.Settings> {
                     SettingsHome(

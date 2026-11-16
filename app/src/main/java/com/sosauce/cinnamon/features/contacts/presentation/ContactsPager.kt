@@ -6,11 +6,11 @@ import android.provider.ContactsContract
 import androidx.compose.ui.util.fastMap
 import androidx.paging.InvalidatingPagingSourceFactory
 import androidx.paging.Pager
-import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.insertSeparators
 import androidx.paging.map
+import com.sosauce.cinnamon.core.utils.listPagingConfig
 import com.sosauce.cinnamon.features.contacts.data.model.CuteContactEntity
 import com.sosauce.cinnamon.features.contacts.data.model.toDomain
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsPagingSource
@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
@@ -89,12 +90,7 @@ class ContactsPager(
             pagingSourceFactory = factory
 
             Pager(
-                config = PagingConfig(
-                    pageSize = PAGE_SIZE,
-                    initialLoadSize = PAGE_SIZE,
-                    prefetchDistance = PAGE_SIZE / 2,
-                    enablePlaceholders = false
-                ),
+                config = listPagingConfig(PAGE_SIZE),
                 pagingSourceFactory = factory
             ).flow.map { pagingData ->
                 pagingData
@@ -133,3 +129,24 @@ class ContactsPager(
  */
 fun Collection<Long>.toContactIdSelection(): String =
     if (isEmpty()) "0" else "${ContactsContract.Contacts._ID} IN (${joinToString(",")})"
+
+/**
+ * SQL selection for the contacts that have a phone number, restricted to these ids when not null
+ */
+fun Set<Long>?.toPhoneContactsSelection(): String = listOfNotNull(
+    "${ContactsContract.Contacts.HAS_PHONE_NUMBER} = 1",
+    this?.toContactIdSelection()
+).joinToString(" AND ")
+
+/**
+ * Ids of the contacts matching [searchQuery], null when not searching.
+ * Results are refreshed when contacts change.
+ */
+fun ContactsRepository.searchResults(searchQuery: Flow<String>): Flow<Set<Long>?> = searchQuery
+    .flatMapLatest { query ->
+        if (query.isBlank()) {
+            flowOf(null)
+        } else {
+            observeContactChanges().mapLatest { searchContactIds(query) }
+        }
+    }

@@ -2,8 +2,14 @@
 
 package com.sosauce.cinnamon.setup
 
+import android.app.Activity
+import android.content.Intent
+import android.widget.Toast
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,9 +31,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.RoundedPolygon
+import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.rememberIsLandscape
 import com.sosauce.cinnamon.core.ui.components.CuteHero
 
@@ -118,5 +127,27 @@ private fun SetupButton(
             text = text,
             style = MaterialTheme.typography.titleMediumEmphasized
         )
+    }
+}
+
+/**
+ * Launcher for a default-app role request: calls [onGranted] when the role was granted,
+ * otherwise asks the user to grant it.
+ */
+@Composable
+fun rememberRoleRequestLauncher(
+    onGranted: () -> Unit
+): ManagedActivityResultLauncher<Intent, ActivityResult> {
+    val context = LocalContext.current
+    val grantPermissionMessage = stringResource(R.string.grant_me)
+
+    return rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            onGranted()
+        } else {
+            Toast.makeText(context, grantPermissionMessage, Toast.LENGTH_SHORT).show()
+        }
     }
 }

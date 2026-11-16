@@ -2,20 +2,14 @@
 
 package com.sosauce.cinnamon.features.phone.data.repository
 
-import android.Manifest
 import android.content.ContentProviderOperation
 import android.content.Context
-import android.content.pm.PackageManager
 import android.database.Cursor
 import android.provider.CallLog
 import android.provider.ContactsContract
 import android.telephony.PhoneNumberUtils
-import android.telephony.SubscriptionManager
-import androidx.compose.ui.util.fastFirst
-import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
-import androidx.core.app.ActivityCompat
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.repository.SimsRepository
@@ -32,7 +26,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
-import kotlin.text.ifEmpty
 
 
 class CallLogsRepository(
@@ -64,7 +57,8 @@ class CallLogsRepository(
         val sims = if (shouldBotherWithSims) {
             simsRepository.simLookup()
         } else emptyMap()
-        val accountSubIds = if (shouldBotherWithSims) simsRepository.accountIdToSubId() else emptyMap()
+        val accountSubIds =
+            if (shouldBotherWithSims) simsRepository.accountIdToSubId() else emptyMap()
 
         context.contentResolver.query(
             CallLog.Calls.CONTENT_URI,
@@ -120,7 +114,8 @@ class CallLogsRepository(
         val cachedName = cursor.getString(columns.cachedName).orEmpty()
         val location = cursor.getString(columns.location)
         val photo = cursor.getString(columns.photo)
-        val subId = cursor.getString(columns.subId)?.let { accountSubIds[it] ?: it.toIntOrNull() } ?: 0
+        val subId =
+            cursor.getString(columns.subId)?.let { accountSubIds[it] ?: it.toIntOrNull() } ?: 0
 
         val needsName = cachedName.isEmpty()
         val needsPhoto = photo.isNullOrEmpty()
@@ -196,6 +191,7 @@ class CallLogsRepository(
                 cursor.moveToPosition(row)
                 return cursor.getString(columns.number).orEmpty()
             }
+
             fun sameGroup(a: Int, b: Int) = groupSubsequent && numberAt(a) == numberAt(b)
 
             // row ranges of each group, in display order
@@ -226,7 +222,9 @@ class CallLogsRepository(
                 // a run is represented by its first call, like groupSubsequentlyBy()
                 cursor.moveToPosition(rows.first)
                 GroupedCallLog(
-                    log = readCallLog(cursor, columns, sims, accountSubIds, lookupCache).toDomain(context),
+                    log = readCallLog(cursor, columns, sims, accountSubIds, lookupCache).toDomain(
+                        context
+                    ),
                     count = rows.last - rows.first + 1,
                     startRow = rows.first
                 )
@@ -278,7 +276,11 @@ class CallLogsRepository(
         if (contactNumbers.isNotEmpty() || isNumberQuery) {
             context.contentResolver.query(
                 CallLog.Calls.CONTENT_URI,
-                arrayOf(CallLog.Calls._ID, CallLog.Calls.NUMBER, CallLog.Calls.CACHED_NORMALIZED_NUMBER),
+                arrayOf(
+                    CallLog.Calls._ID,
+                    CallLog.Calls.NUMBER,
+                    CallLog.Calls.CACHED_NORMALIZED_NUMBER
+                ),
                 null,
                 null,
                 null
@@ -291,10 +293,16 @@ class CallLogsRepository(
 
                     val matchesDigits = isNumberQuery && (
                             queryDigits in number.filter(Char::isDigit) ||
-                                    queryDigits in cursor.getString(2).orEmpty().filter(Char::isDigit)
+                                    queryDigits in cursor.getString(2).orEmpty()
+                                .filter(Char::isDigit)
                             )
 
-                    if (matchesDigits || contactNumbers.any { PhoneNumberUtils.compare(it, number) }) {
+                    if (matchesDigits || contactNumbers.any {
+                            PhoneNumberUtils.compare(
+                                it,
+                                number
+                            )
+                        }) {
                         ids.add(id)
                     }
                 }

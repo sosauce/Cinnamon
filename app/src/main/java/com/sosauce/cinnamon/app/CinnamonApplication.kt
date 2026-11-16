@@ -6,13 +6,10 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationChannelGroup
 import android.app.NotificationManager
-import android.os.Build.VERSION.SDK_INT
 import android.util.Log
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
-import coil3.gif.AnimatedImageDecoder
-import coil3.gif.GifDecoder
 import coil3.request.crossfade
 import coil3.video.VideoFrameDecoder
 import com.sosauce.cinnamon.R
@@ -35,6 +32,7 @@ class CinnamonApplication : Application(), KoinStartup, SingletonImageLoader.Fac
     companion object {
         @Volatile
         var isCallActivityVisible: Boolean = false
+
         // StateFlow for overlay manager to observe visibility changes
         val isCallActivityVisibleFlow = MutableStateFlow(false)
     }
@@ -46,7 +44,11 @@ class CinnamonApplication : Application(), KoinStartup, SingletonImageLoader.Fac
         val userPreferences by inject<UserPreferences>()
 
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            Log.e("CinnamonCrash", "FATAL CRASH on thread ${thread.name}: ${throwable.message}", throwable)
+            Log.e(
+                "CinnamonCrash",
+                "FATAL CRASH on thread ${thread.name}: ${throwable.message}",
+                throwable
+            )
 
             runBlocking {
                 userPreferences.saveCrashLogs(throwable.stackTraceToString())
@@ -63,16 +65,23 @@ class CinnamonApplication : Application(), KoinStartup, SingletonImageLoader.Fac
                     isCallActivityVisibleFlow.update { true }
                 }
             }
+
             override fun onActivityPaused(activity: android.app.Activity) {
                 if (activity is CallActivity) {
                     isCallActivityVisible = false
                     isCallActivityVisibleFlow.update { false }
                 }
             }
+
             override fun onActivityCreated(a: android.app.Activity, b: android.os.Bundle?) {}
             override fun onActivityStarted(a: android.app.Activity) {}
             override fun onActivityStopped(a: android.app.Activity) {}
-            override fun onActivitySaveInstanceState(a: android.app.Activity, b: android.os.Bundle) {}
+            override fun onActivitySaveInstanceState(
+                a: android.app.Activity,
+                b: android.os.Bundle
+            ) {
+            }
+
             override fun onActivityDestroyed(a: android.app.Activity) {
                 if (a is CallActivity) {
                     isCallActivityVisible = false

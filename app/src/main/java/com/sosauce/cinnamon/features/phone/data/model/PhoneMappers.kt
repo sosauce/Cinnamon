@@ -14,7 +14,7 @@ import com.sosauce.cinnamon.features.phone.domain.CuteVoicemail
 fun CuteCallLogEntity.toDomain(context: Context): CuteCallLog {
 
 
-    val callType = when(type) {
+    val callType = when (type) {
         CallLog.Calls.MISSED_TYPE -> CallType.MISSED
         CallLog.Calls.OUTGOING_TYPE -> CallType.OUTGOING
         CallLog.Calls.REJECTED_TYPE -> CallType.REJECTED
@@ -22,7 +22,7 @@ fun CuteCallLogEntity.toDomain(context: Context): CuteCallLog {
         else -> CallType.REJECTED
     }
 
-    val presentation = when(presentation) {
+    val presentation = when (presentation) {
         CallLog.Calls.PRESENTATION_ALLOWED -> CallPresentation.ALLOWED
         CallLog.Calls.PRESENTATION_PAYPHONE -> CallPresentation.PAYPHONE
         CallLog.Calls.PRESENTATION_RESTRICTED -> CallPresentation.RESTRICTED

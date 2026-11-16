@@ -6,10 +6,10 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.provider.ContactsContract
 import android.widget.Toast
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,10 +32,8 @@ import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItemDefaults
 import com.sosauce.cinnamon.core.ui.components.text.HeaderText
 import com.sosauce.cinnamon.core.utils.formateEventDate
-import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsAction
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsState
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.nekobites.components.NoXFound
 
 @Composable
@@ -48,8 +46,10 @@ fun ContactInfos(
     val resources = LocalResources.current
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
-    val hasInfo = state.contact.phoneNumbers.isNotEmpty() || state.details.emails.isNotEmpty() || state.details.addresses.isNotEmpty()
-    val hasAbout = state.details.websites.isNotEmpty() || state.details.note?.isNotEmpty() == true || state.details.events.isNotEmpty()
+    val hasInfo =
+        state.contact.phoneNumbers.isNotEmpty() || state.details.emails.isNotEmpty() || state.details.addresses.isNotEmpty()
+    val hasAbout =
+        state.details.websites.isNotEmpty() || state.details.note?.isNotEmpty() == true || state.details.events.isNotEmpty()
     val emailOffset = state.contact.phoneNumbers.count()
     val addressOffset = emailOffset + state.details.emails.count()
     val infoItemCount = addressOffset + state.details.addresses.count()
@@ -63,17 +63,17 @@ fun ContactInfos(
                 HeaderText(stringResource(R.string.contact_info))
                 state.contact.phoneNumbers.forEachIndexed { index, number ->
                     CuteListItem(
-                        onClick = { onHandleContactDetailsAction(ContactDetailsAction.CallNumber(number.number)) },
+                        onClick = {
+                            onHandleContactDetailsAction(
+                                ContactDetailsAction.CallNumber(
+                                    number.number
+                                )
+                            )
+                        },
                         shape = CuteListItemDefaults.getItemShape(index, infoItemCount),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                         leadingContent = {
-                            Icon(
-                                painter = painterResource(R.drawable.phone),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .padding(start = 10.dp)
-                                    .alpha(if (index == 0) 1f else 0f)
-                            )
+                            InfoLeadingIcon(icon = R.drawable.phone, visible = index == 0)
                         },
                         trailingContent = {
                             if (number.isBlocked) {
@@ -96,23 +96,13 @@ fun ContactInfos(
                         }
                     ) {
                         Text(number.number)
-                        Text(
-                            text = buildString {
-                                append(
-                                    ContactsContract.CommonDataKinds.Phone.getTypeLabel(
-                                        resources,
-                                        number.type,
-                                        "Custom"
-                                    )
-                                )
-                                if (number.isDefault) {
-                                    append(" · ")
-                                    append(stringResource(R.string.string_default))
-                                }
-                            },
-                            style = MaterialTheme.typography.bodyMediumEmphasized.copy(
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        InfoTypeLabel(
+                            typeLabel = ContactsContract.CommonDataKinds.Phone.getTypeLabel(
+                                resources,
+                                number.type,
+                                "Custom"
+                            ),
+                            isDefault = number.isDefault
                         )
                     }
                 }
@@ -135,16 +125,13 @@ fun ContactInfos(
                             }
 
                         },
-                        shape = CuteListItemDefaults.getItemShape(emailOffset + index, infoItemCount),
+                        shape = CuteListItemDefaults.getItemShape(
+                            emailOffset + index,
+                            infoItemCount
+                        ),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                         leadingContent = {
-                            Icon(
-                                painter = painterResource(R.drawable.email),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .padding(start = 10.dp)
-                                    .alpha(if (index == 0) 1f else 0f)
-                            )
+                            InfoLeadingIcon(icon = R.drawable.email, visible = index == 0)
                         },
                         trailingContent = {
                             if (email.isBlocked) {
@@ -156,23 +143,13 @@ fun ContactInfos(
                         }
                     ) {
                         Text(email.email)
-                        Text(
-                            text = buildString {
-                                append(
-                                    ContactsContract.CommonDataKinds.Email.getTypeLabel(
-                                        resources,
-                                        email.type,
-                                        "Custom"
-                                    )
-                                )
-                                if (email.isDefault) {
-                                    append(" · ")
-                                    append(stringResource(R.string.string_default))
-                                }
-                            },
-                            style = MaterialTheme.typography.bodyMediumEmphasized.copy(
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        InfoTypeLabel(
+                            typeLabel = ContactsContract.CommonDataKinds.Email.getTypeLabel(
+                                resources,
+                                email.type,
+                                "Custom"
+                            ),
+                            isDefault = email.isDefault
                         )
                     }
                 }
@@ -199,36 +176,23 @@ fun ContactInfos(
                                 ).show()
                             }
                         },
-                        shape = CuteListItemDefaults.getItemShape(addressOffset + index, infoItemCount),
+                        shape = CuteListItemDefaults.getItemShape(
+                            addressOffset + index,
+                            infoItemCount
+                        ),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                         leadingContent = {
-                            Icon(
-                                painter = painterResource(R.drawable.address),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .padding(start = 10.dp)
-                                    .alpha(if (index == 0) 1f else 0f)
-                            )
+                            InfoLeadingIcon(icon = R.drawable.address, visible = index == 0)
                         }
                     ) {
                         Text(address.address)
-                        Text(
-                            text = buildString {
-                                append(
-                                    ContactsContract.CommonDataKinds.StructuredPostal.getTypeLabel(
-                                        resources,
-                                        address.type,
-                                        "Custom"
-                                    )
-                                )
-                                if (address.isDefault) {
-                                    append(" · ")
-                                    append(stringResource(R.string.string_default))
-                                }
-                            },
-                            style = MaterialTheme.typography.bodyMediumEmphasized.copy(
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        InfoTypeLabel(
+                            typeLabel = ContactsContract.CommonDataKinds.StructuredPostal.getTypeLabel(
+                                resources,
+                                address.type,
+                                "Custom"
+                            ),
+                            isDefault = address.isDefault
                         )
                     }
                 }
@@ -254,35 +218,27 @@ fun ContactInfos(
                                 } else website
                                 uriHandler.openUri(formattedWebsite)
                             } catch (_: IllegalArgumentException) {
-                                Toast.makeText(context, "Couldn't open website", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Couldn't open website", Toast.LENGTH_SHORT)
+                                    .show()
                             }
                         },
                         shape = CuteListItemDefaults.getItemShape(index, aboutItemCount),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                         leadingContent = {
-                            Icon(
-                                painter = painterResource(R.drawable.website),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .padding(start = 10.dp)
-                                    .alpha(if (index == 0) 1f else 0f)
-                            )
+                            InfoLeadingIcon(icon = R.drawable.website, visible = index == 0)
                         }
                     ) { Text(website) }
                 }
                 state.details.events.forEachIndexed { index, event ->
                     CuteListItem(
                         onClick = null,
-                        shape = CuteListItemDefaults.getItemShape(eventOffset + index, aboutItemCount),
+                        shape = CuteListItemDefaults.getItemShape(
+                            eventOffset + index,
+                            aboutItemCount
+                        ),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                         leadingContent = {
-                            Icon(
-                                painter = painterResource(R.drawable.event),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .padding(start = 10.dp)
-                                    .alpha(if (index == 0) 1f else 0f)
-                            )
+                            InfoLeadingIcon(icon = R.drawable.event, visible = index == 0)
                         }
                     ) {
                         Text(event.date.formateEventDate())
@@ -315,4 +271,43 @@ fun ContactInfos(
             }
         }
     }
+}
+
+/**
+ * Icon in front of a group of infos, only shown on the first item of the group
+ */
+@Composable
+private fun InfoLeadingIcon(
+    @DrawableRes icon: Int,
+    visible: Boolean
+) {
+    Icon(
+        painter = painterResource(icon),
+        contentDescription = null,
+        modifier = Modifier
+            .padding(start = 10.dp)
+            .alpha(if (visible) 1f else 0f)
+    )
+}
+
+/**
+ * Type of an info (Mobile, Home…), mentioning when it is the default one
+ */
+@Composable
+private fun InfoTypeLabel(
+    typeLabel: CharSequence,
+    isDefault: Boolean
+) {
+    Text(
+        text = buildString {
+            append(typeLabel)
+            if (isDefault) {
+                append(" · ")
+                append(stringResource(R.string.string_default))
+            }
+        },
+        style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    )
 }

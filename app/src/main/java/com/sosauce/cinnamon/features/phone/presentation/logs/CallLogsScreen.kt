@@ -2,19 +2,14 @@
 
 package com.sosauce.cinnamon.features.phone.presentation.logs
 
-import com.sosauce.cinnamon.core.ui.components.searchbars.MainSearchbar
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -23,7 +18,6 @@ import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDropdownMenuItem
 import androidx.compose.material3.Text
-import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -39,8 +33,11 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.datastore.rememberSortLogsAscending
 import com.sosauce.cinnamon.core.ui.components.NoResult
+import com.sosauce.cinnamon.core.ui.components.SelectedBarAction
+import com.sosauce.cinnamon.core.ui.components.SelectedBarActions
 import com.sosauce.cinnamon.core.ui.components.SelectedBarSurface
 import com.sosauce.cinnamon.core.ui.components.menus.SortingDropdownMenu
+import com.sosauce.cinnamon.core.ui.components.searchbars.MainSearchbar
 import com.sosauce.cinnamon.core.utils.LazyListKeys
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.phone.domain.CallPresentation
@@ -119,47 +116,27 @@ fun SharedTransitionScope.CallLogsScreen(
                 },
                 selectedBar = {
                     // loaded logs only
-                    val items = callLogs.itemSnapshotList.items.mapNotNull { (it as? CallLogsListItem.Log)?.log }
+                    val items =
+                        callLogs.itemSnapshotList.items.mapNotNull { (it as? CallLogsListItem.Log)?.log }
 
                     SelectedBarSurface(
                         modifier = Modifier.selfAlignHorizontally(),
                         items = items,
                         multiSelectState = sweetSelectState
                     ) {
-                        ButtonGroup(
-                            horizontalArrangement = Arrangement.spacedBy(2.dp),
-                            overflowIndicator = {}
-                        ) {
-                            customItem(
-                                buttonGroupContent = {
-                                    Button(
-                                        onClick = {
-                                            val logs = sweetSelectState.selectedItems.map { it.id }
-                                            onHandleDialerActions(DialerAction.DeleteLogs(logs))
-                                            sweetSelectState.clearSelected()
-                                        },
-                                        shape = RoundedCornerShape(
-                                            topStart = 50.dp,
-                                            bottomStart = 50.dp,
-                                            topEnd = 50.dp,
-                                            bottomEnd = 50.dp
-                                        ),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                                        ),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.delete_filled),
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
+                        SelectedBarActions(
+                            actions = listOf(
+                                SelectedBarAction(
+                                    icon = R.drawable.delete_filled,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    onClick = {
+                                        val logs = sweetSelectState.selectedItems.map { it.id }
+                                        onHandleDialerActions(DialerAction.DeleteLogs(logs))
+                                        sweetSelectState.clearSelected()
                                     }
-                                },
-                                menuContent = {}
+                                )
                             )
-                        }
+                        )
                     }
                 },
                 onNavigate = onNavigate

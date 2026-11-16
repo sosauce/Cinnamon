@@ -1,8 +1,6 @@
 package com.sosauce.cinnamon.app.navigation
 
 import androidx.navigation3.runtime.NavKey
-import com.sosauce.cinnamon.features.contacts.domain.CuteContact
-import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails
 import kotlinx.serialization.Serializable
 
 @Serializable

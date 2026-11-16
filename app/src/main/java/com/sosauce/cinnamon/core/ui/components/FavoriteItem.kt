@@ -8,7 +8,6 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -40,13 +38,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import com.sosauce.cinnamon.core.ui.components.SelectionCheckbox
 import com.sosauce.nekobites.animations.bouncySpec
-import com.sosauce.nekobites.components.Spacer
 import com.sosauce.nekobites.helpers.rememberInteractionSource
 
 
@@ -60,7 +56,7 @@ fun FavoriteItem(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     favoriteBubble: @Composable (() -> Unit)?,
-    extraBadge: @Composable (() -> Unit)?= null,
+    extraBadge: @Composable (() -> Unit)? = null,
     visual: @Composable BoxScope.(isPressed: Boolean) -> Unit
 ) {
     val interactionSource = rememberInteractionSource()

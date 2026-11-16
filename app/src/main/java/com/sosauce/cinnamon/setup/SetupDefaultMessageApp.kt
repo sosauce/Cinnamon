@@ -3,10 +3,6 @@
 package com.sosauce.cinnamon.setup
 
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.runtime.Composable
@@ -22,16 +18,7 @@ fun SetupDefaultMessageApp(
 ) {
 
     val context = LocalContext.current
-    val grantPermissionMessage = stringResource(R.string.grant_me)
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            onNext()
-        } else {
-            Toast.makeText(context, grantPermissionMessage, Toast.LENGTH_SHORT).show()
-        }
-    }
+    val launcher = rememberRoleRequestLauncher(onGranted = onNext)
 
     SetupStep(
         icon = R.drawable.messages_filled,

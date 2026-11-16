@@ -50,16 +50,16 @@ import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.SimpleSearchbar
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
-import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar
 import com.sosauce.cinnamon.core.utils.LazyListKeys
 import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
+import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.presentation.ContactListItem
 import com.sosauce.cinnamon.features.contacts.presentation.ContactsListItem
 import com.sosauce.cinnamon.features.contacts.presentation.components.FavoriteContact
-import com.sosauce.cinnamon.features.contacts.presentation.contactsList
 import com.sosauce.cinnamon.features.contacts.presentation.components.dialogs.NumberPickerDialog
+import com.sosauce.cinnamon.features.contacts.presentation.contactsList
 import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
@@ -226,6 +226,24 @@ fun SharedTransitionScope.StartConversation(
 
                 }
 
+                // picks the contact, asking which number to use when there are several
+                val onContactClick: (CuteContact) -> Unit = onContactClick@{ contact ->
+                    val phoneNumbers = contact.phoneNumbers
+                    val firstNumber = phoneNumbers.firstOrNull()?.number ?: return@onContactClick
+
+                    when {
+                        phoneNumbers.size > 1 -> {
+                            contactPhoneNumbersPicker = phoneNumbers.fastMap { it.number }
+                        }
+
+                        state.isGroupChatMode -> onAddNumberToGroup(firstNumber)
+                        else -> {
+                            val threadId = firstNumber.getThreadIdOrCreate(context)
+                            onNavigate(Screen.ConversationDetails(threadId))
+                        }
+                    }
+                }
+
                 contactsList(
                     favorites = state.favorites,
                     contacts = contacts,
@@ -247,23 +265,7 @@ fun SharedTransitionScope.StartConversation(
                             modifier = Modifier.animateItem(),
                             contact = contact,
                             isSelected = isSelected,
-                            onClick = {
-                                val phoneNumbers = contact.phoneNumbers
-                                val firstNumber =
-                                    phoneNumbers.firstOrNull()?.number ?: return@FavoriteContact
-
-                                when {
-                                    phoneNumbers.size > 1 -> {
-                                        contactPhoneNumbersPicker = phoneNumbers.fastMap { it.number }
-                                    }
-
-                                    state.isGroupChatMode -> onAddNumberToGroup(firstNumber)
-                                    else -> {
-                                        val threadId = firstNumber.getThreadIdOrCreate(context)
-                                        onNavigate(Screen.ConversationDetails(threadId))
-                                    }
-                                }
-                            },
+                            onClick = { onContactClick(contact) },
                             onLongClick = { },
                             showNumber = true
                         )
@@ -277,23 +279,7 @@ fun SharedTransitionScope.StartConversation(
                         modifier = Modifier.animateItem(),
                         contact = contact,
                         isSelected = isSelected,
-                        onClick = {
-                            val phoneNumbers = contact.phoneNumbers
-                            val firstNumber =
-                                phoneNumbers.firstOrNull()?.number ?: return@ContactListItem
-
-                            when {
-                                phoneNumbers.size > 1 -> {
-                                    contactPhoneNumbersPicker = phoneNumbers.fastMap { it.number }
-                                }
-
-                                state.isGroupChatMode -> onAddNumberToGroup(firstNumber)
-                                else -> {
-                                    val threadId = firstNumber.getThreadIdOrCreate(context)
-                                    onNavigate(Screen.ConversationDetails(threadId))
-                                }
-                            }
-                        },
+                        onClick = { onContactClick(contact) },
                         showNumber = true
                     )
                 }

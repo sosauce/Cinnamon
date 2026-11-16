@@ -6,16 +6,17 @@ import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
-import android.provider.OpenableColumns
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.PermissionUtils
+import com.sosauce.cinnamon.core.utils.readBackupDisplayName
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
 import com.sosauce.cinnamon.features.contacts.domain.ContactAddress
 import com.sosauce.cinnamon.features.contacts.domain.ContactEmail
 import com.sosauce.cinnamon.features.contacts.domain.ContactEvent
 import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
 import com.sosauce.cinnamon.features.contacts.domain.RawContactEdit
+import com.sosauce.cinnamon.features.messaging.data.backup.ImportResult
 import com.sosauce.cinnamon.features.messaging.data.backup.ImportStrategy
 import ezvcard.Ezvcard
 import ezvcard.VCard
@@ -31,11 +32,6 @@ data class ImportableContact(
     val displayName: String,
     val detailLine: String,
     val vcard: VCard
-)
-
-data class ContactsImportResult(
-    val imported: Int,
-    val skipped: Int
 )
 
 /**
@@ -86,7 +82,7 @@ class ContactsImportRepository(
         items: List<ImportableContact>,
         strategy: ImportStrategy,
         onProgress: suspend (done: Int, total: Int) -> Unit = { _, _ -> }
-    ): ContactsImportResult = withContext(Dispatchers.IO) {
+    ): ImportResult = withContext(Dispatchers.IO) {
         val knownPhones =
             if (strategy == ImportStrategy.SKIP_EXISTING) existingNormalizedPhones() else emptySet()
         val knownEmails =
@@ -112,22 +108,10 @@ class ContactsImportRepository(
             if (items.isNotEmpty()) onProgress(index + 1, items.size)
         }
 
-        ContactsImportResult(imported = imported, skipped = skipped)
+        ImportResult(imported = imported, skipped = skipped)
     }
 
-    fun readDisplayName(uri: Uri): String {
-        return runCatching {
-            context.contentResolver.query(
-                uri,
-                arrayOf(OpenableColumns.DISPLAY_NAME),
-                null,
-                null,
-                null
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) cursor.getString(0) else null
-            }
-        }.getOrNull() ?: context.getString(R.string.backup_file_name)
-    }
+    fun readDisplayName(uri: Uri): String = context.readBackupDisplayName(uri)
 
     private fun isDuplicate(
         edit: RawContactEdit,

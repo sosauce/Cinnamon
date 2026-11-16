@@ -33,9 +33,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
-import com.sosauce.nekobites.helpers.rememberInteractionSource
 import com.sosauce.nekobites.animations.AnimatedDrawable
 import com.sosauce.nekobites.animations.AnimatedDrawableFile
+import com.sosauce.nekobites.helpers.rememberInteractionSource
 
 @Composable
 fun SortingDropdownMenu(

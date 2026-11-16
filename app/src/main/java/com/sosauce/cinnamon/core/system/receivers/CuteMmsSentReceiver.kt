@@ -3,9 +3,7 @@ package com.sosauce.cinnamon.core.system.receivers
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import android.provider.Telephony
-import android.telephony.SmsManager
 import androidx.core.content.contentValuesOf
 import androidx.core.net.toUri
 import com.klinker.android.send_message.MmsSentReceiver

@@ -1,25 +1,20 @@
 package com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bubble
 
-import com.sosauce.nekobites.animations.bouncySpec
-import com.sosauce.nekobites.helpers.rememberInteractionSource
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.animateColorAsState
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -31,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -38,6 +34,8 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import com.sosauce.cinnamon.features.messaging.domain.MessageType
+import com.sosauce.nekobites.animations.bouncySpec
+import com.sosauce.nekobites.helpers.rememberInteractionSource
 
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
@@ -83,7 +81,7 @@ fun MessageLayout(
                 onClick = onClick,
                 onLongClick = onLongClick
             )
-            //.padding(horizontal = 5.dp, vertical = verticalPadding)
+        //.padding(horizontal = 5.dp, vertical = verticalPadding)
 
     ) {
         Box(

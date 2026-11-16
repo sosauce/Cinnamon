@@ -2,9 +2,10 @@ package com.sosauce.cinnamon.features.messaging.data.repository
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.sosauce.cinnamon.core.utils.offsetRefreshKey
+import com.sosauce.cinnamon.core.utils.toOffsetAndLimit
 import com.sosauce.cinnamon.features.messaging.data.model.CuteConversationEntity
 import kotlinx.coroutines.CancellationException
-import kotlin.math.max
 
 /**
  * Offset-based paging over conversations (newest first), restricted by [extraSelection].
@@ -18,16 +19,7 @@ class ConversationsPagingSource(
 ) : PagingSource<Int, CuteConversationEntity>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, CuteConversationEntity> {
-        val key = params.key ?: 0
-
-        val (offset, limit) = when (params) {
-            is LoadParams.Prepend -> {
-                val start = max(0, key - params.loadSize)
-                start to (key - start)
-            }
-
-            else -> max(0, key) to params.loadSize
-        }
+        val (offset, limit) = params.toOffsetAndLimit()
 
         return try {
             val page = conversationsRepository.getConversationsPage(extraSelection, offset, limit)
@@ -47,8 +39,6 @@ class ConversationsPagingSource(
         }
     }
 
-    override fun getRefreshKey(state: PagingState<Int, CuteConversationEntity>): Int? {
-        val anchor = state.anchorPosition ?: return null
-        return max(0, anchor - state.config.initialLoadSize / 2)
-    }
+    override fun getRefreshKey(state: PagingState<Int, CuteConversationEntity>): Int? =
+        state.offsetRefreshKey()
 }

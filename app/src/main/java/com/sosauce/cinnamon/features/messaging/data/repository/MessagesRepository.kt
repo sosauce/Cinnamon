@@ -7,7 +7,6 @@ import android.content.ContentUris
 import android.content.Context
 import android.os.Build
 import android.provider.BaseColumns
-import android.provider.Telephony
 import android.provider.Telephony.Mms
 import android.provider.Telephony.MmsSms
 import android.provider.Telephony.Sms
@@ -294,45 +293,45 @@ class MessagesRepository(
 
             if (limit > 0 && cursor.moveToPosition(offset)) {
                 do {
-                val isMms = cursor.getString(transportColumn) == "mms"
+                    val isMms = cursor.getString(transportColumn) == "mms"
 
-                val id = cursor.getLong(idColumn)
-                val rawDate = cursor.getLong(dateColumn)
+                    val id = cursor.getLong(idColumn)
+                    val rawDate = cursor.getLong(dateColumn)
 
-                // SMS dates are milliseconds, MMS dates are seconds.
-                val dateMillis = if (isMms) {
-                    if (rawDate > 0L) rawDate * 1000L
-                    else System.currentTimeMillis()
-                } else {
-                    rawDate
-                }
+                    // SMS dates are milliseconds, MMS dates are seconds.
+                    val dateMillis = if (isMms) {
+                        if (rawDate > 0L) rawDate * 1000L
+                        else System.currentTimeMillis()
+                    } else {
+                        rawDate
+                    }
 
-                val type = cursor.getInt(
-                    if (isMms) mmsTypeColumn else smsTypeColumn
-                )
-
-                val read = cursor.getInt(readColumn) == 1
-                val status = cursor.getInt(statusColumn)
-
-                val delivered = if (isMms) {
-                    !cursor.isNull(statusColumn) &&
-                            status == MMS_STATUS_RETRIEVED
-                } else {
-                    status == Sms.STATUS_COMPLETE
-                }
-
-                rows.add(
-                    MessageRow(
-                        id = id,
-                        isMms = isMms,
-                        type = type,
-                        dateMillis = dateMillis,
-                        read = read,
-                        delivered = delivered,
-                        body = cursor.getString(bodyColumn)
+                    val type = cursor.getInt(
+                        if (isMms) mmsTypeColumn else smsTypeColumn
                     )
-                )
-            } while (rows.size < limit && cursor.moveToNext())
+
+                    val read = cursor.getInt(readColumn) == 1
+                    val status = cursor.getInt(statusColumn)
+
+                    val delivered = if (isMms) {
+                        !cursor.isNull(statusColumn) &&
+                                status == MMS_STATUS_RETRIEVED
+                    } else {
+                        status == Sms.STATUS_COMPLETE
+                    }
+
+                    rows.add(
+                        MessageRow(
+                            id = id,
+                            isMms = isMms,
+                            type = type,
+                            dateMillis = dateMillis,
+                            read = read,
+                            delivered = delivered,
+                            body = cursor.getString(bodyColumn)
+                        )
+                    )
+                } while (rows.size < limit && cursor.moveToNext())
             }
         }
 
@@ -380,7 +379,6 @@ class MessagesRepository(
             fetchMessagesForThread(threadId)
                 .fastMap { it.toCuteMessage(context) }
         }
-
 
 
     private fun fetchSmsForThread(threadId: Long): List<CuteMessageEntity> {
@@ -493,7 +491,7 @@ class MessagesRepository(
                 val date = if (rawDate > 1_000L) rawDate * 1000 else System.currentTimeMillis()
                 val read = cursor.getInt(readColumn) == 1
                 val delivered = !cursor.isNull(statusColumn) &&
-                    cursor.getInt(statusColumn) == MMS_STATUS_RETRIEVED
+                        cursor.getInt(statusColumn) == MMS_STATUS_RETRIEVED
 
                 rows.add(
                     Row(
@@ -789,6 +787,7 @@ class MessagesRepository(
 
     companion object {
         private const val NORMALIZED_DATE = "normalized_date"
+
         // stay well below SQLite's bound-variable limit on older devices (999)
         private const val SQL_IN_CHUNK = 900
     }
