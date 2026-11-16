@@ -76,7 +76,7 @@
             </intent-filter>
 
 
-            <intent-filter>
+            <intent-filter android:label="@string/send_msg" >
                 <action android:name="android.intent.action.SEND" />
                 <action android:name="android.intent.action.SENDTO" />
 
@@ -90,7 +90,7 @@
             </intent-filter>
 
 
-            <intent-filter>
+            <intent-filter android:label="@string/call">
                 <action android:name="android.intent.action.DIAL" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
