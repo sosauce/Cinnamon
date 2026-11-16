@@ -6,8 +6,6 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationChannelGroup
 import android.app.NotificationManager
-import android.media.AudioAttributes
-import android.media.RingtoneManager
 import android.os.Build.VERSION.SDK_INT
 import android.util.Log
 import coil3.ImageLoader
@@ -88,7 +86,6 @@ class CinnamonApplication : Application(), KoinStartup, SingletonImageLoader.Fac
         val messagesName = getString(R.string.incoming_messages)
         val callsName = getString(R.string.calls)
         val importance = NotificationManager.IMPORTANCE_HIGH
-        val ringtone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
         val messageChannel = NotificationChannel(
             MessageNotificationManager.INCOMING_MESSAGES_CHANNEL_ID,
             messagesName,
@@ -102,13 +99,7 @@ class CinnamonApplication : Application(), KoinStartup, SingletonImageLoader.Fac
             importance
         ).apply {
             group = CallNotificationManager.CALLS_GROUP
-            setSound(
-                ringtone,
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-            )
+            setSound(null, null)
         }
 
         notificationManager.createNotificationChannelGroup(
@@ -126,6 +117,7 @@ class CinnamonApplication : Application(), KoinStartup, SingletonImageLoader.Fac
 
         notificationManager.createNotificationChannel(messageChannel)
         notificationManager.createNotificationChannel(callChannel)
+        notificationManager.deleteNotificationChannel(CallNotificationManager.LEGACY_CALLS_CHANNEL_ID)
 
     }
 

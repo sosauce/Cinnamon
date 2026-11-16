@@ -213,7 +213,9 @@ class CallNotificationManager(
         private const val DECLINE_CALL_CODE = 0
         private const val ACCEPT_CALL_CODE = 1
         private const val HANGUP_ONGOING_CALL_CODE = 2
-        const val CALLS_CHANNEL_ID = "calls_id"
+        const val CALLS_CHANNEL_ID = "calls_silent_id"
+        // Old channel that used the ringtone as its sound, deleted on startup
+        const val LEGACY_CALLS_CHANNEL_ID = "calls_id"
         const val CALLS_GROUP = "calls_group"
 
         const val CALL_NOTIF_ID = 1
