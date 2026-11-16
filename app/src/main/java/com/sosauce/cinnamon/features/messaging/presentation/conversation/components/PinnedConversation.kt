@@ -60,6 +60,23 @@ fun PinnedConversation(
     isInSelectionMode: Boolean = false
 ) {
 
+    val badge: (@Composable () -> Unit)? = if (conversation.unreadCount > 0) {
+        {
+            Badge(
+                containerColor = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.defaultMinSize(25.dp, 25.dp)
+            ) {
+                Text(
+                    text = if (conversation.unreadCount > 99) {
+                        stringResource(R.string.unread_count_overflow)
+                    } else {
+                        conversation.unreadCount.toString()
+                    }
+                )
+            }
+        }
+    } else null
+
     FavoriteItem(
         modifier = modifier,
         title = conversation.name,
@@ -80,20 +97,7 @@ fun PinnedConversation(
                 highQuality = true
             )
         },
-        extraBadge = {
-            Badge(
-                containerColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.defaultMinSize(25.dp, 25.dp)
-            ) {
-                Text(
-                    text = if (conversation.unreadCount > 99) {
-                        stringResource(R.string.unread_count_overflow)
-                    } else {
-                        conversation.unreadCount.toString()
-                    }
-                )
-            }
-        }
+        extraBadge = badge
     )
 }
 
