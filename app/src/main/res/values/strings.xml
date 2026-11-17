@@ -114,6 +114,9 @@
     <string name="via">via</string>
     <string name="private_number">Private number</string>
     <string name="save">Save</string>
+    <string name="discard">Discard</string>
+    <string name="discard_changes">Discard changes ?</string>
+    <string name="discard_changes_u_sure">You have unsaved changes. Are you sure you want to leave without saving ?</string>
     <string name="color_picker">Color picker</string>
     <string name="saved">Saved!</string>
     <string name="calls">Calls</string>

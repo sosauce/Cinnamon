@@ -8,6 +8,7 @@ package com.sosauce.cinnamon.features.contacts.presentation.editor
 
 import android.net.Uri
 import android.provider.ContactsContract
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -46,6 +47,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
@@ -127,6 +129,49 @@ fun SharedTransitionScope.EditContactScreen(
     onHandeEditContactAction: (EditContactAction) -> Unit
 ) {
 
+    var rawContact by retain(state.rawContact) { mutableStateOf(state.rawContact) }
+    var showUnsavedChangesWarning by remember { mutableStateOf(false) }
+
+    val hasUnsavedChanges = state.rawContact != rawContact
+
+    BackHandler(hasUnsavedChanges) {
+        showUnsavedChangesWarning = true
+    }
+
+    if (showUnsavedChangesWarning) {
+        AlertDialog(
+            onDismissRequest = { showUnsavedChangesWarning = false },
+            icon = {
+                Icon(
+                    painter = painterResource(R.drawable.warning),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = { Text(stringResource(R.string.discard_changes)) },
+            text = { Text(stringResource(R.string.discard_changes_u_sure)) },
+            dismissButton = {
+                TextButton(
+                    onClick = { showUnsavedChangesWarning = false },
+                    shapes = ButtonDefaults.shapes()
+                ) { Text(stringResource(R.string.cancel)) }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showUnsavedChangesWarning = false
+                        onNavigateUp()
+                    },
+                    shapes = ButtonDefaults.shapes()
+                ) {
+                    Text(
+                        text = stringResource(R.string.discard),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        )
+    }
 
     val context = LocalContext.current
     val resources = LocalResources.current
@@ -158,70 +203,67 @@ fun SharedTransitionScope.EditContactScreen(
                 )
             }
         }
+    val pfpPicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            uri?.let { rawContact = rawContact.copy(photoString = it.toString()) }
+        }
+    // index of the event being edited, -1 when adding a new one
+    var eventPickerIndex by remember { mutableStateOf<Int?>(null) }
+
+    eventPickerIndex?.let { index ->
+
+        val relatedEvent = rawContact.events.getOrNull(index)
+        val initialSelectedDate = relatedEvent?.date?.let { date ->
+            runCatching {
+                LocalDate.parse(date).atStartOfDay(ZoneOffset.UTC).toInstant()
+                    .toEpochMilli()
+            }.getOrNull()
+        }
+
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = initialSelectedDate
+        )
+
+        DatePickerDialog(
+            onDismissRequest = { eventPickerIndex = null },
+            dismissButton = {
+                TextButton(
+                    onClick = { eventPickerIndex = null },
+                    shapes = ButtonDefaults.shapes()
+                ) { Text(stringResource(R.string.cancel)) }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val millis =
+                            datePickerState.selectedDateMillis ?: return@TextButton
+                        val date = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC)
+                            .toLocalDate().toString()
+
+                        rawContact = rawContact.copy(
+                            events = if (relatedEvent != null) {
+                                rawContact.events.copyMutate {
+                                    this[index] = this[index].copy(date = date)
+                                }
+                            } else {
+                                rawContact.events + ContactEvent(
+                                    date,
+                                    ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY
+                                )
+                            }
+                        )
+                        eventPickerIndex = null
+                    },
+                    shapes = ButtonDefaults.shapes(),
+                    enabled = datePickerState.selectedDateMillis != null
+                ) { Text(stringResource(R.string.set)) }
+            }
+        ) { DatePicker(datePickerState) }
+    }
 
     LoadingBox(
         isLoading = state.isLoading
     ) {
-
-        var rawContact by retain { mutableStateOf(state.rawContact) }
-        val pfpPicker =
-            rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-                uri?.let { rawContact = rawContact.copy(photoString = it.toString()) }
-            }
-        // index of the event being edited, -1 when adding a new one
-        var eventPickerIndex by remember { mutableStateOf<Int?>(null) }
-
-        eventPickerIndex?.let { index ->
-
-            val relatedEvent = rawContact.events.getOrNull(index)
-            val initialSelectedDate = relatedEvent?.date?.let { date ->
-                runCatching {
-                    LocalDate.parse(date).atStartOfDay(ZoneOffset.UTC).toInstant()
-                        .toEpochMilli()
-                }.getOrNull()
-            }
-
-            val datePickerState = rememberDatePickerState(
-                initialSelectedDateMillis = initialSelectedDate
-            )
-
-            DatePickerDialog(
-                onDismissRequest = { eventPickerIndex = null },
-                dismissButton = {
-                    TextButton(
-                        onClick = { eventPickerIndex = null },
-                        shapes = ButtonDefaults.shapes()
-                    ) { Text(stringResource(R.string.cancel)) }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            val millis =
-                                datePickerState.selectedDateMillis ?: return@TextButton
-                            val date = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC)
-                                .toLocalDate().toString()
-
-                            rawContact = rawContact.copy(
-                                events = if (relatedEvent != null) {
-                                    rawContact.events.copyMutate {
-                                        this[index] = this[index].copy(date = date)
-                                    }
-                                } else {
-                                    rawContact.events + ContactEvent(
-                                        date,
-                                        ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY
-                                    )
-                                }
-                            )
-                            eventPickerIndex = null
-                        },
-                        shapes = ButtonDefaults.shapes(),
-                        enabled = datePickerState.selectedDateMillis != null
-                    ) { Text(stringResource(R.string.set)) }
-                }
-            ) { DatePicker(datePickerState) }
-        }
-
         Scaffold(
             bottomBar = {
                 Row(
@@ -235,7 +277,13 @@ fun SharedTransitionScope.EditContactScreen(
                         modifier = Modifier
                             .padding(horizontal = 15.dp)
                             .navigationBarsPadding(),
-                        onNavigateUp = onNavigateUp
+                        onNavigateUp = {
+                            if (hasUnsavedChanges) {
+                                showUnsavedChangesWarning = true
+                            } else {
+                                onNavigateUp()
+                            }
+                        }
                     )
                     AnimatedFab(
                         onClick = {
