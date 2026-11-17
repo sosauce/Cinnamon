@@ -3,6 +3,7 @@
 package com.sosauce.cinnamon.setup
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -28,6 +29,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,7 +49,8 @@ fun SetupStep(
     description: String,
     shape: RoundedPolygon,
     buttonText: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onSkip: (() -> Unit)? = null
 ) {
     val isLandscape = rememberIsLandscape()
 
@@ -70,10 +73,11 @@ fun SetupStep(
                     size = 140.dp
                 )
             }
-            SetupButton(
+            SetupButtons(
                 icon = icon,
                 text = buttonText,
                 onClick = onClick,
+                onSkip = onSkip,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -92,41 +96,75 @@ fun SetupStep(
                     shape = shape
                 )
             }
-            SetupButton(
+            SetupButtons(
                 icon = icon,
                 text = buttonText,
-                onClick = onClick
+                onClick = onClick,
+                onSkip = onSkip
             )
         }
     }
 }
 
+/**
+ * @param onSkip shows a skip button under the main one when provided
+ */
 @Composable
-private fun SetupButton(
+private fun SetupButtons(
     @DrawableRes icon: Int,
     text: String,
     onClick: () -> Unit,
+    onSkip: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
-    Button(
-        onClick = onClick,
-        shapes = ButtonDefaults.shapes(),
-        contentPadding = ButtonDefaults.contentPaddingFor(ButtonDefaults.MediumContainerHeight),
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .fillMaxWidth()
             .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
-            .height(ButtonDefaults.MediumContainerHeight)
     ) {
-        Icon(
-            painter = painterResource(icon),
-            contentDescription = null,
-            modifier = Modifier.size(ButtonDefaults.MediumIconSize)
-        )
-        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.titleMediumEmphasized
-        )
+        Button(
+            onClick = onClick,
+            shapes = ButtonDefaults.shapes(),
+            contentPadding = ButtonDefaults.contentPaddingFor(ButtonDefaults.MediumContainerHeight),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(ButtonDefaults.MediumContainerHeight)
+        ) {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = null,
+                modifier = Modifier.size(ButtonDefaults.MediumIconSize)
+            )
+            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMediumEmphasized
+            )
+        }
+        if (onSkip != null) {
+            Spacer(Modifier.height(4.dp))
+            TextButton(
+                onClick = onSkip,
+                shapes = ButtonDefaults.shapes()
+            ) {
+                Text(
+                    text = stringResource(R.string.skip_for_now),
+                    style = MaterialTheme.typography.labelLargeEmphasized
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Launches a default-app role request made with createDefaultSmsIntent/createDefaultDialerIntent.
+ * Does nothing when the role doesn't exist on this device (nothing can handle the intent then).
+ */
+fun ManagedActivityResultLauncher<Intent, ActivityResult>.launchRoleRequest(intent: Intent) {
+    try {
+        launch(intent)
+    } catch (_: ActivityNotFoundException) {
     }
 }
 

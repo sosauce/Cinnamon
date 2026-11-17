@@ -2,8 +2,13 @@
 
 package com.sosauce.cinnamon.features.phone.presentation.logs
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -19,12 +24,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemContentType
@@ -39,10 +46,12 @@ import com.sosauce.cinnamon.core.ui.components.SelectedBarSurface
 import com.sosauce.cinnamon.core.ui.components.menus.SortingDropdownMenu
 import com.sosauce.cinnamon.core.ui.components.searchbars.MainSearchbar
 import com.sosauce.cinnamon.core.utils.LazyListKeys
+import com.sosauce.cinnamon.core.utils.PermissionUtils
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.phone.domain.CallPresentation
 import com.sosauce.cinnamon.features.phone.domain.CuteCallLog
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
+import com.sosauce.cinnamon.setup.SetupDefaultDialerScreen
 import com.sosauce.nekobites.animations.AnimatedFab
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
@@ -59,6 +68,11 @@ fun SharedTransitionScope.CallLogsScreen(
 ) {
     val sweetSelectState = rememberSweetSelectState<CuteCallLog>()
     var sortLogsAscending by rememberSortLogsAscending()
+    val isDefaultDialer by PermissionUtils.observeHasDefaultApp(PermissionUtils.DIALER)
+
+    LaunchedEffect(isDefaultDialer) {
+        onHandleDialerActions(DialerAction.DefaultDialerChanged(isDefaultDialer))
+    }
 
     Scaffold(
         bottomBar = {
@@ -109,10 +123,16 @@ fun SharedTransitionScope.CallLogsScreen(
                     }
                 },
                 fab = {
-                    AnimatedFab(
-                        onClick = { onNavigate(Screen.Dialpad()) },
-                        icon = R.drawable.dialpad
-                    )
+                    AnimatedVisibility(
+                        visible = isDefaultDialer,
+                        enter = slideInVertically { it },
+                        exit = slideOutVertically { it }
+                    ) {
+                        AnimatedFab(
+                            onClick = { onNavigate(Screen.Dialpad()) },
+                            icon = R.drawable.dialpad
+                        )
+                    }
                 },
                 selectedBar = {
                     // loaded logs only
@@ -143,6 +163,19 @@ fun SharedTransitionScope.CallLogsScreen(
             )
         }
     ) { paddingValues ->
+
+        if (!isDefaultDialer) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                SetupDefaultDialerScreen(
+                    onNext = { }
+                )
+            }
+            return@Scaffold
+        }
 
         LoadingBox(
             isLoading = state.isLoading

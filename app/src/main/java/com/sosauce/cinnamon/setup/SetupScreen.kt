@@ -104,8 +104,15 @@ fun SetupScreen(
                 modifier = Modifier.fillMaxSize()
             ) { step ->
                 when (step) {
-                    0 -> SetupDefaultMessageApp { setupProgress = 1 }
-                    1 -> SetupDefaultDialerScreen(onGotoApp)
+                    0 -> SetupDefaultMessageApp(
+                        onNext = { setupProgress = 1 },
+                        onSkip = { setupProgress = 1 }
+                    )
+
+                    1 -> SetupDefaultDialerScreen(
+                        onNext = onGotoApp,
+                        onSkip = onGotoApp
+                    )
                 }
             }
         }

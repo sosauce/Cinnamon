@@ -39,12 +39,14 @@ import kotlinx.coroutines.launch
  * both restricted by [selection] and refreshed when contacts change.
  *
  * @param selection extra SQL selection on [ContactsContract.Contacts], null for every contact
+ * @param refresh reloads everything and observes contacts again on each emission
  */
 class ContactsPager(
     private val contactsRepository: ContactsRepository,
     scope: CoroutineScope,
     selection: Flow<String?>,
-    sortAscending: Flow<Boolean>
+    sortAscending: Flow<Boolean>,
+    refresh: Flow<*> = flowOf(Unit)
 ) {
 
     private val query = combine(selection, sortAscending, ::Pair).distinctUntilChanged()
@@ -57,7 +59,7 @@ class ContactsPager(
     /**
      * Favorite contacts, null until loaded
      */
-    val favorites: StateFlow<List<CuteContact>?> = query
+    val favorites: StateFlow<List<CuteContact>?> = combine(query, refresh) { query, _ -> query }
         .flatMapLatest { (selection, ascending) ->
             contactsRepository
                 .observeContactChanges()
@@ -109,9 +111,14 @@ class ContactsPager(
 
     init {
         scope.launch {
-            // first emission is the initial value, the paging source is already fresh
-            contactsRepository.observeContactChanges().drop(1).collectLatest {
+            refresh.collectLatest {
+                // no-op the first time, nothing is paged yet
                 pagingSourceFactory?.invalidate()
+
+                // first emission is the initial value, the paging source is already fresh
+                contactsRepository.observeContactChanges().drop(1).collectLatest {
+                    pagingSourceFactory?.invalidate()
+                }
             }
         }
     }

@@ -20,6 +20,7 @@ import androidx.core.content.contentValuesOf
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.beautifyNumber
+import com.sosauce.cinnamon.core.utils.PermissionUtils
 import com.sosauce.cinnamon.core.utils.observe
 import com.sosauce.cinnamon.features.messaging.data.model.CuteConversationEntity
 import com.sosauce.cinnamon.features.messaging.data.model.MessagesPage
@@ -88,6 +89,8 @@ class ConversationsRepository(private val context: Context) {
         extraSelection: String?,
         extraSelectionArgs: Array<String>
     ): List<CuteConversationEntity> {
+        if (!PermissionUtils.isDefaultSmsApp(context)) return emptyList()
+
         val conversations = mutableListOf<CuteConversationEntity>()
 
         queryThreads(extraSelection, extraSelectionArgs)?.use { cursor ->
@@ -101,6 +104,7 @@ class ConversationsRepository(private val context: Context) {
 
     fun observeConversationChanges(): Flow<Boolean> =
         context.contentResolver.observe(Telephony.Threads.CONTENT_URI)
+
 
     /**
      * One page of conversations (newest first), starting at [offset].

@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -47,6 +48,14 @@ class CallLogsViewModel(
 
     private val filter = MutableStateFlow(CallLogsFilter.ALL)
 
+
+    // Assumed until the screen says otherwise. Observing/querying the call log only works as the
+    // default dialer, so everything depending on it restarts when this changes
+    private val isDefaultDialer = MutableStateFlow(true)
+
+    private val callLogChanges = isDefaultDialer
+        .flatMapLatest { callLogsRepository.observeCallLogChanges() }
+
     private val searchQuery = snapshotFlow { textFieldState.text.toString().trim() }
         .debounce(250.milliseconds)
         .distinctUntilChanged()
@@ -61,8 +70,7 @@ class CallLogsViewModel(
                 flowOf(null)
             } else {
                 // refresh results when the call log changes
-                callLogsRepository
-                    .observeCallLogChanges()
+                callLogChanges
                     .mapLatest { callLogsRepository.searchCallLogIds(query) }
             }
         }
@@ -113,7 +121,7 @@ class CallLogsViewModel(
             ).flow.map { pagingData ->
                 pagingData
                     .map { CallLogsListItem.Log(it.log, it.count) }
-                    .insertSeparators<CallLogsListItem.Log, CallLogsListItem> { before, after ->
+                    .insertSeparators { before, after ->
                         val next = after?.log ?: return@insertSeparators null
 
                         if (before?.log?.date != next.date) {
@@ -126,9 +134,13 @@ class CallLogsViewModel(
 
     init {
         viewModelScope.launch {
-            // first emission is the initial value, the paging source is already fresh
-            callLogsRepository.observeCallLogChanges().drop(1).collectLatest {
+            isDefaultDialer.collectLatest {
+                // no-op the first time, nothing is paged yet
                 pagingSourceFactory?.invalidate()
+
+                callLogsRepository.observeCallLogChanges().drop(1).collectLatest {
+                    pagingSourceFactory?.invalidate()
+                }
             }
         }
     }
@@ -153,6 +165,7 @@ class CallLogsViewModel(
         when (action) {
             is DialerAction.ChangeFilter -> filter.value = action.filter
             is DialerAction.ChangeSort -> Unit
+            is DialerAction.DefaultDialerChanged -> isDefaultDialer.value = action.isDefault
             is DialerAction.DeleteLogs -> viewModelScope.launch(Dispatchers.IO) {
                 callLogsRepository.deleteCallLog(action.ids)
             }
@@ -198,6 +211,7 @@ sealed interface DialerAction {
     data class ChangeFilter(val filter: CallLogsFilter) : DialerAction
     data object ChangeSort : DialerAction
     data class DeleteLogs(val ids: List<Long>) : DialerAction
+    data class DefaultDialerChanged(val isDefault: Boolean) : DialerAction
 }
 
 enum class CallLogsFilter {

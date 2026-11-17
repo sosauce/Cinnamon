@@ -18,6 +18,7 @@ import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
 import com.sosauce.cinnamon.features.phone.presentation.call.CallState
 import com.sosauce.cinnamon.features.phone.presentation.call.CallingState
 import com.sosauce.cinnamon.features.phone.presentation.call.OtherCall
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -69,23 +70,27 @@ class CallManager(
     fun swapCalls() = androidCallCallback?.swapCalls()
 
     /**
-     * @return Whether the call was successfully placed or not
+     * @return Whether the call was placed, and if not, whether it's because the system refused it
+     * (see [StartCallResult.NOT_ALLOWED])
      * @param forcedHandle - if provided, uses this PhoneAccountHandle directly (for SIM picker)
      */
     @SuppressLint("MissingPermission")
-    suspend fun startCall(number: String, forcedHandle: PhoneAccountHandle? = null): Boolean {
-
-        if (telecomManager.isInCall) return false
-        val phoneAccountHandle = resolvePhoneAccountHandle(forcedHandle)
-
-        val bundle = Bundle().apply {
-            putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, phoneAccountHandle)
-        }
-
-        val normalizedNumber = phoneNumberNormalizer.formatToE164(number)
-        val numberUri = "tel:$normalizedNumber".toUri()
+    suspend fun startCall(
+        number: String,
+        forcedHandle: PhoneAccountHandle? = null
+    ): StartCallResult {
 
         return try {
+            if (telecomManager.isInCall) return StartCallResult.FAILED
+            val phoneAccountHandle = resolvePhoneAccountHandle(forcedHandle)
+
+            val bundle = Bundle().apply {
+                putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, phoneAccountHandle)
+            }
+
+            val normalizedNumber = phoneNumberNormalizer.formatToE164(number)
+            val numberUri = "tel:$normalizedNumber".toUri()
+
             telecomManager.placeCall(numberUri, bundle)
 
             val callIntent = Intent(context, CallActivity::class.java).apply {
@@ -96,9 +101,14 @@ class CallManager(
                 )
             }
             context.startActivity(callIntent)
-            true
+            StartCallResult.STARTED
+        } catch (_: SecurityException) {
+            // Phone permissions are granted with the default dialer role
+            StartCallResult.NOT_ALLOWED
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
-            false
+            StartCallResult.FAILED
         }
     }
 
@@ -244,6 +254,16 @@ class CallManager(
     }
 }
 
+
+enum class StartCallResult {
+    STARTED,
+    FAILED,
+
+    /**
+     * The system refused the call with a [SecurityException], Cinnamon needs to be the default dialer app
+     */
+    NOT_ALLOWED
+}
 
 interface AndroidCallCallback {
     fun answerCall()

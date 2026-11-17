@@ -22,6 +22,7 @@ import com.sosauce.cinnamon.core.datastore.PreferencesKeys.PINNED_CONVOS
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SEARCH_MESSAGE_CONTENT
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SEND_GROUP_AS_MMS
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SEND_LONG_AS_MMS
+import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SETUP_COMPLETED
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SORT_CONTACTS_ASCENDING
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SORT_CONVERSATIONS_ASCENDING
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SORT_LOGS_ASCENDING
@@ -150,6 +151,19 @@ class UserPreferences(
         context.dataStore.edit { preferences ->
             preferences[DEFAULT_PHONE_HANDLE_ID] = handle.id
             println("Testing - Saved ID: ${handle.id}")
+        }
+    }
+
+    /**
+     * Whether the user went through the setup screens, granting the default app roles or skipping them
+     */
+    val setupCompleted = context.dataStore.data.map {
+        it[SETUP_COMPLETED] ?: false
+    }
+
+    suspend fun saveSetupCompleted() {
+        context.dataStore.edit { preferences ->
+            preferences[SETUP_COMPLETED] = true
         }
     }
 

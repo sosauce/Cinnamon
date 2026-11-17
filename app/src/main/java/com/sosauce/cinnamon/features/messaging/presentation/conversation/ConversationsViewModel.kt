@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -56,13 +57,21 @@ class ConversationsViewModel(
 
     private val drafts = conversationSettingsDao.getAllDrafts()
 
+    // Assumed until the screen says otherwise. Observing/querying conversations only works as the
+    // default SMS app, so everything depending on it restarts when this changes
+    private val isDefaultSmsApp = MutableStateFlow(true)
+
+
     /**
      * threadId -> amount of matching messages, null when not searching
      */
     private val searchResults: Flow<Map<Long, Int>?> = combine(
         searchQuery,
-        userPreferences.searchMessageContent
-    ) { query, searchMessageContent -> query.trim() to searchMessageContent }
+        userPreferences.searchMessageContent,
+        isDefaultSmsApp
+    ) { query, searchMessageContent, isDefault ->
+        Triple(query.trim(), searchMessageContent, isDefault)
+    }
         .distinctUntilChanged()
         .flatMapLatest { (query, searchMessageContent) ->
             if (query.isBlank()) {
@@ -87,7 +96,10 @@ class ConversationsViewModel(
     ) { pinned, archived -> pinned - archived }
         .distinctUntilChanged()
 
-    private val pinnedConversations = visiblePinnedIds.flatMapLatest { pinnedIds ->
+    private val pinnedConversations = combine(
+        visiblePinnedIds,
+        isDefaultSmsApp
+    ) { pinnedIds, _ -> pinnedIds }.flatMapLatest { pinnedIds ->
         if (pinnedIds.isEmpty()) {
             flowOf(emptyList())
         } else {
@@ -156,9 +168,13 @@ class ConversationsViewModel(
 
     init {
         viewModelScope.launch {
-            // first emission is the initial value, the paging source is already fresh
-            conversationsRepository.observeConversationChanges().drop(1).collectLatest {
+            isDefaultSmsApp.collectLatest {
+                // no-op the first time, nothing is paged yet
                 pagingSourceFactory?.invalidate()
+
+                conversationsRepository.observeConversationChanges().drop(1).collectLatest {
+                    pagingSourceFactory?.invalidate()
+                }
             }
         }
     }
@@ -189,6 +205,10 @@ class ConversationsViewModel(
         SharingStarted.WhileSubscribed(5000),
         ConversationsState(isLoading = true)
     )
+
+    fun onDefaultSmsAppChanged(isDefault: Boolean) {
+        isDefaultSmsApp.value = isDefault
+    }
 
     fun handleThreadsAction(action: ConversationsAction) {
         viewModelScope.launch {

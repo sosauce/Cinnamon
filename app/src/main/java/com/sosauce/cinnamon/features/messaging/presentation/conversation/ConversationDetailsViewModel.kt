@@ -24,6 +24,7 @@ import com.sosauce.cinnamon.core.MediaManager
 import com.sosauce.cinnamon.core.telephony.message.CuteTelephonyManager
 import com.sosauce.cinnamon.core.telephony.message.MessageNotificationManager
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
+import com.sosauce.cinnamon.core.telephony.phone.StartCallResult
 import com.sosauce.cinnamon.core.utils.isShortCode
 import com.sosauce.cinnamon.core.utils.unblock
 import com.sosauce.cinnamon.features.messaging.data.ScheduledMessageManager
@@ -262,11 +263,14 @@ class ConversationDetailsViewModel(
 
             is ConversationActions.SendMessage -> {
                 viewModelScope.launch {
-                    cuteTelephonyManager.sendMessage(
+                    val sent = cuteTelephonyManager.sendMessage(
                         addresses = action.addresses,
                         message = action.message,
                         attachments = action.attachments
                     )
+                    if (!sent) {
+                        _events.send(ConversationDetailsEvents.RequestDefaultSmsApp)
+                    }
                 }
             }
 
@@ -336,9 +340,12 @@ class ConversationDetailsViewModel(
             }
 
             is ConversationActions.CallNumber -> viewModelScope.launch {
-                callManager.startCall(
+                val result = callManager.startCall(
                     action.number
                 )
+                if (result == StartCallResult.NOT_ALLOWED) {
+                    _events.send(ConversationDetailsEvents.RequestDefaultDialer)
+                }
             }
 
             is ConversationActions.OpenSearch -> _search.update { it.copy(isActive = true) }
@@ -453,4 +460,14 @@ sealed interface ConversationDetailsEvents {
         val success: Boolean,
         val numbers: List<String>
     ) : ConversationDetailsEvents
+
+    /**
+     * A message couldn't be sent because Cinnamon isn't the default SMS app
+     */
+    data object RequestDefaultSmsApp : ConversationDetailsEvents
+
+    /**
+     * A call couldn't be launched because Cinnamon isn't the default dialer app
+     */
+    data object RequestDefaultDialer : ConversationDetailsEvents
 }

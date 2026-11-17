@@ -33,6 +33,8 @@ import com.sosauce.cinnamon.core.ui.ChatColor
 import com.sosauce.cinnamon.core.ui.navBackTransition
 import com.sosauce.cinnamon.core.ui.navForwardTransition
 import com.sosauce.cinnamon.core.utils.LocalScreen
+import com.sosauce.cinnamon.core.utils.createDefaultDialerIntent
+import com.sosauce.cinnamon.core.utils.createDefaultSmsIntent
 import com.sosauce.cinnamon.core.utils.rememberHazeState
 import com.sosauce.cinnamon.core.utils.tabToScreen
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsEvent
@@ -58,6 +60,7 @@ import com.sosauce.cinnamon.features.messaging.presentation.customization.Conver
 import com.sosauce.cinnamon.features.messaging.presentation.customization.ThemingViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.starter.StartConversation
 import com.sosauce.cinnamon.features.messaging.presentation.starter.StartConversationViewModel
+import com.sosauce.cinnamon.features.phone.presentation.call.CallEvents
 import com.sosauce.cinnamon.features.phone.presentation.call.CallingViewModel
 import com.sosauce.cinnamon.features.phone.presentation.dialpad.DialpadScreen
 import com.sosauce.cinnamon.features.phone.presentation.dialpad.DialpadViewModel
@@ -66,6 +69,8 @@ import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsViewModel
 import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailScreen
 import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailViewModel
 import com.sosauce.cinnamon.settings.SettingsScreen
+import com.sosauce.cinnamon.setup.launchRoleRequest
+import com.sosauce.cinnamon.setup.rememberRoleRequestLauncher
 import com.sosauce.nekobites.helpers.ObserveAsEvents
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -81,6 +86,16 @@ fun Nav(
     val initialTab = rememberInitialScreenBlocking()
     val backStack = rememberNavBackStack(initialTab.tabToScreen())
     val hazeState = rememberHazeState()
+
+    // Launched when a call/message is refused because Cinnamon isn't the default app for it
+    val dialerRoleLauncher = rememberRoleRequestLauncher(onGranted = {})
+    val smsRoleLauncher = rememberRoleRequestLauncher(onGranted = {})
+    val requestDefaultDialer = {
+        dialerRoleLauncher.launchRoleRequest(context.createDefaultDialerIntent())
+    }
+    val requestDefaultSmsApp = {
+        smsRoleLauncher.launchRoleRequest(context.createDefaultSmsIntent())
+    }
 
     LaunchedEffect(intent) { backStack.handleIntent(context, intent) }
 
@@ -135,6 +150,7 @@ fun Nav(
                                 }
 
                                 is ContactDetailsEvent.Success -> backStack.navigateBack()
+                                is ContactDetailsEvent.RequestDefaultDialer -> requestDefaultDialer()
                             }
                         }
 
@@ -150,6 +166,12 @@ fun Nav(
                         val callViewModel = koinViewModel<CallingViewModel>()
                         val state by viewModel.state.collectAsStateWithLifecycle()
                         val callLogs = viewModel.callLogs.collectAsLazyPagingItems()
+
+                        ObserveAsEvents(callViewModel.events) { event ->
+                            when (event) {
+                                is CallEvents.RequestDefaultDialer -> requestDefaultDialer()
+                            }
+                        }
 
                         CallLogsScreen(
                             state = state,
@@ -185,6 +207,7 @@ fun Nav(
                             conversations = conversations,
                             textFieldState = viewModel.textFieldState,
                             onNavigate = backStack::navigate,
+                            onDefaultSmsAppChanged = viewModel::onDefaultSmsAppChanged,
                             onHandleConversationsAction = viewModel::handleThreadsAction
                         )
                     }
@@ -207,7 +230,11 @@ fun Nav(
                         val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
 
                         ObserveAsEvents(viewModel.events) { event ->
-                            showConversationEventToast(context, resources, event)
+                            when (event) {
+                                is ConversationDetailsEvents.RequestDefaultSmsApp -> requestDefaultSmsApp()
+                                is ConversationDetailsEvents.RequestDefaultDialer -> requestDefaultDialer()
+                                else -> showConversationEventToast(context, resources, event)
+                            }
                         }
 
                         // when new messages, block notifs for thread and remark it as read
@@ -258,6 +285,12 @@ fun Nav(
                         val state by viewModel.state.collectAsStateWithLifecycle()
                         val contacts = viewModel.contacts.collectAsLazyPagingItems()
 
+                        ObserveAsEvents(callViewModel.events) { event ->
+                            when (event) {
+                                is CallEvents.RequestDefaultDialer -> requestDefaultDialer()
+                            }
+                        }
+
                         DialpadScreen(
                             state = state,
                             contacts = contacts,
@@ -293,7 +326,11 @@ fun Nav(
                         val media by viewModel.media.collectAsStateWithLifecycle()
 
                         ObserveAsEvents(viewModel.events) { event ->
-                            showConversationEventToast(context, resources, event)
+                            when (event) {
+                                is ConversationDetailsEvents.RequestDefaultSmsApp -> requestDefaultSmsApp()
+                                is ConversationDetailsEvents.RequestDefaultDialer -> requestDefaultDialer()
+                                else -> showConversationEventToast(context, resources, event)
+                            }
                         }
 
                         AboutConversationScreen(
@@ -417,6 +454,10 @@ private fun showConversationEventToast(
                 )
             }
         }
+
+        // handled by the nav entries, they launch a role request instead of a toast
+        is ConversationDetailsEvents.RequestDefaultSmsApp,
+        is ConversationDetailsEvents.RequestDefaultDialer -> return
     }
 
     Toast.makeText(context, text, Toast.LENGTH_SHORT).show()

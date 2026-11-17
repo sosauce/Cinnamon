@@ -2,10 +2,14 @@
 
 package com.sosauce.cinnamon.features.contacts.presentation
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,6 +26,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -38,9 +43,11 @@ import com.sosauce.cinnamon.core.ui.components.ContactsSelectedBar
 import com.sosauce.cinnamon.core.ui.components.menus.SortingDropdownMenu
 import com.sosauce.cinnamon.core.ui.components.searchbars.MainSearchbar
 import com.sosauce.cinnamon.core.utils.LazyListKeys
+import com.sosauce.cinnamon.core.utils.PermissionUtils
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.presentation.components.FavoriteContact
+import com.sosauce.cinnamon.setup.SetupDefaultDialerScreen
 import com.sosauce.nekobites.animations.AnimatedFab
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
@@ -58,8 +65,14 @@ fun SharedTransitionScope.ContactsScreen(
 
     var sortContactsAscending by rememberSortContactsAscending()
     val sweetSelectState = rememberSweetSelectState<CuteContact>()
+    val isDefaultSmsApp by PermissionUtils.observeHasDefaultApp(PermissionUtils.SMS)
+    val isDefaultDialer by PermissionUtils.observeHasDefaultApp(PermissionUtils.DIALER)
+    // being either one is enough to access contacts
+    val isDefaultApp = isDefaultSmsApp || isDefaultDialer
 
-
+    LaunchedEffect(isDefaultApp) {
+        onHandleContactsAction(ContactsAction.DefaultAppChanged(isDefaultApp))
+    }
 
     Scaffold(
         bottomBar = {
@@ -98,10 +111,16 @@ fun SharedTransitionScope.ContactsScreen(
                     }
                 },
                 fab = {
-                    AnimatedFab(
-                        onClick = { onNavigate(Screen.ContactEditor(null)) },
-                        icon = R.drawable.add
-                    )
+                    AnimatedVisibility(
+                        visible = isDefaultApp,
+                        enter = slideInVertically { it },
+                        exit = slideOutVertically { it }
+                    ) {
+                        AnimatedFab(
+                            onClick = { onNavigate(Screen.ContactEditor(null)) },
+                            icon = R.drawable.add
+                        )
+                    }
                 },
                 selectedBar = {
                     ContactsSelectedBar(
@@ -124,6 +143,20 @@ fun SharedTransitionScope.ContactsScreen(
             )
         }
     ) { paddingValues ->
+
+        if (!isDefaultApp) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                SetupDefaultDialerScreen(
+                    onNext = {},
+                    description = R.string.contacts_desc
+                )
+            }
+            return@Scaffold
+        }
 
         LoadingBox(
             isLoading = state.isLoading

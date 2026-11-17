@@ -32,10 +32,14 @@ class SendMessageWorker(
                 val scheduledMessage =
                     scheduledMessagesDao.getScheduledMessageById(scheduledMessageId)
 
-                cuteTelephonyManager.sendMessage(
+                val sent = cuteTelephonyManager.sendMessage(
                     addresses = scheduledMessage.addresses,
                     message = scheduledMessage.message,
                     attachments = emptyList()
+                )
+                // keep the scheduled message so it isn't lost
+                if (!sent) return@withContext Result.failure(
+                    workDataOf(MESSAGE_NOT_SENT to "Cinnamon isn't the default SMS app")
                 )
 
                 scheduledMessagesDao.deleteScheduledMessage(scheduledMessage)

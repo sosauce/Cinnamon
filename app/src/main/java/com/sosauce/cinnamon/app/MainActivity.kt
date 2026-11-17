@@ -9,15 +9,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
 import com.sosauce.cinnamon.app.navigation.Nav
+import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.core.datastore.rememberLastCrash
 import com.sosauce.cinnamon.core.ui.CinnamonTheme
 import com.sosauce.cinnamon.core.ui.CrashScreen
 import com.sosauce.cinnamon.core.utils.PermissionUtils
 import com.sosauce.cinnamon.setup.SetupScreen
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
 
+    private val userPreferences by inject<UserPreferences>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,7 +37,14 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CinnamonTheme {
-                var hasSmsRole by remember { mutableStateOf(PermissionUtils.isDefaultSmsApp(this)) }
+                // Setup is only shown once: the roles can be skipped there, the screens needing
+                // them ask again later
+                var showSetup by remember {
+                    mutableStateOf(
+                        !PermissionUtils.isDefaultSmsApp(this) &&
+                                !runBlocking { userPreferences.setupCompleted.first() }
+                    )
+                }
                 var lastCrash by rememberLastCrash()
 
                 when {
@@ -39,8 +53,12 @@ class MainActivity : ComponentActivity() {
                         onClose = { lastCrash = "" }
                     )
 
-                    hasSmsRole -> Nav(intent = intent)
-                    else -> SetupScreen { hasSmsRole = true }
+                    showSetup -> SetupScreen {
+                        lifecycleScope.launch { userPreferences.saveSetupCompleted() }
+                        showSetup = false
+                    }
+
+                    else -> Nav(intent = intent)
                 }
 
             }
@@ -48,4 +66,3 @@ class MainActivity : ComponentActivity() {
     }
 
 }
-

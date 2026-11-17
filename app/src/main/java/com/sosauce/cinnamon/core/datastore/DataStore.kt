@@ -53,6 +53,7 @@ data object PreferencesKeys {
     val CHAT_ZOOM_SCALE = floatPreferencesKey("CHAT_ZOOM_SCALE")
     val LAST_CRASH_LOG = stringPreferencesKey("LAST_CRASH_LOG")
     val SEARCH_MESSAGE_CONTENT = booleanPreferencesKey("SEARCH_MESSAGE_CONTENT")
+    val SETUP_COMPLETED = booleanPreferencesKey("SETUP_COMPLETED")
 }
 
 

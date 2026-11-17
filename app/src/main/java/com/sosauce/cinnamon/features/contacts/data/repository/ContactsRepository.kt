@@ -14,6 +14,7 @@ import androidx.compose.ui.util.fastMap
 import androidx.core.content.contentValuesOf
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.core.utils.PermissionUtils
 import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.utils.blockNumbers
 import com.sosauce.cinnamon.core.utils.observe
@@ -94,6 +95,12 @@ class ContactsRepository(
         offset: Int,
         limit: Int
     ): ContactsPage = withContext(Dispatchers.IO) {
+
+        if (!PermissionUtils.isDefaultDialerApp(context)) return@withContext ContactsPage(
+            contacts = emptyList(),
+            totalCount = 0
+        )
+
         val rows = mutableListOf<CuteContactEntity>()
         var totalCount = 0
 
@@ -285,6 +292,9 @@ class ContactsRepository(
      * contactId -> account name ("Device" when it has none), for every contact
      */
     suspend fun getContactAccounts(): Map<Long, String> = withContext(Dispatchers.IO) {
+
+        if (!PermissionUtils.isDefaultDialerApp(context)) return@withContext emptyMap()
+
         val accountNames = fetchAccountNames()
         val result = LinkedHashMap<Long, String>()
 
@@ -735,6 +745,9 @@ class ContactsRepository(
      * @param contactIds only fetch account names of these contacts, all of them when null
      */
     private fun fetchAccountNames(contactIds: Collection<Long>? = null): Map<Long, String> {
+
+        if (!PermissionUtils.isDefaultDialerApp(context)) return emptyMap()
+
         val map = mutableMapOf<Long, String>()
         if (contactIds?.isEmpty() == true) return map
         context.contentResolver.query(

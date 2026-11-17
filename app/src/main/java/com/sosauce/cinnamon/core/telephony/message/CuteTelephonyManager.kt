@@ -23,6 +23,7 @@ import com.sosauce.cinnamon.core.system.receivers.CuteMmsSentReceiver
 import com.sosauce.cinnamon.core.system.receivers.DeliveryReportsReceiver
 import com.sosauce.cinnamon.core.system.receivers.SmsSentReceiver
 import com.sosauce.cinnamon.core.telephony.PhoneNumberNormalizer
+import com.sosauce.cinnamon.core.utils.PermissionUtils
 import com.sosauce.cinnamon.core.utils.blockNumbers
 import com.sosauce.cinnamon.core.utils.getFileName
 import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
@@ -53,8 +54,27 @@ class CuteTelephonyManager(
 
     /**
      * Send an SMS or MMS depending on which is more appropriate. Also takes into account user preferences before switching to the right protocol
+     *
+     * @return false when the message couldn't be sent because Cinnamon isn't the default SMS app
+     * (only the default SMS app can write to the SMS provider, and sending without the role's
+     * permissions throws a [SecurityException])
      */
     suspend fun sendMessage(
+        addresses: List<String>,
+        message: String,
+        attachments: List<Uri>
+    ): Boolean {
+        if (!PermissionUtils.isDefaultSmsApp(context)) return false
+
+        return try {
+            sendSmsOrMms(addresses, message, attachments)
+            true
+        } catch (_: SecurityException) {
+            false
+        }
+    }
+
+    private suspend fun sendSmsOrMms(
         addresses: List<String>,
         message: String,
         attachments: List<Uri>

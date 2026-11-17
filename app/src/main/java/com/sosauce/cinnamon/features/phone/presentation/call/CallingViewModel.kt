@@ -10,16 +10,19 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
+import com.sosauce.cinnamon.core.telephony.phone.StartCallResult
 import com.sosauce.cinnamon.core.utils.getContactId
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.phone.domain.AudioRoute
 import com.sosauce.cinnamon.features.phone.domain.CuteSimCard
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -34,15 +37,25 @@ class CallingViewModel(
     private val _state = callManager._callingState
     val state = _state.asStateFlow()
 
+    private val _events = Channel<CallEvents>()
+    val events = _events.receiveAsFlow()
+
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
             state.mapLatest { it.number }.distinctUntilChanged().collectLatest { number ->
-                val poster =
-                    contactSettingsDao.getContactPoster(number.getContactId(application.applicationContext))
+                // contacts can't be read without the default dialer role
+                val (photo, poster) = try {
+                    val contactId = number.getContactId(application.applicationContext)
+
+                    numberLookup.fetchPhoto(number, true) to
+                            contactSettingsDao.getContactPoster(contactId)
+                } catch (_: SecurityException) {
+                    null to null
+                }
                 _state.update {
                     it.copy(
-                        photo = numberLookup.fetchPhoto(number, true)?.toUri(),
+                        photo = photo?.toUri(),
                         poster = poster?.toUri()
                     )
                 }
@@ -54,7 +67,10 @@ class CallingViewModel(
         when (action) {
             is CallAction.LaunchCall -> {
                 viewModelScope.launch {
-                    callManager.startCall(action.number)
+                    if (callManager.startCall(action.number) == StartCallResult.NOT_ALLOWED) {
+                        _events.send(CallEvents.RequestDefaultDialer)
+                        return@launch
+                    }
                     // Optimistically update state and launch UI even if placeCall
                     // threw, ensures call button always opens Cinnamon's CallScreen
                     // (incoming UI is handled separately via CallService fullScreenIntent).
@@ -135,5 +151,8 @@ sealed interface CallAction {
 }
 
 sealed interface CallEvents {
-
+    /**
+     * The call couldn't be launched because Cinnamon isn't the default dialer app
+     */
+    data object RequestDefaultDialer : CallEvents
 }

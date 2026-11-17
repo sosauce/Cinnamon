@@ -14,7 +14,8 @@ import com.sosauce.cinnamon.core.utils.createDefaultSmsIntent
 @SuppressLint("InlinedApi")
 @Composable
 fun SetupDefaultMessageApp(
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    onSkip: (() -> Unit)? = null
 ) {
 
     val context = LocalContext.current
@@ -26,6 +27,7 @@ fun SetupDefaultMessageApp(
         description = stringResource(R.string.default_sms_app_desc),
         shape = MaterialShapes.Cookie12Sided,
         buttonText = stringResource(R.string.request_permission),
-        onClick = { launcher.launch(context.createDefaultSmsIntent()) }
+        onClick = { launcher.launchRoleRequest(context.createDefaultSmsIntent()) },
+        onSkip = onSkip
     )
 }

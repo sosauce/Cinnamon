@@ -5,14 +5,19 @@
 
 package com.sosauce.cinnamon.features.messaging.presentation.conversation
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -28,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -35,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
@@ -43,10 +50,12 @@ import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.components.ConversationsSelectedBar
 import com.sosauce.cinnamon.core.ui.components.searchbars.MainSearchbar
 import com.sosauce.cinnamon.core.utils.LazyListKeys
+import com.sosauce.cinnamon.core.utils.PermissionUtils
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.Conversation
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.PinnedConversation
+import com.sosauce.cinnamon.setup.SetupDefaultMessageApp
 import com.sosauce.nekobites.animations.AnimatedFab
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
@@ -60,10 +69,16 @@ fun SharedTransitionScope.ConversationsScreen(
     conversations: LazyPagingItems<CuteConversation>,
     textFieldState: TextFieldState,
     onNavigate: (Screen) -> Unit,
+    onDefaultSmsAppChanged: (Boolean) -> Unit,
     onHandleConversationsAction: (ConversationsAction) -> Unit
 ) {
     val listState = rememberLazyListState()
     val sweetSelectState = rememberSweetSelectState<CuteConversation>()
+    val isDefaultSmsApp by PermissionUtils.observeHasDefaultApp(PermissionUtils.SMS)
+
+    LaunchedEffect(isDefaultSmsApp) {
+        onDefaultSmsAppChanged(isDefaultSmsApp)
+    }
 
     Scaffold(
         bottomBar = {
@@ -72,10 +87,16 @@ fun SharedTransitionScope.ConversationsScreen(
                 isInSelectionMode = sweetSelectState.isInSelectionMode,
                 sortingMenu = {},
                 fab = {
-                    AnimatedFab(
-                        onClick = { onNavigate(Screen.StartConversation) },
-                        icon = R.drawable.add
-                    )
+                    AnimatedVisibility(
+                        visible = isDefaultSmsApp,
+                        enter = slideInVertically { it },
+                        exit = slideOutVertically { it }
+                    ) {
+                        AnimatedFab(
+                            onClick = { onNavigate(Screen.StartConversation) },
+                            icon = R.drawable.add
+                        )
+                    }
                 },
                 selectedBar = {
                     ConversationsSelectedBar(
@@ -116,6 +137,18 @@ fun SharedTransitionScope.ConversationsScreen(
             )
         }
     ) { paddingValues ->
+
+
+        if (!isDefaultSmsApp) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                SetupDefaultMessageApp(onNext = {})
+            }
+            return@Scaffold
+        }
 
         LoadingBox(
             isLoading = state.isLoading

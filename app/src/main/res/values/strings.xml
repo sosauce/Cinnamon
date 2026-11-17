@@ -166,8 +166,10 @@
     <string name="default_sms_app">Default SMS app</string>
     <string name="default_sms_app_desc">This is required to use texting capabilities</string>
     <string name="request_permission">Request permission</string>
+    <string name="skip_for_now">Skip for now</string>
     <string name="default_dialer_app">Default dialer app</string>
     <string name="default_dialer_app_desc">This is required to use phone capabilities</string>
+    <string name="contacts_desc">This is required to use view &amp; edit contacts</string>
     <string name="android_16_warning">On Android 16 and above, you\'ll have to allow restricted permissions in order to use the app. Click this card to learn how.</string>
     <string name="better_luck_next_time">Better luck next time!</string>
     <string name="failed_to_save_mms">Failed to save MMS to device!</string>

@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -42,19 +43,23 @@ class ContactsViewModel(
 
     private val sortAscending = userPreferences.getSortContactsAscending().distinctUntilChanged()
 
+    // Assumed until the screen says otherwise. Observing/querying contacts only works as the
+    // default SMS or dialer app, so everything depending on it restarts when this changes
+    private val isDefaultApp = MutableStateFlow(true)
+
     /**
      * contactId -> account name, null until loaded
      */
-    private val contactAccounts = contactsRepository
-        .observeContactChanges()
+    private val contactAccounts = isDefaultApp
+        .flatMapLatest { contactsRepository.observeContactChanges() }
         .mapLatest { contactsRepository.getContactAccounts() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     /**
      * Ids of the contacts matching the search query, null when not searching
      */
-    private val searchResults: Flow<Set<Long>?> = contactsRepository
-        .searchResults(searchQuery)
+    private val searchResults: Flow<Set<Long>?> = isDefaultApp
+        .flatMapLatest { contactsRepository.searchResults(searchQuery) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     /**
@@ -80,7 +85,8 @@ class ContactsViewModel(
         contactsRepository = contactsRepository,
         scope = viewModelScope,
         selection = selection,
-        sortAscending = sortAscending
+        sortAscending = sortAscending,
+        refresh = isDefaultApp
     )
 
     /**
@@ -111,6 +117,7 @@ class ContactsViewModel(
     fun handleContactsAction(action: ContactsAction) {
         when (action) {
             is ContactsAction.ChangeAccountFiltering -> accountFilter.value = action.accountName
+            is ContactsAction.DefaultAppChanged -> isDefaultApp.value = action.isDefault
             is ContactsAction.DeleteContacts -> viewModelScope.launch(Dispatchers.IO) {
                 contactsRepository.deleteContacts(action.ids)
                 contactSettingsDao.deleteContactsSettings(action.ids)
@@ -142,4 +149,5 @@ sealed interface ContactsAction {
     data class ChangeAccountFiltering(val accountName: String) : ContactsAction
     data class DeleteContacts(val ids: List<Long>) : ContactsAction
     data class ToggleFavorite(val contacts: List<CuteContact>) : ContactsAction
+    data class DefaultAppChanged(val isDefault: Boolean) : ContactsAction
 }

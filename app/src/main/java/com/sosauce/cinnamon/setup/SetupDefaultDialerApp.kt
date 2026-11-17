@@ -2,6 +2,7 @@
 
 package com.sosauce.cinnamon.setup
 
+import androidx.annotation.StringRes
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.runtime.Composable
@@ -12,7 +13,9 @@ import com.sosauce.cinnamon.core.utils.createDefaultDialerIntent
 
 @Composable
 fun SetupDefaultDialerScreen(
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    @StringRes description: Int = R.string.default_dialer_app_desc,
+    onSkip: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val launcher = rememberRoleRequestLauncher(onGranted = onNext)
@@ -20,9 +23,10 @@ fun SetupDefaultDialerScreen(
     SetupStep(
         icon = R.drawable.phone_filled,
         title = stringResource(R.string.default_dialer_app),
-        description = stringResource(R.string.default_dialer_app_desc),
+        description = stringResource(description),
         shape = MaterialShapes.Clover8Leaf,
         buttonText = stringResource(R.string.request_permission),
-        onClick = { launcher.launch(context.createDefaultDialerIntent()) }
+        onClick = { launcher.launchRoleRequest(context.createDefaultDialerIntent()) },
+        onSkip = onSkip
     )
 }

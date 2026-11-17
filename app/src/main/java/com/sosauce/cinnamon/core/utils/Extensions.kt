@@ -287,13 +287,20 @@ fun ContentResolver.observe(uri: Uri) = callbackFlow {
         }
     }
 
-    registerContentObserver(
-        uri,
-        true,
-        observer
-    )
+    // Without the permission protecting this uri (app used without being a default app),
+    // registering throws. The flow then stays silent so collectors never query the provider.
+    val canObserve = try {
+        registerContentObserver(
+            uri,
+            true,
+            observer
+        )
+        true
+    } catch (_: SecurityException) {
+        false
+    }
 
-    trySend(false)
+    if (canObserve) trySend(false)
     awaitClose {
         unregisterContentObserver(observer)
     }

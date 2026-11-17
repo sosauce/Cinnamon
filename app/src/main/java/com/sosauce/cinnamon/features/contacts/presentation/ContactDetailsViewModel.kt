@@ -6,6 +6,7 @@ import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
+import com.sosauce.cinnamon.core.telephony.phone.StartCallResult
 import com.sosauce.cinnamon.core.utils.unblock
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsEntity
@@ -149,7 +150,11 @@ class ContactDetailsViewModel(
             }
 
             is ContactDetailsAction.CallNumber -> {
-                viewModelScope.launch { callManager.startCall(action.number) }
+                viewModelScope.launch {
+                    if (callManager.startCall(action.number) == StartCallResult.NOT_ALLOWED) {
+                        _events.send(ContactDetailsEvent.RequestDefaultDialer)
+                    }
+                }
             }
         }
     }
@@ -168,6 +173,11 @@ data class ContactDetailsState(
 sealed interface ContactDetailsEvent {
     data object Error : ContactDetailsEvent
     data object Success : ContactDetailsEvent
+
+    /**
+     * A call couldn't be launched because Cinnamon isn't the default dialer app
+     */
+    data object RequestDefaultDialer : ContactDetailsEvent
 }
 
 sealed interface ContactDetailsAction {

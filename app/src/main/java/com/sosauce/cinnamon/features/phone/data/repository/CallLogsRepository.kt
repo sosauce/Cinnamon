@@ -13,6 +13,7 @@ import androidx.compose.ui.util.fastMap
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.repository.SimsRepository
+import com.sosauce.cinnamon.core.utils.PermissionUtils
 import com.sosauce.cinnamon.core.utils.observe
 import com.sosauce.cinnamon.features.phone.data.model.CallLogsPage
 import com.sosauce.cinnamon.features.phone.data.model.CuteCallLogEntity
@@ -172,6 +173,14 @@ class CallLogsRepository(
         backwards: Boolean = false,
         alignToGroup: Boolean = false
     ): CallLogsPage = withContext(Dispatchers.IO) {
+
+        if (!PermissionUtils.isDefaultDialerApp(context)) return@withContext CallLogsPage(
+            logs = emptyList(),
+            startRow = 0,
+            endRow = 0,
+            totalRows = 0
+        )
+
         val lookupCache = mutableMapOf<String, Pair<String?, String?>>()
         val sims = if (simsRepository.hasMultipleSims()) simsRepository.simLookup() else emptyMap()
         val accountSubIds = if (sims.isNotEmpty()) simsRepository.accountIdToSubId() else emptyMap()
