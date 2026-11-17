@@ -91,12 +91,14 @@
     <string name="email">Email</string>
     <string name="first_name">First name</string>
     <string name="last_name">Last name</string>
+    <string name="middle_name">Middle name</string>
     <string name="address">Address</string>
     <string name="add_phone">Add phone</string>
     <string name="add_address">Add address</string>
     <string name="add_note">Add note</string>
     <string name="add_email">Add email</string>
     <string name="add_website">Add website</string>
+    <string name="add_event">Add event</string>
     <string name="company">Company</string>
     <string name="string_default">Default</string>
     <string name="contact_info">Contact info</string>

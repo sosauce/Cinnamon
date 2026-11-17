@@ -1,4 +1,8 @@
-@file:OptIn(ExperimentalGridApi::class, ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(
+    ExperimentalGridApi::class,
+    ExperimentalMaterial3ExpressiveApi::class,
+    ExperimentalMaterial3Api::class
+)
 
 package com.sosauce.cinnamon.features.contacts.presentation.editor
 
@@ -44,6 +48,12 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenuGroup
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenuPopup
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -51,15 +61,20 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SelectableDropdownMenuItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -69,10 +84,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -84,9 +101,12 @@ import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
 import com.sosauce.cinnamon.core.utils.copyMutate
+import com.sosauce.cinnamon.core.utils.formateEventDate
+import com.sosauce.cinnamon.core.utils.getItemShape
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsActions
 import com.sosauce.cinnamon.features.contacts.domain.ContactAddress
 import com.sosauce.cinnamon.features.contacts.domain.ContactEmail
+import com.sosauce.cinnamon.features.contacts.domain.ContactEvent
 import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
 import com.sosauce.nekobites.animations.AnimatedFab
 import com.sosauce.nekobites.animations.bouncySpec
@@ -95,6 +115,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import java.io.File
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 @Composable
 fun SharedTransitionScope.EditContactScreen(
@@ -106,6 +129,7 @@ fun SharedTransitionScope.EditContactScreen(
 
 
     val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val imagePicker =
         rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -144,6 +168,59 @@ fun SharedTransitionScope.EditContactScreen(
             rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
                 uri?.let { rawContact = rawContact.copy(photoString = it.toString()) }
             }
+        // index of the event being edited, -1 when adding a new one
+        var eventPickerIndex by remember { mutableStateOf<Int?>(null) }
+
+        eventPickerIndex?.let { index ->
+
+            val relatedEvent = rawContact.events.getOrNull(index)
+            val initialSelectedDate = relatedEvent?.date?.let { date ->
+                runCatching {
+                    LocalDate.parse(date).atStartOfDay(ZoneOffset.UTC).toInstant()
+                        .toEpochMilli()
+                }.getOrNull()
+            }
+
+            val datePickerState = rememberDatePickerState(
+                initialSelectedDateMillis = initialSelectedDate
+            )
+
+            DatePickerDialog(
+                onDismissRequest = { eventPickerIndex = null },
+                dismissButton = {
+                    TextButton(
+                        onClick = { eventPickerIndex = null },
+                        shapes = ButtonDefaults.shapes()
+                    ) { Text(stringResource(R.string.cancel)) }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val millis =
+                                datePickerState.selectedDateMillis ?: return@TextButton
+                            val date = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC)
+                                .toLocalDate().toString()
+
+                            rawContact = rawContact.copy(
+                                events = if (relatedEvent != null) {
+                                    rawContact.events.copyMutate {
+                                        this[index] = this[index].copy(date = date)
+                                    }
+                                } else {
+                                    rawContact.events + ContactEvent(
+                                        date,
+                                        ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY
+                                    )
+                                }
+                            )
+                            eventPickerIndex = null
+                        },
+                        shapes = ButtonDefaults.shapes(),
+                        enabled = datePickerState.selectedDateMillis != null
+                    ) { Text(stringResource(R.string.set)) }
+                }
+            ) { DatePicker(datePickerState) }
+        }
 
         Scaffold(
             bottomBar = {
@@ -260,6 +337,15 @@ fun SharedTransitionScope.EditContactScreen(
                         onClickRemove = null
                     )
                     ContactEditTextField(
+                        value = rawContact.middleName ?: "",
+                        label = R.string.middle_name,
+                        leadingIcon = R.drawable.contact,
+                        onValueChange = {
+                            rawContact = rawContact.copy(middleName = it)
+                        },
+                        onClickRemove = null
+                    )
+                    ContactEditTextField(
                         value = rawContact.lastName ?: "",
                         label = R.string.last_name,
                         leadingIcon = R.drawable.contact,
@@ -277,21 +363,6 @@ fun SharedTransitionScope.EditContactScreen(
                         },
                         onClickRemove = null
                     )
-
-
-                    if (!rawContact.company.isNullOrEmpty()) {
-                        ContactEditTextField(
-                            value = rawContact.company ?: "",
-                            label = R.string.company,
-                            leadingIcon = R.drawable.business,
-                            onValueChange = {
-                                rawContact = rawContact.copy(company = it)
-                            },
-                            onClickRemove = {
-                                rawContact = rawContact.copy(company = "")
-                            }
-                        )
-                    }
                 }
 
                 Spacer(Modifier.height(25.dp))
@@ -303,6 +374,31 @@ fun SharedTransitionScope.EditContactScreen(
                     iconRes = R.drawable.phone,
                     addLabelRes = R.string.add_phone,
                     valueProvider = { it.number },
+                    rowExtras = { index, phone ->
+                        TypeAndDefaultRow(
+                            type = phone.type,
+                            types = PhoneTypes,
+                            typeLabel = {
+                                ContactsContract.CommonDataKinds.Phone
+                                    .getTypeLabel(resources, it, "Custom").toString()
+                            },
+                            isDefault = phone.isDefault,
+                            onTypeChange = { type ->
+                                rawContact = rawContact.copy(
+                                    phoneNumbers = rawContact.phoneNumbers.copyMutate {
+                                        this[index] = this[index].copy(type = type)
+                                    }
+                                )
+                            },
+                            onToggleDefault = {
+                                rawContact = rawContact.copy(
+                                    phoneNumbers = rawContact.phoneNumbers.mapIndexed { i, item ->
+                                        item.copy(isDefault = i == index && !item.isDefault)
+                                    }
+                                )
+                            }
+                        )
+                    },
                     onValueChange = { index, value ->
                         rawContact = rawContact.copy(
                             phoneNumbers = rawContact.phoneNumbers.copyMutate {
@@ -324,7 +420,7 @@ fun SharedTransitionScope.EditContactScreen(
                             phoneNumbers = rawContact.phoneNumbers + ContactPhone(
                                 "",
                                 ContactsContract.CommonDataKinds.Phone.TYPE_OTHER,
-                                true
+                                false
                             )
                         )
                     }
@@ -338,6 +434,31 @@ fun SharedTransitionScope.EditContactScreen(
                     iconRes = R.drawable.email,
                     addLabelRes = R.string.add_email,
                     valueProvider = { it.email },
+                    rowExtras = { index, email ->
+                        TypeAndDefaultRow(
+                            type = email.type,
+                            types = EmailTypes,
+                            typeLabel = {
+                                ContactsContract.CommonDataKinds.Email
+                                    .getTypeLabel(resources, it, "Custom").toString()
+                            },
+                            isDefault = email.isDefault,
+                            onTypeChange = { type ->
+                                rawContact = rawContact.copy(
+                                    emails = rawContact.emails.copyMutate {
+                                        this[index] = this[index].copy(type = type)
+                                    }
+                                )
+                            },
+                            onToggleDefault = {
+                                rawContact = rawContact.copy(
+                                    emails = rawContact.emails.mapIndexed { i, item ->
+                                        item.copy(isDefault = i == index && !item.isDefault)
+                                    }
+                                )
+                            }
+                        )
+                    },
 
                     onValueChange = { index, value ->
                         rawContact = rawContact.copy(
@@ -360,7 +481,7 @@ fun SharedTransitionScope.EditContactScreen(
                             emails = rawContact.emails + ContactEmail(
                                 "",
                                 ContactsContract.CommonDataKinds.Email.TYPE_OTHER,
-                                true
+                                false
                             )
                         )
                     }
@@ -375,6 +496,31 @@ fun SharedTransitionScope.EditContactScreen(
                     iconRes = R.drawable.address,
                     addLabelRes = R.string.add_address,
                     valueProvider = { it.address },
+                    rowExtras = { index, address ->
+                        TypeAndDefaultRow(
+                            type = address.type,
+                            types = AddressTypes,
+                            typeLabel = {
+                                ContactsContract.CommonDataKinds.StructuredPostal
+                                    .getTypeLabel(resources, it, "Custom").toString()
+                            },
+                            isDefault = address.isDefault,
+                            onTypeChange = { type ->
+                                rawContact = rawContact.copy(
+                                    addresses = rawContact.addresses.copyMutate {
+                                        this[index] = this[index].copy(type = type)
+                                    }
+                                )
+                            },
+                            onToggleDefault = {
+                                rawContact = rawContact.copy(
+                                    addresses = rawContact.addresses.mapIndexed { i, item ->
+                                        item.copy(isDefault = i == index && !item.isDefault)
+                                    }
+                                )
+                            }
+                        )
+                    },
 
                     onValueChange = { index, value ->
                         rawContact = rawContact.copy(
@@ -398,7 +544,7 @@ fun SharedTransitionScope.EditContactScreen(
                             addresses = rawContact.addresses + ContactAddress(
                                 "",
                                 ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER,
-                                true
+                                false
                             )
                         )
                     }
@@ -434,6 +580,56 @@ fun SharedTransitionScope.EditContactScreen(
                         )
                     }
                 )
+
+                Spacer(Modifier.height(10.dp))
+
+                if (rawContact.events.isNotEmpty()) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    ) {
+                        FieldGroup {
+                            rawContact.events.fastForEachIndexed { index, event ->
+                                ContactEventRow(
+                                    date = event.date.formateEventDate(),
+                                    type = event.type,
+                                    typeLabel = {
+                                        ContactsContract.CommonDataKinds.Event
+                                            .getTypeLabel(resources, it, "Custom").toString()
+                                    },
+                                    onTypeChange = { type ->
+                                        rawContact = rawContact.copy(
+                                            events = rawContact.events.copyMutate {
+                                                this[index] = this[index].copy(type = type)
+                                            }
+                                        )
+                                    },
+                                    onClick = { eventPickerIndex = index },
+                                    onClickRemove = {
+                                        rawContact = rawContact.copy(
+                                            events = rawContact.events.copyMutate {
+                                                removeAt(index)
+                                            }
+                                        )
+                                    }
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = { eventPickerIndex = -1 },
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            shapes = ButtonDefaults.shapes()
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.add),
+                                contentDescription = null
+                            )
+                            Spacer(Modifier.width(5.dp))
+                            Text(stringResource(R.string.add_event))
+                        }
+                    }
+                }
 
                 Spacer(Modifier.height(10.dp))
 
@@ -524,6 +720,12 @@ fun SharedTransitionScope.EditContactScreen(
                         }
                     )
                     AddDataButton(
+                        isVisible = rawContact.events.isEmpty(),
+                        icon = R.drawable.event,
+                        text = R.string.add_event,
+                        onClick = { eventPickerIndex = -1 }
+                    )
+                    AddDataButton(
                         isVisible = rawContact.note == null,
                         icon = R.drawable.note,
                         text = R.string.add_note,
@@ -574,7 +776,8 @@ private fun ContactEditTextField(
     @StringRes label: Int,
     @DrawableRes leadingIcon: Int,
     onValueChange: (String) -> Unit,
-    onClickRemove: (() -> Unit)?
+    onClickRemove: (() -> Unit)?,
+    bottomContent: (@Composable () -> Unit)? = null
 ) {
 
     val state = rememberTextFieldState(initialText = value)
@@ -603,52 +806,55 @@ private fun ContactEditTextField(
         color = container,
         modifier = modifier.fillMaxWidth()
     ) {
-        TextField(
-            state = state,
-            label = {
-                Text(
-                    text = stringResource(label),
-                    maxLines = 1,
-                    modifier = Modifier.basicMarquee()
-                )
-            },
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(leadingIcon),
-                    contentDescription = null
-                )
-            },
-            lineLimits = TextFieldLineLimits.SingleLine,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = keyboardType
-            ),
-            interactionSource = interactionSource,
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent
-            ),
-            trailingIcon = {
-                if (onClickRemove != null) {
-                    IconButton(
-                        onClick = onClickRemove,
-                        shapes = IconButtonDefaults.shapes()
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.remove_all_filled),
-                            contentDescription = stringResource(R.string.remove_field),
-                            tint = colors.error
-                        )
+        Column {
+            TextField(
+                state = state,
+                label = {
+                    Text(
+                        text = stringResource(label),
+                        maxLines = 1,
+                        modifier = Modifier.basicMarquee()
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(leadingIcon),
+                        contentDescription = null
+                    )
+                },
+                lineLimits = TextFieldLineLimits.SingleLine,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = keyboardType
+                ),
+                interactionSource = interactionSource,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent
+                ),
+                trailingIcon = {
+                    if (onClickRemove != null) {
+                        IconButton(
+                            onClick = onClickRemove,
+                            shapes = IconButtonDefaults.shapes()
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.remove_all_filled),
+                                contentDescription = stringResource(R.string.remove_field),
+                                tint = colors.error
+                            )
+                        }
                     }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp)
-        )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+            )
+            bottomContent?.invoke()
+        }
     }
 }
 
@@ -777,7 +983,8 @@ private fun <T> ContactDataSection(
     onValueChange: (Int, String) -> Unit,
     onRemove: (Int) -> Unit,
     onAdd: () -> Unit,
-    valueProvider: (T) -> String
+    valueProvider: (T) -> String,
+    rowExtras: (@Composable (Int, T) -> Unit)? = null
 ) {
     if (items.isNotEmpty()) {
         Column(
@@ -785,15 +992,22 @@ private fun <T> ContactDataSection(
             modifier = Modifier.padding(bottom = 10.dp)
         ) {
             FieldGroup {
-                items.fastForEachIndexed { index, item ->
-                    ContactEditTextField(
-                        value = valueProvider(item),
-                        keyboardType = keyboardType,
-                        label = labelRes,
-                        leadingIcon = iconRes,
-                        onValueChange = { newValue -> onValueChange(index, newValue) },
-                        onClickRemove = { onRemove(index) }
-                    )
+                // text field states are positional, rebuild them when a row is added/removed
+                // so every field keeps showing its own value
+                key(items.size) {
+                    items.fastForEachIndexed { index, item ->
+                        ContactEditTextField(
+                            value = valueProvider(item),
+                            keyboardType = keyboardType,
+                            label = labelRes,
+                            leadingIcon = iconRes,
+                            onValueChange = { newValue -> onValueChange(index, newValue) },
+                            onClickRemove = { onRemove(index) },
+                            bottomContent = rowExtras?.let { extras ->
+                                @Composable { extras(index, item) }
+                            }
+                        )
+                    }
                 }
             }
 
@@ -809,6 +1023,195 @@ private fun <T> ContactDataSection(
                 Spacer(Modifier.width(5.dp))
                 Text(stringResource(addLabelRes))
             }
+        }
+    }
+}
+
+private val PhoneTypes = listOf(
+    ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE,
+    ContactsContract.CommonDataKinds.Phone.TYPE_HOME,
+    ContactsContract.CommonDataKinds.Phone.TYPE_WORK,
+    ContactsContract.CommonDataKinds.Phone.TYPE_MAIN,
+    ContactsContract.CommonDataKinds.Phone.TYPE_OTHER
+)
+
+private val EmailTypes = listOf(
+    ContactsContract.CommonDataKinds.Email.TYPE_HOME,
+    ContactsContract.CommonDataKinds.Email.TYPE_WORK,
+    ContactsContract.CommonDataKinds.Email.TYPE_MOBILE,
+    ContactsContract.CommonDataKinds.Email.TYPE_OTHER
+)
+
+private val AddressTypes = listOf(
+    ContactsContract.CommonDataKinds.StructuredPostal.TYPE_HOME,
+    ContactsContract.CommonDataKinds.StructuredPostal.TYPE_WORK,
+    ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER
+)
+
+private val EventTypes = listOf(
+    ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY,
+    ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY,
+    ContactsContract.CommonDataKinds.Event.TYPE_OTHER
+)
+
+@Composable
+private fun TypeAndDefaultRow(
+    type: Int,
+    types: List<Int>,
+    typeLabel: (Int) -> String,
+    isDefault: Boolean,
+    onTypeChange: (Int) -> Unit,
+    onToggleDefault: () -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+    val corners by animateDpAsState(if (isDefault) 50.dp else 12.dp)
+    val defaultColor by animateColorAsState(
+        if (isDefault) colors.primary else colors.surfaceContainerHighest
+    )
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 12.dp, end = 12.dp, bottom = 8.dp)
+    ) {
+        TypeMenuButton(
+            type = type,
+            types = types,
+            typeLabel = typeLabel,
+            onTypeChange = onTypeChange
+        )
+
+        Button(
+            onClick = onToggleDefault,
+            shape = RoundedCornerShape(corners),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = defaultColor,
+                contentColor = if (isDefault) colors.onPrimary else colors.onSurface
+            )
+        ) {
+            AnimatedVisibility(
+                visible = isDefault,
+                modifier = Modifier.padding(end = 5.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.check),
+                    contentDescription = null
+                )
+            }
+            Text(stringResource(R.string.string_default))
+        }
+    }
+}
+
+@Composable
+private fun TypeMenuButton(
+    type: Int,
+    types: List<Int>,
+    typeLabel: (Int) -> String,
+    onTypeChange: (Int) -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        Button(
+            onClick = { expanded = true },
+            shapes = ButtonDefaults.shapes(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colors.surfaceContainerHighest,
+                contentColor = colors.onSurface
+            )
+        ) {
+            Text(
+                text = typeLabel(type),
+                maxLines = 1
+            )
+        }
+        DropdownMenuPopup(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            DropdownMenuGroup(
+                shapes = MenuDefaults.groupShapes()
+            ) {
+                types.fastForEachIndexed { index, option ->
+                    SelectableDropdownMenuItem(
+                        selected = type == option,
+                        onClick = {
+                            onTypeChange(option)
+                            expanded = false
+                        },
+                        shapes = MenuDefaults.itemShape(index, types.count()),
+                        trailingContent = {
+                            if (option == type) {
+                                Icon(
+                                    painter = painterResource(R.drawable.check),
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        text = { Text(typeLabel(option)) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ContactEventRow(
+    date: String,
+    type: Int,
+    typeLabel: (Int) -> String,
+    onTypeChange: (Int) -> Unit,
+    onClick: () -> Unit,
+    onClickRemove: () -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(2.dp),
+        color = colors.surfaceContainer,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.event),
+                    contentDescription = null,
+                    tint = colors.onSurfaceVariant
+                )
+                Text(
+                    text = date,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp)
+                        .basicMarquee()
+                )
+                IconButton(
+                    onClick = onClickRemove,
+                    shapes = IconButtonDefaults.shapes()
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.remove_all_filled),
+                        contentDescription = stringResource(R.string.remove_field),
+                        tint = colors.error
+                    )
+                }
+            }
+            TypeMenuButton(
+                type = type,
+                types = EventTypes,
+                typeLabel = typeLabel,
+                onTypeChange = onTypeChange
+            )
         }
     }
 }

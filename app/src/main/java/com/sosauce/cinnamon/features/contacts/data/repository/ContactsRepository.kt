@@ -824,6 +824,25 @@ class ContactsRepository(
                     )
                 }
 
+                if (!rawContact.company.isNullOrEmpty()) {
+                    operations.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValueBackReference(
+                                ContactsContract.Data.RAW_CONTACT_ID,
+                                backRefIndex
+                            )
+                            .withValue(
+                                ContactsContract.Data.MIMETYPE,
+                                ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE
+                            )
+                            .withValue(
+                                ContactsContract.CommonDataKinds.Organization.COMPANY,
+                                rawContact.company
+                            )
+                            .build()
+                    )
+                }
+
                 rawContact.phoneNumbers.forEach { phone ->
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
@@ -884,6 +903,10 @@ class ContactsRepository(
                             .withValue(
                                 ContactsContract.CommonDataKinds.StructuredPostal.TYPE,
                                 address.type
+                            )
+                            .withValue(
+                                ContactsContract.CommonDataKinds.StructuredPostal.IS_PRIMARY,
+                                if (address.isDefault) 1 else 0
                             )
                             .build()
                     )
@@ -982,6 +1005,17 @@ class ContactsRepository(
                     )
                 }
 
+                operations.add(
+                    ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
+                        .withSelection(
+                            rawContactSelection,
+                            arrayOf(
+                                rawId.toString(),
+                                ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE
+                            )
+                        )
+                        .build()
+                )
                 if (!rawContact.company.isNullOrEmpty()) {
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
@@ -998,7 +1032,8 @@ class ContactsRepository(
                     )
                 }
 
-                if (pfpByteArray != null) {
+                // photo removed in the editor, or replaced by a readable one
+                if (rawContact.photoString == null || pfpByteArray != null) {
                     operations.add(
                         ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
                             .withSelection(
@@ -1010,6 +1045,8 @@ class ContactsRepository(
                             )
                             .build()
                     )
+                }
+                if (pfpByteArray != null) {
                     operations.add(
                         ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawId)
@@ -1106,6 +1143,10 @@ class ContactsRepository(
                             .withValue(
                                 ContactsContract.CommonDataKinds.StructuredPostal.TYPE,
                                 address.type
+                            )
+                            .withValue(
+                                ContactsContract.CommonDataKinds.StructuredPostal.IS_PRIMARY,
+                                if (address.isDefault) 1 else 0
                             )
                             .build()
                     )
