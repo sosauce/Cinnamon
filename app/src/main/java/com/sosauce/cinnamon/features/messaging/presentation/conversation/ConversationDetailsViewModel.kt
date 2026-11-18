@@ -43,6 +43,8 @@ import com.sosauce.cinnamon.features.messaging.domain.ConversationSettings
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import com.sosauce.cinnamon.features.messaging.domain.Participant
 import com.sosauce.cinnamon.features.messaging.domain.listKey
+import com.sosauce.cinnamon.features.phone.domain.SimChoice
+import com.sosauce.cinnamon.features.phone.domain.SimPickerState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -50,6 +52,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -243,6 +246,9 @@ class ConversationDetailsViewModel(
     private val _events = Channel<ConversationDetailsEvents>()
     val events = _events.receiveAsFlow()
 
+    private val _simPicker = MutableStateFlow<SimPickerState?>(null)
+    val simPicker = _simPicker.asStateFlow()
+
 
     fun deleteConversation() =
         viewModelScope.launch(Dispatchers.IO) { messagesRepository.deleteConversation(threadId) }
@@ -345,8 +351,24 @@ class ConversationDetailsViewModel(
                 )
                 if (result == StartCallResult.NOT_ALLOWED) {
                     _events.send(ConversationDetailsEvents.RequestDefaultDialer)
+                } else if (result == StartCallResult.NEEDS_SIM_SELECTION) {
+                    _simPicker.update {
+                        SimPickerState(action.number, callManager.fetchSimChoices())
+                    }
                 }
             }
+
+            is ConversationActions.PickSim -> {
+                val number = _simPicker.value?.number ?: return
+                _simPicker.value = null
+                viewModelScope.launch {
+                    if (callManager.startCall(number, action.sim.handle) == StartCallResult.NOT_ALLOWED) {
+                        _events.send(ConversationDetailsEvents.RequestDefaultDialer)
+                    }
+                }
+            }
+
+            is ConversationActions.DismissSimPicker -> _simPicker.update { null }
 
             is ConversationActions.OpenSearch -> _search.update { it.copy(isActive = true) }
 
@@ -446,6 +468,9 @@ sealed interface ConversationActions {
     data class CallNumber(
         val number: String
     ) : ConversationActions
+
+    data class PickSim(val sim: SimChoice) : ConversationActions
+    data object DismissSimPicker : ConversationActions
 
     data object OpenSearch : ConversationActions
     data class OpenSearchWithQuery(val query: String) : ConversationActions

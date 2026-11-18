@@ -14,12 +14,15 @@ import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails
 import com.sosauce.cinnamon.features.contacts.domain.CuteRawContact
+import com.sosauce.cinnamon.features.phone.domain.SimChoice
+import com.sosauce.cinnamon.features.phone.domain.SimPickerState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -38,6 +41,9 @@ class ContactDetailsViewModel(
 
     private val _events = Channel<ContactDetailsEvent>()
     val events = _events.receiveAsFlow()
+
+    private val _simPicker = MutableStateFlow<SimPickerState?>(null)
+    val simPicker = _simPicker.asStateFlow()
 
     private val _state = MutableStateFlow(ContactDetailsState())
     val state = combine(
@@ -151,11 +157,28 @@ class ContactDetailsViewModel(
 
             is ContactDetailsAction.CallNumber -> {
                 viewModelScope.launch {
-                    if (callManager.startCall(action.number) == StartCallResult.NOT_ALLOWED) {
+                    when (callManager.startCall(action.number)) {
+                        StartCallResult.NOT_ALLOWED -> _events.send(ContactDetailsEvent.RequestDefaultDialer)
+                        StartCallResult.NEEDS_SIM_SELECTION -> _simPicker.update {
+                            SimPickerState(action.number, callManager.fetchSimChoices())
+                        }
+
+                        else -> Unit
+                    }
+                }
+            }
+
+            is ContactDetailsAction.PickSim -> {
+                val number = _simPicker.value?.number ?: return
+                _simPicker.update { null }
+                viewModelScope.launch {
+                    if (callManager.startCall(number, action.sim.handle) == StartCallResult.NOT_ALLOWED) {
                         _events.send(ContactDetailsEvent.RequestDefaultDialer)
                     }
                 }
             }
+
+            is ContactDetailsAction.DismissSimPicker -> _simPicker.update { null }
         }
     }
 
@@ -187,4 +210,6 @@ sealed interface ContactDetailsAction {
     data class BlockContact(val emailsToo: Boolean) : ContactDetailsAction
     data class Unblock(val value: String) : ContactDetailsAction
     data class CallNumber(val number: String) : ContactDetailsAction
+    data class PickSim(val sim: SimChoice) : ContactDetailsAction
+    data object DismissSimPicker : ContactDetailsAction
 }

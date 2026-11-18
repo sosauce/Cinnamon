@@ -23,4 +23,10 @@ class SimsViewModel(
             userPreferences.saveDefaultPhoneHandleId(handle)
         }
     }
+
+    fun saveAskEveryTimePhoneHandle() {
+        viewModelScope.launch {
+            userPreferences.saveAskEveryTimePhoneHandle()
+        }
+    }
 }

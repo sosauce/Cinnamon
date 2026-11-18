@@ -14,8 +14,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.core.ui.CinnamonTheme
+import com.sosauce.cinnamon.core.ui.components.dialogs.SimPickerDialog
 import com.sosauce.cinnamon.core.utils.APP_PACKAGE
 import com.sosauce.cinnamon.core.utils.createDefaultDialerIntent
 import com.sosauce.nekobites.helpers.ObserveAsEvents
@@ -32,6 +36,16 @@ class CallActivity : ComponentActivity() {
         setContent {
             val callViewModel = koinViewModel<CallingViewModel>()
             val callUiState by callViewModel.state.collectAsStateWithLifecycle()
+            val simPicker by callViewModel.simPicker.collectAsStateWithLifecycle()
+
+            // The calling state is still ENDED from the previous call until the call from the intent
+            // is launched, don't finish meanwhile or the SIM picker would never show up
+            var awaitingIntentCall by remember { mutableStateOf(intent.action == Intent.ACTION_CALL) }
+            LaunchedEffect(callUiState.callState, simPicker) {
+                if (callUiState.callState != CallState.ENDED || simPicker != null) {
+                    awaitingIntentCall = false
+                }
+            }
 
             // Asked when the call from the intent is refused because Cinnamon isn't the default dialer app
             val dialerRoleLauncher = rememberLauncherForActivityResult(
@@ -64,17 +78,30 @@ class CallActivity : ComponentActivity() {
                 }
             }
 
-            LaunchedEffect(callUiState) {
-                if (callUiState.callState == CallState.ENDED) {
+            LaunchedEffect(callUiState, simPicker, awaitingIntentCall) {
+                if (callUiState.callState == CallState.ENDED && simPicker == null && !awaitingIntentCall) {
                     finishAndRemoveTask()
                 }
             }
             CinnamonTheme {
 
-                CallScreen(
-                    onCallAction = callViewModel::handleCallAction,
-                    callUiState = callUiState
-                )
+                simPicker?.let { picker ->
+                    SimPickerDialog(
+                        state = picker,
+                        onPickSim = { callViewModel.handleCallAction(CallAction.PickSim(it)) },
+                        onDismissRequest = {
+                            callViewModel.handleCallAction(CallAction.DismissSimPicker)
+                            finishAndRemoveTask()
+                        }
+                    )
+                }
+
+                if (simPicker == null && !awaitingIntentCall) {
+                    CallScreen(
+                        onCallAction = callViewModel::handleCallAction,
+                        callUiState = callUiState
+                    )
+                }
             }
         }
     }

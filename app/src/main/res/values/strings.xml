@@ -297,6 +297,8 @@
     <string name="default_sim_messages">Default SIM for messaging functions.</string>
     <string name="no_sim_available">No SIM found… are you texting with carrier pigeons?</string>
     <string name="no_sim_phone_permission">No SIM available. Grant the Phone permission to pick a default SIM.</string>
+    <string name="ask_every_time">Ask every time</string>
+    <string name="call_with">Call with</string>
     <string name="conversations">Conversations</string>
     <string name="sending_settings">Sending</string>
     <string name="default_dialer_desc">Required for the call screen and bubbles over other apps</string>

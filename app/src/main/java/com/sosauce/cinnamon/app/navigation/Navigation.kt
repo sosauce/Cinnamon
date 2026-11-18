@@ -30,6 +30,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.rememberInitialScreenBlocking
 import com.sosauce.cinnamon.core.ui.ChatColor
+import com.sosauce.cinnamon.core.ui.components.dialogs.SimPickerDialog
 import com.sosauce.cinnamon.core.ui.navBackTransition
 import com.sosauce.cinnamon.core.ui.navForwardTransition
 import com.sosauce.cinnamon.core.utils.LocalScreen
@@ -37,6 +38,7 @@ import com.sosauce.cinnamon.core.utils.createDefaultDialerIntent
 import com.sosauce.cinnamon.core.utils.createDefaultSmsIntent
 import com.sosauce.cinnamon.core.utils.rememberHazeState
 import com.sosauce.cinnamon.core.utils.tabToScreen
+import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsAction
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsEvent
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsScreen
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsViewModel
@@ -60,6 +62,7 @@ import com.sosauce.cinnamon.features.messaging.presentation.customization.Conver
 import com.sosauce.cinnamon.features.messaging.presentation.customization.ThemingViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.starter.StartConversation
 import com.sosauce.cinnamon.features.messaging.presentation.starter.StartConversationViewModel
+import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.features.phone.presentation.call.CallEvents
 import com.sosauce.cinnamon.features.phone.presentation.call.CallingViewModel
 import com.sosauce.cinnamon.features.phone.presentation.dialpad.DialpadScreen
@@ -154,6 +157,15 @@ fun Nav(
                             }
                         }
 
+                        val simPicker by viewModel.simPicker.collectAsStateWithLifecycle()
+                        simPicker?.let { picker ->
+                            SimPickerDialog(
+                                state = picker,
+                                onPickSim = { viewModel.handleContactDetailsAction(ContactDetailsAction.PickSim(it)) },
+                                onDismissRequest = { viewModel.handleContactDetailsAction(ContactDetailsAction.DismissSimPicker) }
+                            )
+                        }
+
                         ContactDetailsScreen(
                             state = state,
                             onNavigateBack = backStack::navigateBack,
@@ -171,6 +183,15 @@ fun Nav(
                             when (event) {
                                 is CallEvents.RequestDefaultDialer -> requestDefaultDialer()
                             }
+                        }
+
+                        val simPicker by callViewModel.simPicker.collectAsStateWithLifecycle()
+                        simPicker?.let { picker ->
+                            SimPickerDialog(
+                                state = picker,
+                                onPickSim = { callViewModel.handleCallAction(CallAction.PickSim(it)) },
+                                onDismissRequest = { callViewModel.handleCallAction(CallAction.DismissSimPicker) }
+                            )
                         }
 
                         CallLogsScreen(
@@ -250,6 +271,15 @@ fun Nav(
                             ChatColor.color = state.settings.color
                             onRetire { ChatColor.color = null }
                         }
+                        val simPicker by viewModel.simPicker.collectAsStateWithLifecycle()
+                        simPicker?.let { picker ->
+                            SimPickerDialog(
+                                state = picker,
+                                onPickSim = { viewModel.handleConversationActions(ConversationActions.PickSim(it)) },
+                                onDismissRequest = { viewModel.handleConversationActions(ConversationActions.DismissSimPicker) }
+                            )
+                        }
+
                         ConversationDetailsScreen(
                             state = state,
                             messages = messages,
@@ -289,6 +319,15 @@ fun Nav(
                             when (event) {
                                 is CallEvents.RequestDefaultDialer -> requestDefaultDialer()
                             }
+                        }
+
+                        val simPicker by callViewModel.simPicker.collectAsStateWithLifecycle()
+                        simPicker?.let { picker ->
+                            SimPickerDialog(
+                                state = picker,
+                                onPickSim = { callViewModel.handleCallAction(CallAction.PickSim(it)) },
+                                onDismissRequest = { callViewModel.handleCallAction(CallAction.DismissSimPicker) }
+                            )
                         }
 
                         DialpadScreen(
@@ -331,6 +370,15 @@ fun Nav(
                                 is ConversationDetailsEvents.RequestDefaultDialer -> requestDefaultDialer()
                                 else -> showConversationEventToast(context, resources, event)
                             }
+                        }
+
+                        val simPicker by viewModel.simPicker.collectAsStateWithLifecycle()
+                        simPicker?.let { picker ->
+                            SimPickerDialog(
+                                state = picker,
+                                onPickSim = { viewModel.handleConversationActions(ConversationActions.PickSim(it)) },
+                                onDismissRequest = { viewModel.handleConversationActions(ConversationActions.DismissSimPicker) }
+                            )
                         }
 
                         AboutConversationScreen(

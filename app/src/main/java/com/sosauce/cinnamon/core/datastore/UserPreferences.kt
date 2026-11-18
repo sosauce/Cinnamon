@@ -130,12 +130,18 @@ class UserPreferences(
         context.dataStore.data.mapLatest { it[SORT_CONTACTS_ASCENDING] ?: true }
 
 
+    /**
+     * @return The SIM to call with: the one picked in Cinnamon, or the system default if none was picked.
+     * Null means the user has to pick one before every call ("Ask every time").
+     */
     @SuppressLint("MissingPermission")
     fun getDefaultPhoneHandle(): Flow<PhoneAccountHandle?> {
         return context.dataStore.data.map { preferences ->
             val savedId = preferences[DEFAULT_PHONE_HANDLE_ID] ?: ""
 
-            if (savedId.isEmpty()) {
+            if (savedId == ASK_EVERY_TIME_PHONE_HANDLE_ID) {
+                null
+            } else if (savedId.isEmpty()) {
                 println("Testing - Saved ID is empty")
                 telecomManager.getDefaultOutgoingPhoneAccount(PhoneAccount.SCHEME_TEL)
             } else {
@@ -151,6 +157,15 @@ class UserPreferences(
         context.dataStore.edit { preferences ->
             preferences[DEFAULT_PHONE_HANDLE_ID] = handle.id
             println("Testing - Saved ID: ${handle.id}")
+        }
+    }
+
+    /**
+     * Makes Cinnamon ask which SIM to use before every call, whatever the system default is.
+     */
+    suspend fun saveAskEveryTimePhoneHandle() {
+        context.dataStore.edit { preferences ->
+            preferences[DEFAULT_PHONE_HANDLE_ID] = ASK_EVERY_TIME_PHONE_HANDLE_ID
         }
     }
 
@@ -173,3 +188,8 @@ class UserPreferences(
         }
     }
 }
+
+/**
+ * Stored in [DEFAULT_PHONE_HANDLE_ID] instead of a handle id when the user wants to pick a SIM for every call
+ */
+private const val ASK_EVERY_TIME_PHONE_HANDLE_ID = "ask_every_time"

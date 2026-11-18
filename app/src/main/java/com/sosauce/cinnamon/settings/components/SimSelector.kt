@@ -39,6 +39,23 @@ fun PhoneAccountHandleSelector(
 }
 
 @Composable
+fun AskEveryTimeSelector(
+    onClick: () -> Unit,
+    isSelected: Boolean
+) {
+    SelectableTile(
+        selected = isSelected,
+        onClick = onClick,
+        label = stringResource(R.string.ask_every_time)
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.question_mark),
+            contentDescription = null
+        )
+    }
+}
+
+@Composable
 private fun SimTile(
     label: String,
     color: Color,

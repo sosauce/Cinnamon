@@ -4,6 +4,7 @@ package com.sosauce.cinnamon.features.phone.presentation.call
 
 import android.app.Application
 import android.net.Uri
+import android.telecom.PhoneAccountHandle
 import androidx.compose.runtime.Stable
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
@@ -15,9 +16,13 @@ import com.sosauce.cinnamon.core.utils.getContactId
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.phone.domain.AudioRoute
 import com.sosauce.cinnamon.features.phone.domain.CuteSimCard
+import com.sosauce.cinnamon.features.phone.domain.SimChoice
+import com.sosauce.cinnamon.features.phone.domain.SimPickerState
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -39,6 +44,11 @@ class CallingViewModel(
 
     private val _events = Channel<CallEvents>()
     val events = _events.receiveAsFlow()
+
+    // Not in CallingState, which is shared by every screen through CallManager
+    private val _simPicker = MutableStateFlow<SimPickerState?>(null)
+    val simPicker = _simPicker.asStateFlow()
+    private var pickedSimCallJob: Job? = null
 
 
     init {
@@ -66,23 +76,21 @@ class CallingViewModel(
     fun handleCallAction(action: CallAction) {
         when (action) {
             is CallAction.LaunchCall -> {
-                viewModelScope.launch {
-                    if (callManager.startCall(action.number) == StartCallResult.NOT_ALLOWED) {
-                        _events.send(CallEvents.RequestDefaultDialer)
-                        return@launch
-                    }
-                    // Optimistically update state and launch UI even if placeCall
-                    // threw, ensures call button always opens Cinnamon's CallScreen
-                    // (incoming UI is handled separately via CallService fullScreenIntent).
-                    callManager._callingState.update {
-                        it.copy(
-                            number = action.number,
-                            displayName = action.number,
-                            callState = CallState.DIALING
-                        )
-                    }
+                viewModelScope.launch { launchCall(action.number) }
+            }
+
+            is CallAction.PickSim -> {
+                val number = _simPicker.value?.number ?: return
+                if (pickedSimCallJob?.isActive == true) return
+                pickedSimCallJob = viewModelScope.launch {
+                    // the picker is closed once the call state is updated, so CallActivity doesn't
+                    // finish in between because of the previous call's ENDED state
+                    launchCall(number, action.sim.handle)
+                    _simPicker.update { null }
                 }
             }
+
+            is CallAction.DismissSimPicker -> _simPicker.update { null }
 
             is CallAction.AnswerCall -> callManager.answerCall()
             is CallAction.DeclineCall -> callManager.declineCall()
@@ -99,6 +107,32 @@ class CallingViewModel(
             is CallAction.HoldAndAnswer -> callManager.holdAndAnswer()
             is CallAction.EndAndAnswer -> callManager.endAndAnswer()
             is CallAction.SwapCalls -> callManager.swapCalls()
+        }
+    }
+
+    private suspend fun launchCall(number: String, handle: PhoneAccountHandle? = null) {
+        when (callManager.startCall(number, handle)) {
+            StartCallResult.NOT_ALLOWED -> {
+                _events.send(CallEvents.RequestDefaultDialer)
+                return
+            }
+
+            StartCallResult.NEEDS_SIM_SELECTION -> {
+                _simPicker.value = SimPickerState(number, callManager.fetchSimChoices())
+                return
+            }
+
+            else -> Unit
+        }
+        // Optimistically update state and launch UI even if placeCall
+        // threw, ensures call button always opens Cinnamon's CallScreen
+        // (incoming UI is handled separately via CallService fullScreenIntent).
+        callManager._callingState.update {
+            it.copy(
+                number = number,
+                displayName = number,
+                callState = CallState.DIALING
+            )
         }
     }
 
@@ -138,6 +172,8 @@ data class OtherCall(
 
 sealed interface CallAction {
     data class LaunchCall(val number: String) : CallAction
+    data class PickSim(val sim: SimChoice) : CallAction
+    data object DismissSimPicker : CallAction
     data class StartTone(val char: Char) : CallAction
     data class ToggleMute(val mute: Boolean) : CallAction
     data class SwitchAudioTarget(val route: AudioRoute) : CallAction
