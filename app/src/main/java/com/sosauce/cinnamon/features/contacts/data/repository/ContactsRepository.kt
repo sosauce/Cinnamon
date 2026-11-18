@@ -187,7 +187,7 @@ class ContactsRepository(
             while (cursor.moveToNext()) ids.add(cursor.getLong(0))
         }
 
-        // "06 12 34" should match "+33 6 12 34 56 78"-like numbers, so compare digits only for number-like queries
+        // "06 12 34" should match "+33 6 12 34 56 78" like numbers, so compare digits only for number-like queries
         val queryDigits = query.filter(Char::isDigit)
         val isNumberQuery = queryDigits.length >= 3 && query.all { it.isDigit() || it in " +-()." }
 
@@ -422,7 +422,7 @@ class ContactsRepository(
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
-                val number = cursor.getString(numColumn)
+                val number = cursor.getString(numColumn) ?: continue
                 val isDefault = cursor.getInt(primColumn) != 0
 
                 // E.164 when the provider could compute it, so differently formatted copies still match
@@ -584,7 +584,8 @@ class ContactsRepository(
 
                 while (cursor.moveToNext()) {
                     val rawId = cursor.getLong(rawIdColumn)
-                    val accountName = cursor.getString(accountNameColumn)
+                    // Device-local raw contacts have no account, so ACCOUNT_NAME is null
+                    val accountName = cursor.getString(accountNameColumn)?.ifEmpty { null } ?: deviceAccountName
                     val rawContact = CuteRawContact(
                         id = rawId,
                         accountName = accountName
