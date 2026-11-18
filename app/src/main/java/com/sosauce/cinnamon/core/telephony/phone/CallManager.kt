@@ -101,17 +101,25 @@ class CallManager(
             val normalizedNumber = if (isServiceCode) number else phoneNumberNormalizer.formatToE164(number)
             val numberUri = Uri.fromParts(PhoneAccount.SCHEME_TEL, normalizedNumber, null)
 
-            telecomManager.placeCall(numberUri, bundle)
 
-            val callIntent = Intent(context, CallActivity::class.java).apply {
-                addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK or
-                            Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                            Intent.FLAG_ACTIVITY_CLEAR_TOP
-                )
+            // don't launch the call activity if it's a service code, else we'll just get stuck on it!
+            if (isServiceCode) {
+                telecomManager.placeCall(numberUri, bundle)
+            } else {
+
+                telecomManager.placeCall(numberUri, bundle)
+
+                val callIntent = Intent(context, CallActivity::class.java).apply {
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                                Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    )
+                }
+                context.startActivity(callIntent)
             }
-            context.startActivity(callIntent)
             StartCallResult.STARTED
+
         } catch (_: SecurityException) {
             // Phone permissions are granted with the default dialer role
             StartCallResult.NOT_ALLOWED
