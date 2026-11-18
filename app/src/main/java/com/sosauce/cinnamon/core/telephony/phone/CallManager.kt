@@ -3,11 +3,11 @@ package com.sosauce.cinnamon.core.telephony.phone
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
-import androidx.core.net.toUri
 import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.core.repository.SimsRepository
@@ -96,8 +96,10 @@ class CallManager(
                 putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, phoneAccountHandle)
             }
 
-            val normalizedNumber = phoneNumberNormalizer.formatToE164(number)
-            val numberUri = "tel:$normalizedNumber".toUri()
+            // USSD/MMI codes (*#06#, *858*...#) must not be formatted as phone numbers
+            val isServiceCode = number.any { it == '*' || it == '#' }
+            val normalizedNumber = if (isServiceCode) number else phoneNumberNormalizer.formatToE164(number)
+            val numberUri = Uri.fromParts(PhoneAccount.SCHEME_TEL, normalizedNumber, null)
 
             telecomManager.placeCall(numberUri, bundle)
 

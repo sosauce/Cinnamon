@@ -47,11 +47,10 @@ class CallActivity : ComponentActivity() {
                 }
             }
 
-            // Asked when the call from the intent is refused because Cinnamon isn't the default dialer app
             val dialerRoleLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartActivityForResult()
             ) { result ->
-                val number = intent.data?.toString()?.removePrefix("tel:")
+                val number = intent.data?.schemeSpecificPart
 
                 if (result.resultCode == RESULT_OK && number != null) {
                     callViewModel.handleCallAction(CallAction.LaunchCall(number))
@@ -65,7 +64,7 @@ class CallActivity : ComponentActivity() {
                     is CallEvents.RequestDefaultDialer -> try {
                         dialerRoleLauncher.launch(createDefaultDialerIntent())
                     } catch (_: ActivityNotFoundException) {
-                        // no dialer role on this device, nothing to call with
+                        // didn't get the dialer role, too bad!
                         finishAndRemoveTask()
                     }
                 }
@@ -73,8 +72,12 @@ class CallActivity : ComponentActivity() {
 
             LaunchedEffect(intent) {
                 if (intent.action == Intent.ACTION_CALL) {
-                    val number = intent.data.toString().removePrefix("tel:")
-                    callViewModel.handleCallAction(CallAction.LaunchCall(number))
+                    val number = intent.data?.schemeSpecificPart
+                    if (number != null) {
+                        callViewModel.handleCallAction(CallAction.LaunchCall(number))
+                    } else {
+                        finishAndRemoveTask()
+                    }
                 }
             }
 
