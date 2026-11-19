@@ -17,6 +17,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sosauce.cinnamon.core.utils.isEmoji
@@ -109,6 +110,7 @@ fun TextBubbleContent(
                 lineHeight = if (text.isEmoji()) 42.sp else bodyLarge.lineHeight,
                 color = contentColorFor(bubbleColor),
                 textDecoration = if (text.isLink()) TextDecoration.Underline else null,
+                textDirection = TextDirection.ContentOrRtl
             )
         )
     }
