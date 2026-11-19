@@ -14,7 +14,11 @@ data class CuteMessage(
     val isMms: Boolean,
     val attachment: CuteAttachment? = null,
     val isScheduled: Boolean,
-    val delivered: Boolean
+    val delivered: Boolean,
+    /**
+     * Address of whoever sent a received message, null for sent messages or when unknown
+     */
+    val senderAddress: String? = null
 )
 
 /**

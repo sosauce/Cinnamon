@@ -36,6 +36,9 @@ import org.xmlpull.v1.XmlPullParser
 
 private const val MMS_STATUS_RETRIEVED = 0x80
 
+// PduHeaders.FROM, type of the sender row in an MMS's addr table
+private const val MMS_ADDR_TYPE_FROM = 137
+
 class MessagesRepository(
     private val context: Context
 ) {
@@ -247,7 +250,8 @@ class MessagesRepository(
             val dateMillis: Long,
             val read: Boolean,
             val delivered: Boolean,
-            val body: String?
+            val body: String?,
+            val address: String?
         )
 
         val rows = mutableListOf<MessageRow>()
@@ -261,6 +265,7 @@ class MessagesRepository(
             Sms.TYPE,
             Sms.READ,
             Sms.STATUS,
+            Sms.ADDRESS,
             Mms.MESSAGE_BOX,
             MmsSms.TYPE_DISCRIMINATOR_COLUMN
         )
@@ -285,6 +290,7 @@ class MessagesRepository(
             val mmsTypeColumn = cursor.getColumnIndexOrThrow(Mms.MESSAGE_BOX)
             val readColumn = cursor.getColumnIndexOrThrow(Sms.READ)
             val statusColumn = cursor.getColumnIndexOrThrow(Sms.STATUS)
+            val addressColumn = cursor.getColumnIndexOrThrow(Sms.ADDRESS)
             val transportColumn = cursor.getColumnIndexOrThrow(
                 MmsSms.TYPE_DISCRIMINATOR_COLUMN
             )
@@ -328,7 +334,9 @@ class MessagesRepository(
                             dateMillis = dateMillis,
                             read = read,
                             delivered = delivered,
-                            body = cursor.getString(bodyColumn)
+                            body = cursor.getString(bodyColumn),
+                            // only filled for SMS, MMS senders live in their addr table
+                            address = if (isMms) null else cursor.getString(addressColumn)
                         )
                     )
                 } while (rows.size < limit && cursor.moveToNext())
@@ -346,12 +354,19 @@ class MessagesRepository(
             emptyMap()
         }
 
+        val mmsSenders = getMmsSenders(
+            rows
+                .fastFilter { it.isMms && it.type == Mms.MESSAGE_BOX_INBOX }
+                .fastMap { it.id }
+        )
+
         val messages = rows.fastMap { row ->
             val attachment = if (row.isMms) {
                 allMmsAttachments[row.id]
             } else {
                 null
             }
+            val isReceived = row.type == Sms.MESSAGE_TYPE_INBOX
 
             CuteMessageEntity(
                 id = row.id,
@@ -363,11 +378,41 @@ class MessagesRepository(
                 isMms = row.isMms,
                 attachment = attachment,
                 dateMillis = row.dateMillis,
-                isScheduled = false
+                isScheduled = false,
+                senderAddress = when {
+                    !isReceived -> null
+                    row.isMms -> mmsSenders[row.id]
+                    else -> row.address
+                }
             )
         }
 
         return MessagesPage(messages = messages, totalCount = totalCount)
+    }
+
+    /**
+     * Maps MMS id -> address of its sender, used to tell who sent what in group chats.
+     */
+    private fun getMmsSenders(mmsIds: List<Long>): Map<Long, String> {
+        val senders = mutableMapOf<Long, String>()
+
+        mmsIds.fastForEach { id ->
+            context.contentResolver.query(
+                "content://mms/$id/addr".toUri(),
+                arrayOf(Mms.Addr.ADDRESS),
+                "${Mms.Addr.TYPE} = ?",
+                arrayOf(MMS_ADDR_TYPE_FROM.toString()),
+                null
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    cursor.getString(cursor.getColumnIndexOrThrow(Mms.Addr.ADDRESS))
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { senders[id] = it }
+                }
+            }
+        }
+
+        return senders
     }
 
     /**

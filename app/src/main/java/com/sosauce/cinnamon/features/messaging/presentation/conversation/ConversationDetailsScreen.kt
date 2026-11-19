@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import android.telephony.PhoneNumberUtils
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -60,6 +61,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -72,6 +74,8 @@ import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
+import com.sosauce.cinnamon.core.ui.CinnamonTheme
+import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.datastore.rememberChatZoomScale
 import com.sosauce.cinnamon.core.datastore.rememberEnablePinchToZoom
 import com.sosauce.cinnamon.core.telephony.message.ActiveThreadId
@@ -80,7 +84,9 @@ import com.sosauce.cinnamon.core.utils.isEmoji
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingActions
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import com.sosauce.cinnamon.features.messaging.domain.MessageType
+import com.sosauce.cinnamon.features.messaging.domain.Participant
 import com.sosauce.cinnamon.features.messaging.domain.listKey
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.about.contactScreen
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.TextingUnavailableBar
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.TextingUnavailableReason
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bottombar.ConversationBottomBar
@@ -122,6 +128,7 @@ fun SharedTransitionScope.ConversationDetailsScreen(
         chatFontScale = (chatFontScale * zoomChange).coerceIn(0.9f, 2.2f)
     }
     val isGroupChat = state.participants.size > 1
+    val senderOf = rememberSenderResolver(state.participants)
 
     val density = LocalDensity.current
     val scaledDensity = remember(density, chatFontScale) {
@@ -319,9 +326,11 @@ fun SharedTransitionScope.ConversationDetailsScreen(
                                         ?: isOldest,
                                     sweetSelectState = sweetSelectState,
                                     isGroupChat = isGroupChat,
+                                    senderOf = senderOf,
                                     highlightQuery = highlightQuery,
                                     isFocusedMatch = focusedMatchKey == message.listKey,
-                                    onHandleConversationActions = onHandleConversationActions
+                                    onHandleConversationActions = onHandleConversationActions,
+                                    onNavigate = onNavigate
                                 )
                             }
 
@@ -387,13 +396,23 @@ private fun LazyItemScope.ConversationMessageItem(
     showDateHeader: Boolean,
     sweetSelectState: SweetSelectState<CuteMessage>,
     isGroupChat: Boolean,
+    senderOf: (CuteMessage) -> Participant?,
     highlightQuery: String?,
     isFocusedMatch: Boolean,
-    onHandleConversationActions: (ConversationActions) -> Unit
+    onHandleConversationActions: (ConversationActions) -> Unit,
+    onNavigate: (Screen) -> Unit
 ) {
-    // bubbles only connect with neighbours from the same day and of the same type
-    val sameAsPrev = older != null && older.date == message.date && older.type == message.type
-    val sameAsNext = newer != null && newer.date == message.date && newer.type == message.type
+    val sender = if (isGroupChat && message.type == MessageType.RECEIVED) senderOf(message) else null
+
+    // bubbles only connect with neighbours from the same day, of the same type and,
+    // in group chats, from the same sender
+    fun connectsWith(other: CuteMessage?): Boolean {
+        if (other == null || other.date != message.date || other.type != message.type) return false
+        return sender == null || senderOf(other) == sender
+    }
+
+    val sameAsPrev = connectsWith(older)
+    val sameAsNext = connectsWith(newer)
 
     val sandwichPosition = when {
         !sameAsPrev && !sameAsNext -> SandwichPosition.SOLO
@@ -442,6 +461,8 @@ private fun LazyItemScope.ConversationMessageItem(
                 }
             },
             onLongClick = { sweetSelectState.toggle(message) },
+            sender = sender,
+            onSenderClick = { sender?.let { onNavigate(it.contactScreen()) } },
             statusContent = {
                 AnimatedContent(
                     targetState = message.type
@@ -512,6 +533,93 @@ private fun LazyItemScope.ConversationMessageItem(
                     bubbleColor = bubbleColor,
                     highlightQuery = highlightQuery,
                     isFocusedMatch = isFocusedMatch
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Maps a received message to the participant who sent it, a participant is made up from the
+ * address when it doesn't match any, null when the sender is unknown.
+ */
+@Composable
+private fun rememberSenderResolver(participants: List<Participant>): (CuteMessage) -> Participant? {
+    return remember(participants) {
+        val cache = mutableMapOf<String, Participant>()
+        val resolver: (CuteMessage) -> Participant? = { message ->
+            message.senderAddress?.let { address ->
+                cache.getOrPut(address) {
+                    participants.firstOrNull { PhoneNumberUtils.compare(it.rawNumber, address) }
+                        ?: Participant(
+                            rawNumber = address,
+                            displayName = address.beautifyNumber(),
+                            photoUriString = null,
+                            isBlocked = false
+                        )
+                }
+            }
+        }
+        resolver
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun GroupChatPreview() {
+    val alice = Participant(rawNumber = "+33600000001", displayName = "Alice", photoUriString = null, isBlocked = false, contactId = 1)
+    val bob = Participant(rawNumber = "+33600000002", displayName = "Bob", photoUriString = null, isBlocked = false, contactId = 2)
+    val unknown = Participant(rawNumber = "+33600000003", displayName = "+33 6 00 00 00 03", photoUriString = null, isBlocked = false)
+    val participants = listOf(alice, bob, unknown)
+
+    val script = listOf(
+        alice to "Who's up for dinner tonight?",
+        alice to "Thinking that new ramen place",
+        bob to "I'm in!",
+        null to "Same, 8pm?",
+        unknown to "Count me in too",
+        bob to "8 works",
+        bob to "I'll book a table",
+        alice to "\uD83C\uDF5C",
+        null to "See you there"
+    )
+    val messages = script.mapIndexed { index, (sender, body) ->
+        CuteMessage(
+            id = index.toLong(),
+            body = body,
+            type = if (sender == null) MessageType.SENT else MessageType.RECEIVED,
+            date = "Nov 19",
+            time = "19:${(10 + index).toString().padStart(2, '0')}",
+            timestamp = index.toLong(),
+            threadId = 1,
+            read = true,
+            isMms = false,
+            isScheduled = false,
+            delivered = sender == null,
+            senderAddress = sender?.rawNumber
+        )
+    }.asReversed()
+
+    CinnamonTheme {
+        val sweetSelectState = rememberSweetSelectState<CuteMessage>()
+        val senderOf: (CuteMessage) -> Participant? = { message ->
+            participants.firstOrNull { it.rawNumber == message.senderAddress }
+        }
+
+        LazyColumn(reverseLayout = true) {
+            itemsIndexed(messages, key = { _, message -> message.listKey }) { index, message ->
+                ConversationMessageItem(
+                    message = message,
+                    older = messages.getOrNull(index + 1),
+                    newer = messages.getOrNull(index - 1),
+                    showDateHeader = index == messages.lastIndex,
+                    sweetSelectState = sweetSelectState,
+                    isGroupChat = true,
+                    senderOf = senderOf,
+                    highlightQuery = null,
+                    isFocusedMatch = false,
+                    onHandleConversationActions = {},
+                    onNavigate = {}
                 )
             }
         }

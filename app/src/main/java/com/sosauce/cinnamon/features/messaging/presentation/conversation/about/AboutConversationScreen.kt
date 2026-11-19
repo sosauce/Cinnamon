@@ -413,7 +413,7 @@ private fun SectionTitle(text: String) {
     }
 }
 
-private fun Participant.contactScreen(): Screen =
+fun Participant.contactScreen(): Screen =
     contactId?.let { Screen.ContactDetails(it) }
         ?: Screen.ContactEditor(rawContactId = null, prefilledNumber = rawNumber)
 

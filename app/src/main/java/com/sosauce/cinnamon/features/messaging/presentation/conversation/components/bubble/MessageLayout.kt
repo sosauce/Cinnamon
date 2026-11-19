@@ -6,16 +6,20 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,16 +28,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
+import com.sosauce.cinnamon.core.utils.thenIf
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
 import com.sosauce.cinnamon.features.messaging.domain.MessageType
+import com.sosauce.cinnamon.features.messaging.domain.Participant
 import com.sosauce.nekobites.animations.bouncySpec
 import com.sosauce.nekobites.helpers.rememberInteractionSource
 
@@ -48,6 +56,8 @@ fun MessageLayout(
     isGroupChat: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    sender: Participant? = null,
+    onSenderClick: () -> Unit = {},
     statusContent: @Composable (ColumnScope.() -> Unit)? = null,
     bubbleContent: @Composable () -> Unit
 ) {
@@ -68,6 +78,12 @@ fun MessageLayout(
     val selectionColor by animateColorAsState(
         if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent
     )
+    val showSender = isGroupChat && message.type == MessageType.RECEIVED
+    val isFirstOfRun =
+        sandwichPosition == SandwichPosition.SOLO || sandwichPosition == SandwichPosition.TOP
+    val isLastOfRun =
+        sandwichPosition == SandwichPosition.SOLO || sandwichPosition == SandwichPosition.BOTTOM
+    val senderPadding = if (showSender) SENDER_ICON_SIZE + SENDER_ICON_SPACING else 0.dp
 
 
     Column(
@@ -84,22 +100,58 @@ fun MessageLayout(
         //.padding(horizontal = 5.dp, vertical = verticalPadding)
 
     ) {
-        Box(
-            modifier = Modifier
-                .align(alignment)
-                .widthIn(max = config.screenWidthDp.dp * 0.8f)
-                .graphicsLayer {
-                    scaleX = bubbleScale
-                    scaleY = bubbleScale
-                }
+        if (showSender && isFirstOfRun && sender != null) {
+            Text(
+                text = sender.displayName,
+                style = MaterialTheme.typography.labelMediumEmphasized,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                modifier = Modifier.padding(start = senderPadding + 12.dp, bottom = 2.dp)
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier.align(alignment)
         ) {
-            bubbleContent()
+            if (showSender) {
+                Box(Modifier.size(SENDER_ICON_SIZE)) {
+                    if (isLastOfRun) {
+                        val viewContactLabel = stringResource(R.string.view_contact)
+                        DefaultContactIcon(
+                            modifier = Modifier.thenIf(sender != null) {
+                                Modifier
+                                    .clip(CircleShape)
+                                    .clickable(
+                                        onClickLabel = viewContactLabel,
+                                        onClick = onSenderClick
+                                    )
+                            },
+                            firstLetter = sender?.displayName?.firstOrNull(),
+                            contactPfp = sender?.photoUri,
+                            size = SENDER_ICON_SIZE
+                        )
+                    }
+                }
+                Spacer(Modifier.width(SENDER_ICON_SPACING))
+            }
+            Box(
+                modifier = Modifier
+                    .widthIn(max = config.screenWidthDp.dp * 0.8f)
+                    .graphicsLayer {
+                        scaleX = bubbleScale
+                        scaleY = bubbleScale
+                    }
+            ) {
+                bubbleContent()
+            }
         }
         AnimatedVisibility(
             visible = isTimestampVisible,
 //            enter = expandVertically(),
 //            exit = shrinkVertically(),
-            modifier = Modifier.align(alignment)
+            modifier = Modifier
+                .align(alignment)
+                .padding(start = senderPadding)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -141,21 +193,19 @@ fun MessageLayout(
             }
         }
         statusContent?.let {
-            Box(Modifier.align(alignment)) {
+            Box(
+                Modifier
+                    .align(alignment)
+                    .padding(start = senderPadding)
+            ) {
                 it(this@Column)
             }
         }
-        if (isGroupChat && (sandwichPosition == SandwichPosition.BOTTOM || sandwichPosition == SandwichPosition.SOLO) && message.type == MessageType.RECEIVED) {
-            DefaultContactIcon(
-                modifier = Modifier
-                    .padding(top = 5.dp)
-                    .align(alignment),
-                firstLetter = 'S',
-                size = 30.dp
-            )
-        }
     }
 }
+
+private val SENDER_ICON_SIZE = 30.dp
+private val SENDER_ICON_SPACING = 8.dp
 
 enum class SandwichPosition {
     SOLO, TOP, MIDDLE, BOTTOM

@@ -50,7 +50,8 @@ fun CuteMessageEntity.toCuteMessage(context: Context): CuteMessage {
         delivered = delivered,
         type = type,
         timestamp = dateMillis,
-        attachment = attachment
+        attachment = attachment,
+        senderAddress = senderAddress
     )
 }
 
