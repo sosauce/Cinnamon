@@ -273,6 +273,12 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
             }
         )
         callManager.updateIsHolding(state == Call.STATE_HOLDING)
+        primary.details?.let { details ->
+            callManager.updateCallProperties(
+                isHdAudio = details.hasProperty(Call.Details.PROPERTY_HIGH_DEF_AUDIO),
+                isWifiCall = details.hasProperty(Call.Details.PROPERTY_WIFI)
+            )
+        }
 
         val other = live.getOrNull(1)
         callManager.updateOtherCall(

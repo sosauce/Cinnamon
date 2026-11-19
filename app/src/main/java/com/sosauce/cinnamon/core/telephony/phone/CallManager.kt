@@ -223,6 +223,12 @@ class CallManager(
         }
     }
 
+    fun updateCallProperties(isHdAudio: Boolean, isWifiCall: Boolean) {
+        _callingState.update {
+            it.copy(isHdAudio = isHdAudio, isWifiCall = isWifiCall)
+        }
+    }
+
     fun updateCallState(callState: CallState) {
 
         if (callState == CallState.ENDED) {

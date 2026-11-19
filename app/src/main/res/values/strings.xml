@@ -266,6 +266,8 @@
     <string name="hold_and_answer">Hold &amp; answer</string>
     <string name="end_and_answer">End &amp; answer</string>
     <string name="ongoing_call">Ongoing</string>
+    <string name="hd_call">HD call</string>
+    <string name="wifi_calling">Wi-Fi calling</string>
     <string name="backup_and_restore">Backup &amp; restore</string>
     <string name="backup_desc">Backup and restore, what do you expect?</string>
     <string name="generic_error">An error occurred!</string>

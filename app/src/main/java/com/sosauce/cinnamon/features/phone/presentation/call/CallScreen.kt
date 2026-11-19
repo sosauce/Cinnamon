@@ -16,10 +16,12 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -76,6 +78,7 @@ import com.sosauce.cinnamon.core.ui.barsContentTransform
 import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
 import com.sosauce.cinnamon.features.phone.domain.AudioRoute
 import com.sosauce.cinnamon.features.phone.presentation.call.components.CallBottomBar
+import com.sosauce.cinnamon.features.phone.presentation.call.components.CallQualityIcons
 import com.sosauce.cinnamon.features.phone.presentation.call.components.IncomingBottomBar
 import com.sosauce.nekobites.animations.bouncySpec
 import kotlinx.coroutines.launch
@@ -331,6 +334,17 @@ private fun CallerInfo(
         }
         Spacer(Modifier.height(16.dp))
         CallStatusPill(callUiState)
+        AnimatedVisibility(
+            visible = callUiState.isHdAudio || callUiState.isWifiCall,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            CallQualityIcons(
+                isHdAudio = callUiState.isHdAudio,
+                isWifiCall = callUiState.isWifiCall,
+                modifier = Modifier.padding(top = 12.dp)
+            )
+        }
     }
 }
 
@@ -491,6 +505,8 @@ private fun CallScreenPreviewOngoing() {
                 displayName = "Ava Thompson",
                 callState = CallState.ONGOING,
                 timeSpentInCall = 127,
+                isHdAudio = true,
+                isWifiCall = true,
                 availableAudioRoutes = listOf(
                     AudioRoute(name = "Speaker"),
                     AudioRoute(name = "Earpiece")

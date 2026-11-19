@@ -135,28 +135,41 @@ fun CallBubble(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    AnimatedContent(
-                        targetState = when (state.callState) {
-                            CallState.RINGING -> "Incoming • via ${state.activeSim.name.ifBlank { "SIM" }}"
-                            CallState.DIALING -> "Calling…"
-                            CallState.ONGOING -> formatDuration(state.timeSpentInCall)
-                            CallState.ENDED -> "Ended"
-                        },
-                        transitionSpec = { (scaleIn() + fadeIn()) togetherWith (scaleOut() + fadeOut()) },
-                        label = "bubbleStatus"
-                    ) { status ->
-                        Text(
-                            text = status,
-                            style = MaterialTheme.typography.labelMediumEmphasized.copy(
-                                color = when (state.callState) {
-                                    CallState.RINGING -> MaterialTheme.colorScheme.tertiary
-                                    CallState.ONGOING -> MaterialTheme.colorScheme.primary
-                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        AnimatedContent(
+                            targetState = when (state.callState) {
+                                CallState.RINGING -> "Incoming • via ${state.activeSim.name.ifBlank { "SIM" }}"
+                                CallState.DIALING -> "Calling…"
+                                CallState.ONGOING -> formatDuration(state.timeSpentInCall)
+                                CallState.ENDED -> "Ended"
+                            },
+                            transitionSpec = { (scaleIn() + fadeIn()) togetherWith (scaleOut() + fadeOut()) },
+                            label = "bubbleStatus",
+                            modifier = Modifier.weight(1f, fill = false)
+                        ) { status ->
+                            Text(
+                                text = status,
+                                style = MaterialTheme.typography.labelMediumEmphasized.copy(
+                                    color = when (state.callState) {
+                                        CallState.RINGING -> MaterialTheme.colorScheme.tertiary
+                                        CallState.ONGOING -> MaterialTheme.colorScheme.primary
+                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        CallQualityIcons(
+                            isHdAudio = state.isHdAudio,
+                            isWifiCall = state.isWifiCall,
+                            iconSize = 14.dp,
+                            containerColor = null,
+                            spacing = 4.dp
                         )
                     }
                 }

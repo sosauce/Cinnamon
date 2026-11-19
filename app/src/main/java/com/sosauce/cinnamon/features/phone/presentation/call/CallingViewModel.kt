@@ -155,6 +155,8 @@ data class CallingState(
     val photo: Uri? = null,
     val poster: Uri? = null, // contact that may or may nor be associated with the caller
     val activeSim: CuteSimCard = CuteSimCard(),
+    val isHdAudio: Boolean = false,
+    val isWifiCall: Boolean = false,
     val otherCall: OtherCall? = null // second call (call waiting / on hold), null when there's only one call
 
 )
