@@ -26,6 +26,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.core.utils.safeStartActivity
 import org.koin.compose.koinInject
 
 /**
@@ -99,7 +100,7 @@ private fun ForgotPinDialog(onDismissRequest: () -> Unit) {
             TextButton(
                 onClick = {
                     onDismissRequest()
-                    context.startActivity(
+                    context.safeStartActivity(
                         Intent(
                             Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                             Uri.fromParts("package", context.packageName, null)

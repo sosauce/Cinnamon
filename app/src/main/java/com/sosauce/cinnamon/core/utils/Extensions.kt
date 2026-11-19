@@ -5,6 +5,7 @@ package com.sosauce.cinnamon.core.utils
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.role.RoleManager
+import android.content.ActivityNotFoundException
 import android.content.ContentProviderOperation
 import android.content.ContentResolver
 import android.content.Context
@@ -23,6 +24,7 @@ import android.telephony.PhoneNumberUtils
 import android.text.format.DateFormat
 import android.text.format.DateUtils
 import android.util.Patterns
+import android.widget.Toast
 import androidx.annotation.FloatRange
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
@@ -700,4 +702,22 @@ fun Context.unblock(number: String): Int {
 fun backupFileName(prefix: String, nowMillis: Long = System.currentTimeMillis()): String {
     val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
     return "${prefix}_${formatter.format(Date(nowMillis))}"
+}
+
+/**
+ * Handles [ActivityNotFoundException]
+ */
+fun Context.safeStartActivity(
+    intent: Intent,
+    errorMessage: String? = null
+) {
+    try {
+        startActivity(intent)
+    } catch (_: ActivityNotFoundException) {
+        Toast.makeText(
+            this,
+            errorMessage ?: getString(R.string.generic_error),
+            Toast.LENGTH_SHORT
+        ).show()
+    }
 }

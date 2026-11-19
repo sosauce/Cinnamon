@@ -13,6 +13,7 @@ import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.core.repository.SimsRepository
 import com.sosauce.cinnamon.core.telephony.PhoneNumberNormalizer
 import com.sosauce.cinnamon.core.utils.beautifyNumber
+import com.sosauce.cinnamon.core.utils.safeStartActivity
 import com.sosauce.cinnamon.features.phone.domain.AudioRoute
 import com.sosauce.cinnamon.features.phone.domain.CuteSimCard
 import com.sosauce.cinnamon.features.phone.domain.SimChoice
@@ -116,7 +117,7 @@ class CallManager(
                                 Intent.FLAG_ACTIVITY_CLEAR_TOP
                     )
                 }
-                context.startActivity(callIntent)
+                context.safeStartActivity(callIntent)
             }
             StartCallResult.STARTED
 

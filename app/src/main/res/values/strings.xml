@@ -269,6 +269,8 @@
     <string name="backup_and_restore">Backup &amp; restore</string>
     <string name="backup_desc">Backup and restore, what do you expect?</string>
     <string name="generic_error">An error occurred!</string>
+    <string name="no_email_app_found">No email app found!</string>
+    <string name="google_maps_not_found">Google Maps not found!</string>
 
 
     <plurals name="delete_msg">

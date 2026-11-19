@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.createDefaultDialerIntent
 import com.sosauce.cinnamon.core.utils.createDefaultSmsIntent
+import com.sosauce.cinnamon.core.utils.safeStartActivity
 import com.sosauce.nekobites.components.settings.SettingsGroup
 import com.sosauce.nekobites.components.settings.SettingsIconBadge
 import com.sosauce.nekobites.components.settings.SettingsItem
@@ -127,10 +128,7 @@ fun SettingsPermissions() {
                         try {
                             dialerLauncher.launch(roleIntent)
                         } catch (_: Exception) {
-                            try {
-                                context.startActivity(roleIntent.apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
-                            } catch (_: Exception) {
-                            }
+                            context.safeStartActivity(roleIntent.apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
                         }
                     } else {
                         val fallback = Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER).apply {
@@ -142,10 +140,7 @@ fun SettingsPermissions() {
                         try {
                             dialerLauncher.launch(fallback)
                         } catch (_: Exception) {
-                            try {
-                                context.startActivity(fallback.apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
-                            } catch (_: Exception) {
-                            }
+                            context.safeStartActivity(fallback.apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
                         }
                     }
                 }

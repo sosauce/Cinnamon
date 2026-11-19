@@ -23,6 +23,7 @@ import com.sosauce.cinnamon.core.telephony.phone.AndroidCallCallback
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
 import com.sosauce.cinnamon.core.telephony.phone.CallNotificationManager
 import com.sosauce.cinnamon.core.telephony.phone.CallServiceCallback
+import com.sosauce.cinnamon.core.utils.safeStartActivity
 import com.sosauce.cinnamon.features.phone.domain.AudioRoute
 import com.sosauce.cinnamon.features.phone.domain.CuteSimCard
 import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
@@ -160,16 +161,7 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         // launches are restricted — ensure we are foreground or use fullScreenIntent.
         // Callers (CallManager/ViewModel) also launch CallActivity directly as immediate UI,
         // this is a fallback for Telecom-triggered calls (incoming / from other apps).
-        try {
-            startActivity(intent)
-        } catch (e: Exception) {
-            // Fallback: rely on notification fullScreenIntent
-            android.util.Log.w(
-                "CallService",
-                "launchCallActivity failed, relying on fullScreenIntent",
-                e
-            )
-        }
+        safeStartActivity(intent)
     }
 
 

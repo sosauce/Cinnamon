@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.appVersion
+import com.sosauce.cinnamon.core.utils.safeStartActivity
 import com.sosauce.nekobites.components.Spacer
 
 @Composable
@@ -84,7 +85,7 @@ fun CrashScreen(
                             data = mailtoUri
                         }
 
-                        context.startActivity(
+                        context.safeStartActivity(
                             Intent.createChooser(
                                 emailIntent,
                                 "Choose an Email client : "

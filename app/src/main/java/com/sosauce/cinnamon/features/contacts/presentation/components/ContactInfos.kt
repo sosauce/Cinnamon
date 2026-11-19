@@ -2,7 +2,6 @@
 
 package com.sosauce.cinnamon.features.contacts.presentation.components
 
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.provider.ContactsContract
 import android.widget.Toast
@@ -42,6 +41,7 @@ import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItemDefaults
 import com.sosauce.cinnamon.core.ui.components.text.HeaderText
 import com.sosauce.cinnamon.core.utils.formateEventDate
+import com.sosauce.cinnamon.core.utils.safeStartActivity
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsAction
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsState
 import com.sosauce.nekobites.animations.bouncySpec
@@ -137,20 +137,14 @@ fun ContactInfos(
                 state.details.emails.forEachIndexed { index, email ->
                     CuteListItem(
                         onClick = {
-                            try {
-                                val intent = Intent(Intent.ACTION_SENDTO, "mailto:".toUri())
-                                    .apply {
-                                        putExtra(Intent.EXTRA_EMAIL, email.email)
-                                    }
-                                context.startActivity(intent)
-
-                            } catch (_: ActivityNotFoundException) {
-                                Toast.makeText(
-                                    context,
-                                    "No email app found!",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
+                            val intent = Intent(Intent.ACTION_SENDTO, "mailto:".toUri())
+                                .apply {
+                                    putExtra(Intent.EXTRA_EMAIL, email.email)
+                                }
+                            context.safeStartActivity(
+                                intent = intent,
+                                errorMessage = resources.getString(R.string.no_email_app_found)
+                            )
 
                         },
                         shape = CuteListItemDefaults.getItemShape(
@@ -199,25 +193,20 @@ fun ContactInfos(
                 state.details.addresses.forEachIndexed { index, address ->
                     CuteListItem(
                         onClick = {
-                            try {
-                                val intent = Intent(
-                                    Intent.ACTION_VIEW,
-                                    "geo:0,0?q=${address.address}".toUri()
-                                )
-                                    .apply {
-                                        setClassName(
-                                            "com.google.android.apps.maps",
-                                            "com.google.android.maps.MapsActivity"
-                                        )
-                                    }
-                                context.startActivity(intent)
-                            } catch (_: ActivityNotFoundException) {
-                                Toast.makeText(
-                                    context,
-                                    "Google Maps not found!",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
+                            val intent = Intent(
+                                Intent.ACTION_VIEW,
+                                "geo:0,0?q=${address.address}".toUri()
+                            )
+                                .apply {
+                                    setClassName(
+                                        "com.google.android.apps.maps",
+                                        "com.google.android.maps.MapsActivity"
+                                    )
+                                }
+                            context.safeStartActivity(
+                                intent = intent,
+                                errorMessage = context.getString(R.string.google_maps_not_found)
+                            )
                         },
                         shape = CuteListItemDefaults.getItemShape(
                             addressOffset + index,

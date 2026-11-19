@@ -34,6 +34,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
 import com.sosauce.cinnamon.core.utils.getVcfName
 import com.sosauce.cinnamon.core.utils.isVcard
+import com.sosauce.cinnamon.core.utils.safeStartActivity
 import com.sosauce.cinnamon.features.messaging.data.model.AttachmentType
 import com.sosauce.cinnamon.features.messaging.data.model.CuteAttachment
 import com.sosauce.cinnamon.features.messaging.domain.CuteMessage
@@ -169,7 +170,7 @@ private fun FileAttachment(
                     setDataAndType(details.uri, context.contentResolver.getType(details.uri))
                     flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                 }
-                context.startActivity(intent)
+                context.safeStartActivity(intent)
             }
     ) {
         Row(

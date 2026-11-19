@@ -14,6 +14,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.app.CinnamonApplication
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
 import com.sosauce.cinnamon.core.ui.CinnamonTheme
+import com.sosauce.cinnamon.core.utils.safeStartActivity
 import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
 import com.sosauce.cinnamon.features.phone.presentation.call.CallState
 import com.sosauce.cinnamon.features.phone.presentation.call.components.CallBubble
@@ -41,7 +42,7 @@ class CallOverlayManager(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                 "package:${context.packageName}".toUri()
             ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-            context.startActivity(intent)
+            context.safeStartActivity(intent)
         }
     }
 
@@ -136,7 +137,7 @@ class CallOverlayManager(
                 val intent = Intent(context, CallActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 }
-                context.startActivity(intent)
+                context.safeStartActivity(intent)
                 // Optionally hide overlay when expanding to full UI
                 // hideOverlay()
             },
