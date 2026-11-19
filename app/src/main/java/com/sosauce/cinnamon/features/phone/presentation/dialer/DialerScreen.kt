@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
 
-package com.sosauce.cinnamon.features.phone.presentation.dialpad
+package com.sosauce.cinnamon.features.phone.presentation.dialer
 
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
@@ -40,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -53,6 +54,7 @@ import androidx.compose.ui.util.fastMap
 import androidx.paging.compose.LazyPagingItems
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
+import com.sosauce.cinnamon.core.ui.components.ScreenSelection
 import com.sosauce.cinnamon.core.ui.components.buttons.LongClickButton
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.utils.backspace
@@ -65,16 +67,17 @@ import com.sosauce.cinnamon.features.contacts.presentation.components.dialogs.Nu
 import com.sosauce.cinnamon.features.contacts.presentation.contactsList
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.features.phone.presentation.call.components.DisableSoftKeyboard
+import com.sosauce.nekobites.animations.AnimatedFab
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
 
 @Composable
-fun SharedTransitionScope.DialpadScreen(
-    state: DialpadState,
+fun SharedTransitionScope.DialerScreen(
+    state: DialerState,
     contacts: LazyPagingItems<ContactsListItem>,
     textFieldState: TextFieldState,
-    onNavigateUp: () -> Unit,
     onNavigate: (Screen) -> Unit,
+    onNavigateUp: () -> Unit,
     onHandleCallAction: (CallAction) -> Unit
 ) {
     val dialpadLayout = listOf(
@@ -120,50 +123,56 @@ fun SharedTransitionScope.DialpadScreen(
                     )
                     .navigationBarsPadding()
             ) {
-                DisableSoftKeyboard {
-                    TextField(
-                        state = textFieldState,
-                        lineLimits = TextFieldLineLimits.SingleLine,
-                        shape = RoundedCornerShape(50.dp),
-                        modifier = Modifier
-                            .padding(10.dp)
-                            .fillMaxWidth()
-                            .focusRequester(focusRequester),
-                        colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        ),
-                        leadingIcon = {
-                            IconButton(
-                                onClick = onNavigateUp,
-                                shapes = IconButtonDefaults.shapes()
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.back),
-                                    contentDescription = stringResource(R.string.back)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    DisableSoftKeyboard {
+                        TextField(
+                            state = textFieldState,
+                            lineLimits = TextFieldLineLimits.SingleLine,
+                            shape = RoundedCornerShape(50.dp),
+                            modifier = Modifier
+                                .padding(10.dp)
+                                .fillMaxWidth()
+                                .focusRequester(focusRequester),
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            ),
+                            placeholder = {
+                                Text(
+                                    text = stringResource(R.string.enter_number)
                                 )
+                            },
+                            leadingIcon = {
+                                IconButton(
+                                    onClick = onNavigateUp,
+                                    shapes = IconButtonDefaults.shapes()
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.back),
+                                        contentDescription = null
+                                    )
+                                }
+                            },
+                            trailingIcon = {
+                                IconButton(
+                                    onClick = { textFieldState.backspace() },
+                                    shapes = IconButtonDefaults.shapes(),
+                                    enabled = textFieldState.text.isNotEmpty()
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.backspace),
+                                        contentDescription = stringResource(R.string.backspace)
+                                    )
+                                }
                             }
-                        },
-                        placeholder = {
-                            Text(
-                                text = stringResource(R.string.enter_number)
-                            )
-                        },
-                        trailingIcon = {
-                            IconButton(
-                                onClick = { textFieldState.backspace() },
-                                shapes = IconButtonDefaults.shapes(),
-                                enabled = textFieldState.text.isNotEmpty()
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.backspace),
-                                    contentDescription = stringResource(R.string.backspace)
-                                )
-                            }
-                        }
-                    )
+                        )
+                    }
                 }
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                     Column(
@@ -247,7 +256,6 @@ fun SharedTransitionScope.DialpadScreen(
                 contentPadding = paddingValues,
                 modifier = Modifier.padding(horizontal = 10.dp)
             ) {
-                // calls the contact, asking which number to use when there are several
                 val onContactClick: (CuteContact) -> Unit = { contact ->
                     if (contact.phoneNumbers.size > 1) {
                         numberPickerContact = contact

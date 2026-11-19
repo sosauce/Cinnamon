@@ -593,8 +593,8 @@ fun Context.toLocalizedTab(tab: Int): String {
     return when (tab) {
         DefaultTabOption.MESSAGES -> getString(R.string.messages)
         DefaultTabOption.CONTACTS -> getString(R.string.contacts)
+        DefaultTabOption.CALLS -> getString(R.string.calls)
         DefaultTabOption.DIALER -> getString(R.string.dialer)
-        DefaultTabOption.DIALPAD -> getString(R.string.dialpad)
         else -> throw IllegalArgumentException("Not a valid tab!")
     }
 }
@@ -603,8 +603,8 @@ fun Int.tabToScreen(): Screen {
     return when (this) {
         DefaultTabOption.MESSAGES -> Screen.Conversations
         DefaultTabOption.CONTACTS -> Screen.Contacts
-        DefaultTabOption.DIALER -> Screen.Dialer
-        DefaultTabOption.DIALPAD -> Screen.Dialpad()
+        DefaultTabOption.CALLS -> Screen.Calls
+        DefaultTabOption.DIALER -> Screen.Dialer()
         else -> throw IllegalArgumentException("Not a valid tab!")
     }
 }

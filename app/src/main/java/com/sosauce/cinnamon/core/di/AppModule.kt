@@ -51,7 +51,7 @@ import com.sosauce.cinnamon.features.phone.data.backup.CallLogsImportRepository
 import com.sosauce.cinnamon.features.phone.data.repository.CallLogsRepository
 import com.sosauce.cinnamon.features.phone.data.repository.VoicemailsRepository
 import com.sosauce.cinnamon.features.phone.presentation.call.CallingViewModel
-import com.sosauce.cinnamon.features.phone.presentation.dialpad.DialpadViewModel
+import com.sosauce.cinnamon.features.phone.presentation.dialer.DialerViewModel
 import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsViewModel
 import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailViewModel
 import com.sosauce.cinnamon.settings.AppLockSettingsViewModel
@@ -148,7 +148,7 @@ val appModule = module {
     viewModelOf(::ArchivedConversationsViewModel)
     viewModelOf(::CallLogsViewModel)
     viewModelOf(::VoicemailViewModel)
-    viewModelOf(::DialpadViewModel)
+    viewModelOf(::DialerViewModel)
     viewModelOf(::CallingViewModel)
     viewModelOf(::BottomBarViewModel)
     viewModelOf(::BackupViewModel)

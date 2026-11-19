@@ -161,12 +161,12 @@ class CallLogsViewModel(
         CallLogsState(isLoading = true)
     )
 
-    fun handleDialerAction(action: DialerAction) {
+    fun handleCallLogsAction(action: CallLogsAction) {
         when (action) {
-            is DialerAction.ChangeFilter -> filter.value = action.filter
-            is DialerAction.ChangeSort -> Unit
-            is DialerAction.DefaultDialerChanged -> isDefaultDialer.value = action.isDefault
-            is DialerAction.DeleteLogs -> viewModelScope.launch(Dispatchers.IO) {
+            is CallLogsAction.ChangeFilter -> filter.value = action.filter
+            is CallLogsAction.ChangeSort -> Unit
+            is CallLogsAction.DefaultDialerChanged -> isDefaultDialer.value = action.isDefault
+            is CallLogsAction.DeleteLogs -> viewModelScope.launch(Dispatchers.IO) {
                 callLogsRepository.deleteCallLog(action.ids)
             }
         }
@@ -207,11 +207,11 @@ sealed interface CallLogsListItem {
     }
 }
 
-sealed interface DialerAction {
-    data class ChangeFilter(val filter: CallLogsFilter) : DialerAction
-    data object ChangeSort : DialerAction
-    data class DeleteLogs(val ids: List<Long>) : DialerAction
-    data class DefaultDialerChanged(val isDefault: Boolean) : DialerAction
+sealed interface CallLogsAction {
+    data class ChangeFilter(val filter: CallLogsFilter) : CallLogsAction
+    data object ChangeSort : CallLogsAction
+    data class DeleteLogs(val ids: List<Long>) : CallLogsAction
+    data class DefaultDialerChanged(val isDefault: Boolean) : CallLogsAction
 }
 
 enum class CallLogsFilter {

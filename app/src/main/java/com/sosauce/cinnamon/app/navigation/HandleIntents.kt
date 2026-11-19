@@ -21,11 +21,11 @@ fun NavBackStack<NavKey>.handleIntent(
 
         CuteIntents.SHORTCUT_MESSAGES -> add(Screen.Conversations)
         CuteIntents.SHORTCUT_CONTACTS -> add(Screen.Contacts)
-        CuteIntents.SHORTCUT_DIALPAD -> add(Screen.Dialpad())
+        CuteIntents.SHORTCUT_DIALPAD -> add(Screen.Dialer())
 
         Intent.ACTION_DIAL -> {
             val number = intent.data?.schemeSpecificPart.orEmpty().replace('%', ' ')
-            add(Screen.Dialpad(number))
+            add(Screen.Dialer(number))
         }
 
         Intent.ACTION_SENDTO -> {

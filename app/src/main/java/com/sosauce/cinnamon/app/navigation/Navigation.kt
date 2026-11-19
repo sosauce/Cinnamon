@@ -66,8 +66,8 @@ import com.sosauce.cinnamon.features.messaging.presentation.starter.StartConvers
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.features.phone.presentation.call.CallEvents
 import com.sosauce.cinnamon.features.phone.presentation.call.CallingViewModel
-import com.sosauce.cinnamon.features.phone.presentation.dialpad.DialpadScreen
-import com.sosauce.cinnamon.features.phone.presentation.dialpad.DialpadViewModel
+import com.sosauce.cinnamon.features.phone.presentation.dialer.DialerScreen
+import com.sosauce.cinnamon.features.phone.presentation.dialer.DialerViewModel
 import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsScreen
 import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsViewModel
 import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailScreen
@@ -185,7 +185,7 @@ fun Nav(
                             onHandleContactDetailsAction = viewModel::handleContactDetailsAction
                         )
                     }
-                    entry<Screen.Dialer> {
+                    entry<Screen.Calls> {
                         val viewModel = koinViewModel<CallLogsViewModel>()
                         val callViewModel = koinViewModel<CallingViewModel>()
                         val state by viewModel.state.collectAsStateWithLifecycle()
@@ -212,7 +212,7 @@ fun Nav(
                             textFieldState = viewModel.textFieldState,
                             onNavigate = backStack::navigate,
                             onHandleCallActions = callViewModel::handleCallAction,
-                            onHandleDialerActions = viewModel::handleDialerAction
+                            onHandleCallLogsActions = viewModel::handleCallLogsAction
                         )
                     }
 
@@ -319,9 +319,9 @@ fun Nav(
                         )
                     }
 
-                    entry<Screen.Dialpad> { key ->
+                    entry<Screen.Dialer> { key ->
                         val callViewModel = koinViewModel<CallingViewModel>()
-                        val viewModel = koinViewModel<DialpadViewModel>(
+                        val viewModel = koinViewModel<DialerViewModel>(
                             parameters = { parametersOf(key.prefilledNumber) }
                         )
                         val state by viewModel.state.collectAsStateWithLifecycle()
@@ -342,12 +342,12 @@ fun Nav(
                             )
                         }
 
-                        DialpadScreen(
+                        DialerScreen(
                             state = state,
                             contacts = contacts,
                             textFieldState = viewModel.textFieldState,
-                            onNavigateUp = backStack::navigateBack,
                             onNavigate = backStack::navigate,
+                            onNavigateUp = backStack::navigateBack,
                             onHandleCallAction = callViewModel::handleCallAction
                         )
                     }

@@ -26,8 +26,8 @@ fun SettingsNavigation() {
     val screens = listOf(
         ScreenOption(DefaultTabOption.MESSAGES, R.drawable.messages_filled, R.string.messages),
         ScreenOption(DefaultTabOption.CONTACTS, R.drawable.contacts_filled, R.string.contacts),
-        ScreenOption(DefaultTabOption.DIALER, R.drawable.phone_filled, R.string.dialer),
-        ScreenOption(DefaultTabOption.DIALPAD, R.drawable.dialpad, R.string.dialpad)
+        ScreenOption(DefaultTabOption.CALLS, R.drawable.phone_filled, R.string.calls),
+        ScreenOption(DefaultTabOption.DIALER, R.drawable.dialpad, R.string.dialer)
     )
 
     SettingsGroup(title = stringResource(R.string.navigation)) {

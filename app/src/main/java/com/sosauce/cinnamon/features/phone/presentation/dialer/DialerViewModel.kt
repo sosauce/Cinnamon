@@ -1,6 +1,6 @@
 @file:OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 
-package com.sosauce.cinnamon.features.phone.presentation.dialpad
+package com.sosauce.cinnamon.features.phone.presentation.dialer
 
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Stable
@@ -28,7 +28,7 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlin.time.Duration.Companion.milliseconds
 
-class DialpadViewModel(
+class DialerViewModel(
     private val prefilledNumber: String,
     private val contactsRepository: ContactsRepository,
     private val userPreferences: UserPreferences
@@ -77,22 +77,22 @@ class DialpadViewModel(
         pager.favorites,
         pager.loaded
     ) { favorites, loaded ->
-        DialpadState(
+        DialerState(
             isLoading = !loaded || favorites == null,
             favorites = favorites.orEmpty()
         )
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
-        DialpadState(isLoading = true)
+        DialerState(isLoading = true)
     )
 }
 
 @Stable
-data class DialpadState(
+data class DialerState(
     val isLoading: Boolean = false,
     /**
-     * Favorite contacts aren't paged, the others are in [DialpadViewModel.contacts]
+     * Favorite contacts aren't paged, the others are in [DialerViewModel.contacts]
      */
     val favorites: List<CuteContact> = emptyList()
 )

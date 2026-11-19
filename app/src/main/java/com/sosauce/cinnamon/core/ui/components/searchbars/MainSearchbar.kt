@@ -11,7 +11,7 @@ import com.sosauce.cinnamon.core.ui.barsContentTransform
 import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 
-val MainTabs: List<Screen> = listOf(Screen.Conversations, Screen.Contacts, Screen.Dialer)
+val MainTabs: List<Screen> = listOf(Screen.Conversations, Screen.Contacts, Screen.Calls, Screen.Dialer())
 
 @Composable
 fun SharedTransitionScope.MainSearchbar(

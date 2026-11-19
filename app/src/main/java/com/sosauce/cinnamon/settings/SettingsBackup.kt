@@ -113,7 +113,7 @@ fun SettingsBackup() {
         SettingsClickable(
             title = stringResource(R.string.backup_call_logs),
             description = stringResource(R.string.backup_call_logs_desc),
-            icon = R.drawable.call_log_rounded,
+            icon = R.drawable.call_log,
             onClick = { showCallsDialog = true }
         )
     }

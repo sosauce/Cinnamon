@@ -2,10 +2,7 @@
 
 package com.sosauce.cinnamon.features.phone.presentation.logs
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -51,7 +48,6 @@ import com.sosauce.cinnamon.features.phone.domain.CallPresentation
 import com.sosauce.cinnamon.features.phone.domain.CuteCallLog
 import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.cinnamon.setup.SetupDefaultDialerScreen
-import com.sosauce.nekobites.animations.AnimatedFab
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
 import com.sosauce.sweetselect.rememberSweetSelectState
@@ -63,14 +59,14 @@ fun SharedTransitionScope.CallLogsScreen(
     textFieldState: TextFieldState,
     onNavigate: (Screen) -> Unit,
     onHandleCallActions: (CallAction) -> Unit,
-    onHandleDialerActions: (DialerAction) -> Unit
+    onHandleCallLogsActions: (CallLogsAction) -> Unit
 ) {
     val sweetSelectState = rememberSweetSelectState<CuteCallLog>()
     var sortLogsAscending by rememberSortLogsAscending()
     val isDefaultDialer by PermissionUtils.observeHasDefaultApp(PermissionUtils.DIALER)
 
     LaunchedEffect(isDefaultDialer) {
-        onHandleDialerActions(DialerAction.DefaultDialerChanged(isDefaultDialer))
+        onHandleCallLogsActions(CallLogsAction.DefaultDialerChanged(isDefaultDialer))
     }
 
     Scaffold(
@@ -105,8 +101,8 @@ fun SharedTransitionScope.CallLogsScreen(
                             SelectableDropdownMenuItem(
                                 selected = filter == state.filter,
                                 onClick = {
-                                    onHandleDialerActions(
-                                        DialerAction.ChangeFilter(
+                                    onHandleCallLogsActions(
+                                        CallLogsAction.ChangeFilter(
                                             filter
                                         )
                                     )
@@ -121,18 +117,8 @@ fun SharedTransitionScope.CallLogsScreen(
                         }
                     }
                 },
-                fab = {
-                    AnimatedVisibility(
-                        visible = isDefaultDialer,
-                        enter = slideInVertically { it },
-                        exit = slideOutVertically { it }
-                    ) {
-                        AnimatedFab(
-                            onClick = { onNavigate(Screen.Dialpad()) },
-                            icon = R.drawable.dialpad
-                        )
-                    }
-                },
+                // dialing has its own tab, see Screen.Dialer
+                fab = {},
                 selectedBar = {
                     // loaded logs only
                     val items =
@@ -150,7 +136,7 @@ fun SharedTransitionScope.CallLogsScreen(
                                     tint = MaterialTheme.colorScheme.error,
                                     onClick = {
                                         val logs = sweetSelectState.selectedItems.map { it.id }
-                                        onHandleDialerActions(DialerAction.DeleteLogs(logs))
+                                        onHandleCallLogsActions(CallLogsAction.DeleteLogs(logs))
                                         sweetSelectState.clearSelected()
                                     }
                                 )
@@ -209,7 +195,7 @@ fun SharedTransitionScope.CallLogsScreen(
                             NoXFound(
                                 headlineText = R.string.no_calls_found,
                                 bodyText = R.string.no_calls_found_desc,
-                                icon = R.drawable.call_log_rounded
+                                icon = R.drawable.call_log
                             )
                         }
                     }
@@ -244,8 +230,8 @@ fun SharedTransitionScope.CallLogsScreen(
                                     onCallAction = onHandleCallActions,
                                     onNavigate = onNavigate,
                                     onDeleteCallLog = {
-                                        onHandleDialerActions(
-                                            DialerAction.DeleteLogs(
+                                        onHandleCallLogsActions(
+                                            CallLogsAction.DeleteLogs(
                                                 listOf(callLog.id)
                                             )
                                         )

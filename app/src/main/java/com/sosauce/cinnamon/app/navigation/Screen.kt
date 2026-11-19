@@ -20,13 +20,13 @@ sealed class Screen : NavKey {
     data object DebugCall : Screen()
 
     @Serializable
-    data object Dialer : Screen()
+    data object Calls : Screen()
 
     @Serializable
     /**
      * @param prefilledNumber for dial intent
      */
-    data class Dialpad(val prefilledNumber: String = "") : Screen()
+    data class Dialer(val prefilledNumber: String = "") : Screen()
 
     @Serializable
     data object Voicemail : Screen()

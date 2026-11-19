@@ -29,7 +29,7 @@
         android:shortcutId="dialpad"
         android:enabled="true"
         android:icon="@drawable/dialpad"
-        android:shortcutShortLabel="@string/dialpad">
+        android:shortcutShortLabel="@string/dialer">
         <intent
             android:action="dialpad"
             android:targetPackage="com.sosauce.cinnamon"

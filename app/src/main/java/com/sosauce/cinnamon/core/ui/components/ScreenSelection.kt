@@ -62,11 +62,18 @@ fun ScreenSelection(
             selectedIcon = R.drawable.contacts_filled
         ),
         ScreenCategory(
-            screen = Screen.Dialer,
+            screen = Screen.Calls,
+            name = R.string.calls,
+            onClick = { onNavigate(Screen.Calls) },
+            unselectedIcon = R.drawable.call_log,
+            selectedIcon = R.drawable.call_log_filled
+        ),
+        ScreenCategory(
+            screen = Screen.Dialer(),
             name = R.string.dialer,
-            onClick = { onNavigate(Screen.Dialer) },
-            unselectedIcon = R.drawable.phone,
-            selectedIcon = R.drawable.phone_filled
+            onClick = { if (currentScreen !is Screen.Dialer) onNavigate(Screen.Dialer()) },
+            unselectedIcon = R.drawable.dialpad,
+            selectedIcon = R.drawable.dialpad
         )
     )
 
@@ -77,7 +84,8 @@ fun ScreenSelection(
             .height(TextFieldDefaults.MinHeight)
     ) {
         screens.forEach { screen ->
-            val selected = currentScreen == screen.screen
+            // compared by type, the dialer can be opened with a prefilled number
+            val selected = currentScreen::class == screen.screen::class
             val interactionSource = remember { MutableInteractionSource() }
             val isPressed by interactionSource.collectIsPressedAsState()
             val weight by animateFloatAsState(
