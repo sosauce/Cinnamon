@@ -34,7 +34,7 @@ import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.barsContentTransform
 import com.sosauce.cinnamon.core.ui.components.SelectedBarSurface
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButton
-import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar
+import com.sosauce.cinnamon.core.ui.components.searchbars.SimpleSearchbar
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.phone.domain.CuteVoicemail
 import com.sosauce.nekobites.components.LoadingBox
@@ -114,15 +114,14 @@ fun VoicemailScreen(
                         }
                     }
                 } else {
-                    CuteSearchbar(
+                    SimpleSearchbar(
                         modifier = Modifier.selfAlignHorizontally(),
                         textFieldState = textFieldState,
                         navigationButton = {
                             CuteNavigationButton(
                                 onNavigateUp = onNavigateUp
                             )
-                        },
-                        onNavigate = onNavigate
+                        }
                     )
                 }
             }

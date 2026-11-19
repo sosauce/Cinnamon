@@ -417,6 +417,7 @@ fun Nav(
 
                         ForwardingScreen(
                             state = state,
+                            textFieldState = viewModel.textFieldState,
                             onNavigateBack = backStack::navigateBack,
                             onNavigate = { screen ->
                                 backStack.navigate(screen)
@@ -432,6 +433,7 @@ fun Nav(
 
                         ArchivedConversationsScreen(
                             state = state,
+                            textFieldState = viewModel.textFieldState,
                             onNavigateUp = backStack::navigateBack,
                             onNavigate = backStack::navigate,
                             onHandleThreadsAction = viewModel::handleThreadsAction

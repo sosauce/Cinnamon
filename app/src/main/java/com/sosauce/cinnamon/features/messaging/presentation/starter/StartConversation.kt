@@ -47,7 +47,7 @@ import androidx.compose.ui.util.fastMap
 import androidx.paging.compose.LazyPagingItems
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
-import com.sosauce.cinnamon.core.ui.SimpleSearchbar
+import com.sosauce.cinnamon.core.ui.components.searchbars.SimpleSearchbar
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.utils.LazyListKeys

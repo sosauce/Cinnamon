@@ -5,6 +5,7 @@ package com.sosauce.cinnamon.features.messaging.presentation.archived
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -18,7 +19,7 @@ import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.ui.barsContentTransform
 import com.sosauce.cinnamon.core.ui.components.ConversationsSelectedBar
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
-import com.sosauce.cinnamon.core.ui.components.searchbars.CuteSearchbar
+import com.sosauce.cinnamon.core.ui.components.searchbars.SimpleSearchbar
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationsAction
@@ -30,6 +31,7 @@ import com.sosauce.sweetselect.rememberSweetSelectState
 @Composable
 fun SharedTransitionScope.ArchivedConversationsScreen(
     state: ArchivedState,
+    textFieldState: TextFieldState,
     onNavigate: (Screen) -> Unit,
     onNavigateUp: () -> Unit,
     onHandleThreadsAction: (ConversationsAction) -> Unit
@@ -60,9 +62,10 @@ fun SharedTransitionScope.ArchivedConversationsScreen(
                 transitionSpec = { barsContentTransform }
             ) {
                 if (!it) {
-                    CuteSearchbar(
+                    SimpleSearchbar(
                         modifier = Modifier.selfAlignHorizontally(),
-                        onNavigate = onNavigate,
+                        textFieldState = textFieldState,
+                        leadingIcon = R.drawable.search,
                         navigationButton = { CuteNavigationButtonSurface(onNavigateUp = onNavigateUp) }
                     )
                 } else {
