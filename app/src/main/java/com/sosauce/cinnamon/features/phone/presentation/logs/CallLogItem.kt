@@ -91,6 +91,13 @@ fun CallLogItem(
         CallType.REJECTED -> R.drawable.block
     }
 
+    val isDarkTheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val iconColor = when (callLog.callType) {
+        CallType.INCOMING, CallType.OUTGOING -> if (isDarkTheme) Color(0xFF81C784) else Color(0xFF2E7D32)
+        CallType.MISSED -> MaterialTheme.colorScheme.error
+        CallType.REJECTED -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
 
     val actions = buildList {
         if (callLog.presentation == CallPresentation.ALLOWED) {
@@ -212,12 +219,11 @@ fun CallLogItem(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val providedColor =
-                if (callLog.callType == CallType.MISSED) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-            CompositionLocalProvider(LocalContentColor provides providedColor) {
+            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
                 Icon(
                     painter = painterResource(icon),
                     contentDescription = null,
+                    tint = iconColor,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(Modifier.width(5.dp))
