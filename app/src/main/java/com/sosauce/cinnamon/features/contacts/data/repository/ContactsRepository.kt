@@ -3,6 +3,7 @@
 package com.sosauce.cinnamon.features.contacts.data.repository
 
 import android.content.ContentProviderOperation
+import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
 import android.provider.BlockedNumberContract
@@ -25,11 +26,13 @@ import com.sosauce.cinnamon.features.contacts.domain.ContactAddress
 import com.sosauce.cinnamon.features.contacts.domain.ContactEmail
 import com.sosauce.cinnamon.features.contacts.domain.ContactEvent
 import com.sosauce.cinnamon.features.contacts.domain.ContactPhone
+import com.sosauce.cinnamon.features.contacts.domain.ContactsDeletionException
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails
 import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetailsBuilder
 import com.sosauce.cinnamon.features.contacts.domain.CuteRawContact
 import com.sosauce.cinnamon.features.contacts.domain.RawContactEdit
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.combine
@@ -1262,24 +1265,36 @@ class ContactsRepository(
         return null
     }
 
-    suspend fun deleteContacts(contactIds: List<Long>) = withContext(Dispatchers.IO) {
+    /**
+     * @return [Result.success] if every contact was deleted, otherwise [Result.failure] with
+     * the thrown exception, or a [ContactsDeletionException] listing the ids that weren't deleted
+     */
+    suspend fun deleteContacts(contactIds: List<Long>): Result<Unit> = withContext(Dispatchers.IO) {
 
         try {
             val ops = ArrayList<ContentProviderOperation>()
             contactIds.fastForEach { id ->
                 ops.add(
                     ContentProviderOperation
-                        .newDelete(ContactsContract.Contacts.CONTENT_URI)
-                        .withSelection(
-                            "${ContactsContract.Contacts._ID} = ?",
-                            arrayOf(id.toString())
-                        )
+                        .newDelete(ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, id))
                         .build()
                 )
             }
-            context.contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+            val results = context.contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+
+            val failedIds = contactIds.filterIndexed { index, _ ->
+                (results.getOrNull(index)?.count ?: 0) == 0
+            }
+
+            if (failedIds.isEmpty()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(ContactsDeletionException(failedIds))
+            }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             e.printStackTrace()
+            Result.failure(e)
         }
 
     }

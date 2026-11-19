@@ -194,6 +194,7 @@
     <string name="wallpaper">Wallpaper</string>
     <string name="select_account_to_edit">Select account to edit</string>
     <string name="delete_contact_error">There was a problem deleting the contact!</string>
+    <string name="delete_contacts_error">There was a problem deleting some contacts!</string>
     <string name="no_contact_info">No info found for this contact</string>
     <string name="no_contact_info_desc">You may want to start filling their info!</string>
     <string name="enable_delivery_reports">Enable delivery reports</string>

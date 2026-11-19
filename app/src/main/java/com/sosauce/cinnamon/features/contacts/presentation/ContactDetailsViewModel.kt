@@ -120,20 +120,25 @@ class ContactDetailsViewModel(
             is ContactDetailsAction.ShareContact -> {}
             is ContactDetailsAction.DeleteContact -> {
                 viewModelScope.launch(Dispatchers.IO) {
-                    try {
-                        contactsRepository.deleteContacts(listOf(contactId))
+                    val settings = state.value.settings
 
-                        // Delete poster before deleting settings from local db or else we might lose reference to the poster in the state before being able to delete
-                        File(application.filesDir, state.value.settings.poster).delete()
-                        contactSettingsDao.deleteContactSettings(state.value.settings)
-
-                        _events.send(ContactDetailsEvent.Success)
-                    } catch (e: Exception) {
-                        if (e is CancellationException) ensureActive()
-                        _events.send(ContactDetailsEvent.Error)
-                    }
-
-
+                    contactsRepository.deleteContacts(listOf(contactId))
+                        .onSuccess {
+                            try {
+                                if (settings.poster.isNotBlank()) {
+                                    File(application.filesDir, settings.poster).delete()
+                                }
+                                contactSettingsDao.deleteContactSettings(settings)
+                            } catch (e: Exception) {
+                                // The contact itself is gone, leftover local settings shouldn't count as a failure
+                                if (e is CancellationException) ensureActive()
+                                e.printStackTrace()
+                            }
+                            _events.send(ContactDetailsEvent.Success)
+                        }
+                        .onFailure {
+                            _events.send(ContactDetailsEvent.Error)
+                        }
                 }
             }
 

@@ -40,6 +40,7 @@ import com.sosauce.cinnamon.core.utils.rememberHazeState
 import com.sosauce.cinnamon.core.utils.tabToScreen
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsAction
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsEvent
+import com.sosauce.cinnamon.features.contacts.presentation.ContactsEvent
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsScreen
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsViewModel
 import com.sosauce.cinnamon.features.contacts.presentation.ContactsScreen
@@ -123,6 +124,18 @@ fun Nav(
                         val viewModel = koinViewModel<ContactsViewModel>()
                         val state by viewModel.state.collectAsStateWithLifecycle()
                         val contacts = viewModel.contacts.collectAsLazyPagingItems()
+
+                        ObserveAsEvents(viewModel.events) { event ->
+                            when (event) {
+                                is ContactsEvent.DeleteError -> {
+                                    Toast.makeText(
+                                        context,
+                                        resources.getString(R.string.delete_contacts_error),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                        }
 
                         ContactsScreen(
                             state = state,

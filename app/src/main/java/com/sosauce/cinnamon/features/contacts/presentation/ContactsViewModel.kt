@@ -11,10 +11,12 @@ import androidx.paging.PagingData
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
+import com.sosauce.cinnamon.features.contacts.domain.ContactsDeletionException
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,6 +25,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -32,6 +35,9 @@ class ContactsViewModel(
     private val userPreferences: UserPreferences,
     private val contactSettingsDao: ContactSettingsDao
 ) : ViewModel() {
+
+    private val _events = Channel<ContactsEvent>()
+    val events = _events.receiveAsFlow()
 
     val textFieldState = TextFieldState()
 
@@ -120,7 +126,19 @@ class ContactsViewModel(
             is ContactsAction.DefaultAppChanged -> isDefaultApp.value = action.isDefault
             is ContactsAction.DeleteContacts -> viewModelScope.launch(Dispatchers.IO) {
                 contactsRepository.deleteContacts(action.ids)
-                contactSettingsDao.deleteContactsSettings(action.ids)
+                    .onSuccess {
+                        contactSettingsDao.deleteContactsSettings(action.ids)
+                    }
+                    .onFailure { e ->
+                        // Still clean up settings of the contacts that did get deleted
+                        if (e is ContactsDeletionException) {
+                            val deletedIds = action.ids - e.failedIds.toSet()
+                            if (deletedIds.isNotEmpty()) {
+                                contactSettingsDao.deleteContactsSettings(deletedIds)
+                            }
+                        }
+                        _events.send(ContactsEvent.DeleteError)
+                    }
             }
 
             is ContactsAction.ToggleFavorite -> viewModelScope.launch(Dispatchers.IO) {
@@ -144,6 +162,10 @@ data class ContactsState(
     val accountsToCount: Map<String, Int> = emptyMap(),
     val accountFilter: String? = null
 )
+
+sealed interface ContactsEvent {
+    data object DeleteError : ContactsEvent
+}
 
 sealed interface ContactsAction {
     data class ChangeAccountFiltering(val accountName: String) : ContactsAction
