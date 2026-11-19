@@ -205,7 +205,7 @@ fun ContactInfos(
                                 }
                             context.safeStartActivity(
                                 intent = intent,
-                                errorMessage = context.getString(R.string.google_maps_not_found)
+                                errorMessage = resources.getString(R.string.google_maps_not_found)
                             )
                         },
                         shape = CuteListItemDefaults.getItemShape(
@@ -229,15 +229,7 @@ fun ContactInfos(
                     }
                 }
             }
-        } else {
-            NoXFound(
-                headlineText = R.string.no_contact_info,
-                bodyText = R.string.no_contact_info_desc,
-                icon = R.drawable.search
-            )
         }
-
-
         if (hasAbout) {
             Column {
                 HeaderText(stringResource(R.string.about) + " ${state.contact.displayName}")
@@ -301,6 +293,14 @@ fun ContactInfos(
                     ) { Text(note) }
                 }
             }
+        }
+
+        if (!hasAbout && !hasInfo) {
+            NoXFound(
+                headlineText = R.string.no_contact_info,
+                bodyText = R.string.no_contact_info_desc,
+                icon = R.drawable.info
+            )
         }
     }
 }

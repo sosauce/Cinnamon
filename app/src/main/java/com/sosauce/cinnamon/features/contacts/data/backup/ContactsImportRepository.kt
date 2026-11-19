@@ -24,7 +24,7 @@ import ezvcard.parameter.TelephoneType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 data class ImportableContact(
@@ -211,7 +211,7 @@ class ContactsImportRepository(
                 isDefault = address.types.any { it == ezvcard.parameter.AddressType.PREF }
             )
         }
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE
         val events = buildList {
             birthday?.let { birthday ->
                 val date = birthday.date?.let { dateFormat.format(it) }
