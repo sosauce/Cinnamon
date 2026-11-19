@@ -6,12 +6,14 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.MainActivity
 import com.sosauce.cinnamon.core.NumberLookup
+import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.core.system.receivers.MarkAsReadReceiver
 import com.sosauce.cinnamon.core.system.receivers.MessageReplyReceiver
 import com.sosauce.cinnamon.core.utils.CuteIntents
@@ -19,6 +21,7 @@ import com.sosauce.cinnamon.core.utils.RESULT_KEY
 import com.sosauce.cinnamon.core.utils.THREAD_ID
 import com.sosauce.cinnamon.core.utils.getAddressFromThreadId
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MessageNotificationManager(
@@ -26,7 +29,8 @@ class MessageNotificationManager(
     private val cuteTelephonyManager: CuteTelephonyManager,
     private val scope: CoroutineScope,
     private val notificationManager: NotificationManager,
-    private val numberLookup: NumberLookup
+    private val numberLookup: NumberLookup,
+    private val userPreferences: UserPreferences
 ) {
 
     private val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -91,15 +95,6 @@ class MessageNotificationManager(
             .setIcon(personIcon)
             .setName(name)
             .build()
-        val receivedMessage =
-            NotificationCompat.MessagingStyle.Message(message, System.currentTimeMillis(), person)
-                .apply {
-                    if (imageUri != null) {
-                        setData("image/", imageUri)
-                    }
-                }
-        val notificationStyle = NotificationCompat.MessagingStyle(person)
-            .addMessage(receivedMessage)
 
         val threadIdAsNotif =
             notificationManager.activeNotifications.find { it.id == threadId.toInt() }
@@ -115,7 +110,61 @@ class MessageNotificationManager(
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        threadIdAsNotif?.let { notification ->
+        val appLockEnabled = userPreferences.appLockEnabled.first()
+
+        // app lock disables certain things about message notif
+        if (appLockEnabled) {
+            val previousCount = threadIdAsNotif?.notification?.let { notification ->
+                if (notification.extras.getBoolean(EXTRA_CONTENT_HIDDEN)) {
+                    notification.number
+                } else {
+                    NotificationCompat.MessagingStyle
+                        .extractMessagingStyleFromNotification(notification)
+                        ?.messages?.size ?: 0
+                }
+            } ?: 0
+            val count = previousCount + 1
+            val summary = NotificationCompat.MessagingStyle.Message(
+                context.resources.getQuantityString(
+                    R.plurals.locked_notification_messages,
+                    count,
+                    count
+                ),
+                System.currentTimeMillis(),
+                person
+            )
+            val contentHiddenExtra = Bundle().apply { putBoolean(EXTRA_CONTENT_HIDDEN, true) }
+
+            notificationManager.notify(
+                threadId.toInt(),
+                NotificationCompat.Builder(context, INCOMING_MESSAGES_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.app_icon)
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                    .setStyle(NotificationCompat.MessagingStyle(person).addMessage(summary))
+                    .setNumber(count)
+                    .addExtras(contentHiddenExtra)
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
+                    .build()
+            )
+            return
+        }
+
+        val receivedMessage =
+            NotificationCompat.MessagingStyle.Message(message, System.currentTimeMillis(), person)
+                .apply {
+                    if (imageUri != null) {
+                        setData("image/", imageUri)
+                    }
+                }
+        val notificationStyle = NotificationCompat.MessagingStyle(person)
+            .addMessage(receivedMessage)
+
+        // A hidden "x messages" notification has nothing worth appending to, start a new one
+        threadIdAsNotif
+            ?.takeUnless { it.notification.extras.getBoolean(EXTRA_CONTENT_HIDDEN) }
+            ?.let { notification ->
             val activeStyle =
                 NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(notification.notification)
                     ?.addMessage(receivedMessage)
@@ -195,6 +244,9 @@ class MessageNotificationManager(
     companion object {
         const val INCOMING_MESSAGES_CHANNEL_ID = "incoming_messages_channel"
         const val MESSAGES_GROUP = "messages_group"
+
+        /** Marks notifications posted while the app lock hides message content */
+        private const val EXTRA_CONTENT_HIDDEN = "com.sosauce.cinnamon.CONTENT_HIDDEN"
     }
 }
 

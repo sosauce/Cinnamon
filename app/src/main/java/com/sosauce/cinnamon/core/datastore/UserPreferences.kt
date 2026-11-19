@@ -11,6 +11,13 @@ import android.telephony.SubscriptionManager
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.datastore.preferences.core.edit
+import com.sosauce.cinnamon.core.datastore.PreferencesKeys.APP_LOCK_ENABLED
+import com.sosauce.cinnamon.core.datastore.PreferencesKeys.APP_LOCK_FAILED_ATTEMPTS
+import com.sosauce.cinnamon.core.datastore.PreferencesKeys.APP_LOCK_LOCKOUT_UNTIL
+import com.sosauce.cinnamon.core.datastore.PreferencesKeys.APP_LOCK_PIN_HASH
+import com.sosauce.cinnamon.core.datastore.PreferencesKeys.APP_LOCK_PIN_SALT
+import com.sosauce.cinnamon.core.datastore.PreferencesKeys.APP_LOCK_TIMEOUT
+import com.sosauce.cinnamon.core.datastore.PreferencesKeys.APP_LOCK_USE_BIOMETRICS
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.ARCHIVED_CONVOS
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.DEFAULT_MESSAGES_SIM
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.DEFAULT_PHONE_HANDLE_ID
@@ -185,6 +192,60 @@ class UserPreferences(
     suspend fun saveCrashLogs(crash: String) {
         context.dataStore.edit { preferences ->
             preferences[LAST_CRASH_LOG] = crash
+        }
+    }
+
+    // App lock (only AppLockManager should use these)
+    val appLockEnabled = context.dataStore.data.map { it[APP_LOCK_ENABLED] ?: false }
+    val appLockPinHash = context.dataStore.data.map { it[APP_LOCK_PIN_HASH] ?: "" }
+    val appLockPinSalt = context.dataStore.data.map { it[APP_LOCK_PIN_SALT] ?: "" }
+    val appLockTimeout = context.dataStore.data.map { it[APP_LOCK_TIMEOUT] ?: 0L }
+    val appLockUseBiometrics = context.dataStore.data.map { it[APP_LOCK_USE_BIOMETRICS] ?: false }
+    val appLockFailedAttempts = context.dataStore.data.map { it[APP_LOCK_FAILED_ATTEMPTS] ?: 0 }
+    val appLockLockoutUntil = context.dataStore.data.map { it[APP_LOCK_LOCKOUT_UNTIL] ?: 0L }
+
+    /**
+     * Saves a new PIN, and turns the lock on when [enable] is true
+     */
+    suspend fun saveAppLockPin(hash: String, salt: String, enable: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[APP_LOCK_PIN_HASH] = hash
+            preferences[APP_LOCK_PIN_SALT] = salt
+            preferences[APP_LOCK_FAILED_ATTEMPTS] = 0
+            preferences[APP_LOCK_LOCKOUT_UNTIL] = 0L
+            if (enable) preferences[APP_LOCK_ENABLED] = true
+        }
+    }
+
+    suspend fun disableAppLock() {
+        context.dataStore.edit { preferences ->
+            preferences[APP_LOCK_ENABLED] = false
+            preferences.remove(APP_LOCK_PIN_HASH)
+            preferences.remove(APP_LOCK_PIN_SALT)
+            preferences[APP_LOCK_FAILED_ATTEMPTS] = 0
+            preferences[APP_LOCK_LOCKOUT_UNTIL] = 0L
+        }
+    }
+
+    suspend fun saveAppLockTimeout(timeoutMillis: Long) {
+        context.dataStore.edit { it[APP_LOCK_TIMEOUT] = timeoutMillis }
+    }
+
+    suspend fun saveAppLockUseBiometrics(useBiometrics: Boolean) {
+        context.dataStore.edit { it[APP_LOCK_USE_BIOMETRICS] = useBiometrics }
+    }
+
+    suspend fun saveAppLockFailure(failedAttempts: Int, lockoutUntil: Long) {
+        context.dataStore.edit { preferences ->
+            preferences[APP_LOCK_FAILED_ATTEMPTS] = failedAttempts
+            preferences[APP_LOCK_LOCKOUT_UNTIL] = lockoutUntil
+        }
+    }
+
+    suspend fun resetAppLockAttempts() {
+        context.dataStore.edit { preferences ->
+            preferences[APP_LOCK_FAILED_ATTEMPTS] = 0
+            preferences[APP_LOCK_LOCKOUT_UNTIL] = 0L
         }
     }
 }

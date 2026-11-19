@@ -54,6 +54,15 @@ data object PreferencesKeys {
     val LAST_CRASH_LOG = stringPreferencesKey("LAST_CRASH_LOG")
     val SEARCH_MESSAGE_CONTENT = booleanPreferencesKey("SEARCH_MESSAGE_CONTENT")
     val SETUP_COMPLETED = booleanPreferencesKey("SETUP_COMPLETED")
+
+    // App lock, only written through AppLockManager
+    val APP_LOCK_ENABLED = booleanPreferencesKey("APP_LOCK_ENABLED")
+    val APP_LOCK_PIN_HASH = stringPreferencesKey("APP_LOCK_PIN_HASH")
+    val APP_LOCK_PIN_SALT = stringPreferencesKey("APP_LOCK_PIN_SALT")
+    val APP_LOCK_TIMEOUT = longPreferencesKey("APP_LOCK_TIMEOUT")
+    val APP_LOCK_USE_BIOMETRICS = booleanPreferencesKey("APP_LOCK_USE_BIOMETRICS")
+    val APP_LOCK_FAILED_ATTEMPTS = intPreferencesKey("APP_LOCK_FAILED_ATTEMPTS")
+    val APP_LOCK_LOCKOUT_UNTIL = longPreferencesKey("APP_LOCK_LOCKOUT_UNTIL")
 }
 
 

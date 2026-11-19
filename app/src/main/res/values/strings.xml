@@ -351,4 +351,51 @@
     <string name="device">Device</string>
     <string name="no_sim_name">No name</string>
     <string name="no_carrier">No carrier</string>
+
+    <!-- App lock -->
+    <string name="privacy_security">Privacy &amp; security</string>
+    <string name="privacy_security_desc">Lock Cinnamon behind a PIN</string>
+    <string name="app_lock">App lock</string>
+    <string name="app_lock_switch">Lock Cinnamon</string>
+    <string name="app_lock_switch_desc">Ask for a PIN to open the app and hide message previews in notifications. Calls are never locked.</string>
+    <string name="change_pin">Change PIN</string>
+    <string name="lock_after">Lock after</string>
+    <string name="timeout_immediately">Immediately</string>
+    <string name="timeout_30_seconds">30 seconds</string>
+    <string name="timeout_1_minute">1 minute</string>
+    <string name="timeout_5_minutes">5 minutes</string>
+    <string name="timeout_15_minutes">15 minutes</string>
+    <string name="timeout_short_immediately">0s</string>
+    <string name="timeout_short_30_seconds">30s</string>
+    <string name="timeout_short_1_minute">1m</string>
+    <string name="timeout_short_5_minutes">5m</string>
+    <string name="timeout_short_15_minutes">15m</string>
+    <string name="use_biometrics">Use biometrics</string>
+    <string name="cinnamon_locked">Cinnamon is locked</string>
+    <string name="enter_pin">Enter your PIN</string>
+    <string name="verify_its_you">Verify it\'s you</string>
+    <string name="verify_its_you_desc">Confirm to change app lock settings</string>
+    <string name="create_pin">Create a PIN</string>
+    <string name="create_pin_desc">4 to 8 digits</string>
+    <string name="confirm_pin">Confirm your PIN</string>
+    <string name="confirm_pin_desc">Type the same PIN again</string>
+    <string name="pins_dont_match">PINs don\'t match, try again</string>
+    <string name="pin_too_short">Your PIN needs at least 4 digits</string>
+    <string name="try_again_in">Too many attempts. Try again in %1$s</string>
+    <string name="forgot_pin">Forgot PIN?</string>
+    <string name="forgot_pin_title">Forgot your PIN?</string>
+    <string name="forgot_pin_desc">For your privacy, there\'s no way to recover it. To use Cinnamon again, clear its data from your phone\'s settings (App info › Storage › Clear storage). Your messages, contacts and calls are stored by Android and stay safe, but Cinnamon\'s own settings will be reset.</string>
+    <string name="open_app_info">Open app info</string>
+    <string name="unlock_cinnamon">Unlock Cinnamon</string>
+    <string name="use_pin">Use PIN</string>
+    <string name="delete_digit">Delete digit</string>
+    <string name="confirm">Confirm</string>
+    <plurals name="wrong_pin_attempts_left">
+        <item quantity="one">Wrong PIN, %d attempt left</item>
+        <item quantity="other">Wrong PIN, %d attempts left</item>
+    </plurals>
+    <plurals name="locked_notification_messages">
+        <item quantity="one">%d message</item>
+        <item quantity="other">%d messages</item>
+    </plurals>
 </resources>

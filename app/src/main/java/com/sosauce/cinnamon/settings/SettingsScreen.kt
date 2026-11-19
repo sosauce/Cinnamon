@@ -115,6 +115,9 @@ fun SettingsScreen(
                 entry<SettingsScreens.Backup> {
                     ScrollPage(paddingValues) { SettingsBackup() }
                 }
+                entry<SettingsScreens.Privacy> {
+                    ScrollPage(paddingValues) { SettingsPrivacy() }
+                }
             }
         )
     }
@@ -171,6 +174,12 @@ private fun SettingsHome(
             onClick = { backStack.add(SettingsScreens.Phone) }
         ),
         SettingsEntry(
+            icon = R.drawable.security,
+            name = stringResource(R.string.privacy_security),
+            description = stringResource(R.string.privacy_security_desc),
+            onClick = { backStack.add(SettingsScreens.Privacy) }
+        ),
+        SettingsEntry(
             icon = R.drawable.backup,
             name = stringResource(R.string.backup_and_restore),
             description = stringResource(R.string.backup_desc),
@@ -193,7 +202,7 @@ private fun SettingsHome(
         )
         Spacer(Modifier.height(20.dp))
         FeaturedCard(
-            icon = R.drawable.security,
+            icon = R.drawable.check,
             title = stringResource(R.string.default_apps),
             description = stringResource(R.string.permissions_desc),
             onClick = { backStack.add(SettingsScreens.Permissions) }

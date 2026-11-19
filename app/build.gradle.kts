@@ -99,6 +99,10 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
+    // App lock
+    implementation(libs.androidx.biometric)
+    implementation(libs.androidx.biometric.compose)
+
     // Compose
     debugImplementation(libs.androidx.ui.tooling)
     implementation(platform(libs.androidx.compose.bom))

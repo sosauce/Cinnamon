@@ -88,7 +88,6 @@ fun Nav(
     val resources = LocalResources.current
     val initialTab = rememberInitialScreenBlocking()
     val backStack = rememberNavBackStack(initialTab.tabToScreen())
-    val hazeState = rememberHazeState()
 
     // Launched when a call/message is refused because Cinnamon isn't the default app for it
     val dialerRoleLauncher = rememberRoleRequestLauncher(onGranted = {})

@@ -8,6 +8,7 @@ import androidx.room.Room
 import androidx.work.WorkManager
 import com.sosauce.cinnamon.core.MediaManager
 import com.sosauce.cinnamon.core.NumberLookup
+import com.sosauce.cinnamon.core.applock.AppLockManager
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.core.repository.SimsRepository
 import com.sosauce.cinnamon.core.system.services.CallOverlayManager
@@ -53,6 +54,7 @@ import com.sosauce.cinnamon.features.phone.presentation.call.CallingViewModel
 import com.sosauce.cinnamon.features.phone.presentation.dialpad.DialpadViewModel
 import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsViewModel
 import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailViewModel
+import com.sosauce.cinnamon.settings.AppLockSettingsViewModel
 import com.sosauce.cinnamon.settings.BackupViewModel
 import com.sosauce.cinnamon.settings.SimsViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -115,6 +117,7 @@ val appModule = module {
     }
 
     singleOf(::UserPreferences)
+    singleOf(::AppLockManager)
     singleOf(::NumberLookup)
     singleOf(::ScheduledMessageManager)
     singleOf(::CallManager)
@@ -153,4 +156,5 @@ val appModule = module {
     viewModelOf(::EditContactViewModel)
     viewModelOf(::SimsViewModel)
     viewModelOf(::ForwardingViewModel)
+    viewModelOf(::AppLockSettingsViewModel)
 }

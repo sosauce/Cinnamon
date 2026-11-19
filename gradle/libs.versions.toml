@@ -1,5 +1,6 @@
 [versions]
 agp = "9.5.1"
+biometric = "1.4.0-rc01"
 coilGif = "3.6.3"
 mmslib = "1.0.1"
 cloudy = "0.7.1"
@@ -46,6 +47,8 @@ zoomable = "2.16.0"
 
 [libraries]
 androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "pagingCompose" }
+androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
+androidx-biometric-compose = { module = "androidx.biometric:biometric-compose", version.ref = "biometric" }
 coil-gif = { module = "io.coil-kt.coil3:coil-gif", version.ref = "coilGif" }
 mmslib = { module = "org.fossify:mmslib", version.ref = "mmslib" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

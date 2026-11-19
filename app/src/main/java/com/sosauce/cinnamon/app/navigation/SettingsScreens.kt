@@ -33,4 +33,7 @@ sealed class SettingsScreens : NavKey {
     @Serializable
     data object Permissions : SettingsScreens()
 
+    @Serializable
+    data object Privacy : SettingsScreens()
+
 }
