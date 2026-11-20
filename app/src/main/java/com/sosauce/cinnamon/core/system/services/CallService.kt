@@ -12,12 +12,18 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.OutcomeReceiver
 import android.telecom.Call
 import android.telecom.CallAudioState
+import android.telecom.CallEndpoint
+import android.telecom.CallEndpointException
 import android.telecom.InCallService
+import android.telecom.TelecomManager
 import android.telecom.VideoProfile
 import android.telephony.SubscriptionManager
 import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastMap
+import androidx.compose.ui.util.fastMapNotNull
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.INCOMING_CALL_FULLSCREEN
 import com.sosauce.cinnamon.core.datastore.dataStore
@@ -58,11 +64,11 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
 
     private val job = SupervisorJob()
     private val scope = CoroutineScope(job)
-    private lateinit var audioManager: AudioManager
     val callNotificationManager by inject<CallNotificationManager>()
     val callManager by inject<CallManager>()
     val callOverlayManager by inject<CallOverlayManager>()
     val simsRepository by inject<SimsRepository>()
+    val telecomManager by inject<TelecomManager>()
 
     // Call currently shown in the UI, read from the notification coroutine too
     @Volatile
@@ -118,20 +124,8 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         }
     }
 
-    private val audioFocus = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-        .setAudioAttributes(
-            AudioAttributes
-                .Builder()
-                .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
-                .build()
-        )
-        .build()
-
     override fun onCreate() {
         super.onCreate()
-        audioManager = (getSystemService(AUDIO_SERVICE) as AudioManager).apply {
-            requestAudioFocus(audioFocus)
-        }
         try {
             callOverlayManager.observe(scope)
         } catch (_: Exception) {
@@ -140,7 +134,7 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
 
     override fun onDestroy() {
         super.onDestroy()
-        audioManager.abandonAudioFocusRequest(audioFocus)
+        //audioManager.abandonAudioFocusRequest(audioFocus)
         try {
             callOverlayManager.hideOverlay()
         } catch (_: Exception) {
@@ -421,6 +415,17 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
 
     @SuppressLint("MissingPermission")
     private fun simFor(call: Call): CuteSimCard {
+
+
+        //val phoneAccount = telecomManager.getPhoneAccount(call.details.accountHandle)
+
+//        return CuteSimCard(
+//            subId = phoneAccount.accountHandle.id,
+//            name = phoneAccount.label.toString(),
+//            carrierName = phoneAccount.accountHandle.userHandle,
+//            color = phoneAccount.highlightColor
+//        )
+
         val subscriptionManager = getSystemService(SubscriptionManager::class.java)
         val subId = call.details.accountHandle?.let { simsRepository.subIdFor(it) } ?: -1
         val activeSubInfo = try {
@@ -436,41 +441,95 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         )
     }
 
+    // A14 +
+    override fun onAvailableCallEndpointsChanged(availableEndpoints: List<CallEndpoint?>) {
+        super.onAvailableCallEndpointsChanged(availableEndpoints)
 
-    // A13 and below
-    @Deprecated("Deprecated in Java")
-    override fun onCallAudioStateChanged(audioState: CallAudioState?) {
-        super.onCallAudioStateChanged(audioState)
-        callManager.updateIsMuted(audioState?.isMuted == true)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
 
+            val availableRoutes = availableEndpoints.fastMapNotNull { endpoint ->
+                if (endpoint == null) {
+                    null
+                }  else {
+                    AudioRoute(
+                        name = endpoint.endpointName.toString(),
+                        type = endpoint.endpointType
+                    )
+                }
 
-        val supportedRoutes = audioState?.supportedRouteMask ?: 0
-        val availableRoutes = listOf(
-            CallAudioState.ROUTE_BLUETOOTH,
-            CallAudioState.ROUTE_EARPIECE,
-            CallAudioState.ROUTE_SPEAKER,
-            CallAudioState.ROUTE_WIRED_HEADSET
-        ).mapNotNull { route ->
-            if (supportedRoutes and route != 0) {
-                AudioRoute(
-                    name = CallAudioState.audioRouteToString(route),
-                    type = route
-                )
-            } else null
+            }
+            callManager.updateAvailableAudioRoutes(availableRoutes)
         }
-        val endpoint = AudioRoute(
-            name = CallAudioState.audioRouteToString(
-                audioState?.route ?: CallAudioState.ROUTE_EARPIECE
-            ),
-            type = audioState?.route ?: CallAudioState.ROUTE_EARPIECE
-        )
-        callManager.updateAvailableAudioRoutes(availableRoutes)
-        callManager.updateCurrentAudioRoute(endpoint)
     }
+
+    // A14 +
+    override fun onCallEndpointChanged(callEndpoint: CallEndpoint) {
+        super.onCallEndpointChanged(callEndpoint)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val route = AudioRoute(
+                name = callEndpoint.endpointName.toString(),
+                type = callEndpoint.endpointType
+            )
+            callManager.updateCurrentAudioRoute(route)
+        }
+    }
+
+
+    // A14 +
+    override fun onMuteStateChanged(isMuted: Boolean) {
+        super.onMuteStateChanged(isMuted)
+        callManager.updateIsMuted(isMuted)
+    }
+
+//    // A13 and below
+//    @Deprecated("Deprecated in Java")
+//    override fun onCallAudioStateChanged(audioState: CallAudioState?) {
+//        super.onCallAudioStateChanged(audioState)
+//        callManager.updateIsMuted(audioState?.isMuted == true)
+//
+//
+//        val supportedRoutes = audioState?.supportedRouteMask ?: 0
+//        val availableRoutes = listOf(
+//            CallAudioState.ROUTE_BLUETOOTH,
+//            CallAudioState.ROUTE_EARPIECE,
+//            CallAudioState.ROUTE_SPEAKER,
+//            CallAudioState.ROUTE_WIRED_HEADSET
+//        ).mapNotNull { route ->
+//            if (supportedRoutes and route != 0) {
+//                AudioRoute(
+//                    name = CallAudioState.audioRouteToString(route),
+//                    type = route
+//                )
+//            } else null
+//        }
+//        val endpoint = AudioRoute(
+//            name = CallAudioState.audioRouteToString(
+//                audioState?.route ?: CallAudioState.ROUTE_EARPIECE
+//            ),
+//            type = audioState?.route ?: CallAudioState.ROUTE_EARPIECE
+//        )
+//        callManager.updateAvailableAudioRoutes(availableRoutes)
+//        callManager.updateCurrentAudioRoute(endpoint)
+//    }
 
     override fun toggleMute(mute: Boolean) = setMuted(mute)
 
-    override fun switchAudioRoute(route: AudioRoute) = setAudioRoute(route.type)
+    override fun switchAudioRoute(route: AudioRoute) {
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+//            requestCallEndpointChange(
+//                CallEndpoint(
+//                    route.name, route.type
+//                ),
+//                mainExecutor,
+//                object : OutcomeReceiver<Void, CallEndpointException> {
+//                    override fun onResult(result: Void?) = Unit
+//                    override fun onError(error: CallEndpointException) = Unit
+//                }
+//        } else {
+//        }
+        setAudioRoute(route.type)
+    }
 
     override fun answerCall() {
         ringingCall()?.answer(VideoProfile.STATE_AUDIO_ONLY)

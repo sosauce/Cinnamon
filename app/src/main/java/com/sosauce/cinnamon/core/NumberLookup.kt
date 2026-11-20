@@ -141,7 +141,7 @@ class NumberLookup(
         details: Call.Details?,
         number: String
     ): String? = details?.telecomContactName ?: fetchContactDisplayName(number)
-    
+
 
     /**
      * @return The display name of the contact associated with [number] if it exists.

@@ -2,6 +2,7 @@ package com.sosauce.cinnamon.settings.components
 
 import android.telecom.PhoneAccount
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -18,7 +19,7 @@ fun SimSelector(
 ) {
     SimTile(
         label = simCard.name,
-        color = Color(simCard.color),
+        color = simCard.color?.let { Color(it) },
         selected = isDefaultSim,
         onClick = onClick
     )
@@ -58,7 +59,7 @@ fun AskEveryTimeSelector(
 @Composable
 private fun SimTile(
     label: String,
-    color: Color,
+    color: Color?,
     selected: Boolean,
     onClick: () -> Unit
 ) {
@@ -70,7 +71,7 @@ private fun SimTile(
         Icon(
             painter = painterResource(R.drawable.sim_card_filled),
             contentDescription = null,
-            tint = color
+            tint = color ?: LocalContentColor.current
         )
     }
 }

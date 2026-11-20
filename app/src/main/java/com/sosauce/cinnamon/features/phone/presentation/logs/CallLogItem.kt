@@ -252,7 +252,7 @@ fun CallLogItem(
             }
         }
         callLog.sim?.let { sim ->
-            val simColor = Color(sim.color)
+            val simColor = sim.color?.let { Color(it) } ?: LocalContentColor.current
             val contentColor = if (simColor.luminance() > 0.5f) Color.Black else Color.White
 
             Row(

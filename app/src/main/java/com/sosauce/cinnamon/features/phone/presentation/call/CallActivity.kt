@@ -17,12 +17,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.sosauce.cinnamon.core.ui.CinnamonTheme
 import com.sosauce.cinnamon.core.ui.components.dialogs.SimPickerDialog
 import com.sosauce.cinnamon.core.utils.APP_PACKAGE
 import com.sosauce.cinnamon.core.utils.createDefaultDialerIntent
 import com.sosauce.nekobites.helpers.ObserveAsEvents
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 class CallActivity : ComponentActivity() {
@@ -86,6 +91,9 @@ class CallActivity : ComponentActivity() {
                     finishAndRemoveTask()
                 }
             }
+
+
+
             CinnamonTheme {
 
                 simPicker?.let { picker ->
