@@ -1,5 +1,3 @@
-@file:OptIn(DelicateCoroutinesApi::class)
-
 package com.sosauce.cinnamon.core.system.receivers
 
 import android.content.BroadcastReceiver
@@ -14,6 +12,7 @@ import com.sosauce.cinnamon.core.utils.getThreadIdOrCreate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
@@ -27,7 +26,7 @@ class SmsReceiver : BroadcastReceiver(), KoinComponent {
         val messagesNotificationManager by inject<MessageNotificationManager>()
         val cuteTelephonyManager by inject<CuteTelephonyManager>()
         val userPreferences by inject<UserPreferences>()
-        val scope = CoroutineScope(Dispatchers.IO)
+        val scope = CoroutineScope(SupervisorJob())
         val parts = Sms.Intents.getMessagesFromIntent(intent) ?: return
         val message = buildString { parts.forEach { append(it.messageBody.orEmpty()) } }
         val firstPart = parts.firstOrNull() ?: return
@@ -38,7 +37,7 @@ class SmsReceiver : BroadcastReceiver(), KoinComponent {
         ).takeIf { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
         val pending = goAsync()
 
-        scope.launch {
+        scope.launch(Dispatchers.IO) {
             try {
                 val archived = userPreferences.archivedConversations.first()
                 val threadId = address.getThreadIdOrCreate(context)

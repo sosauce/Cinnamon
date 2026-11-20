@@ -54,7 +54,6 @@ class CallingViewModel(
     init {
         viewModelScope.launch(Dispatchers.IO) {
             state.mapLatest { it.number }.distinctUntilChanged().collectLatest { number ->
-                // contacts can't be read without the default dialer role
                 val (photo, poster) = try {
                     val contactId = number.getContactId(application.applicationContext)
 

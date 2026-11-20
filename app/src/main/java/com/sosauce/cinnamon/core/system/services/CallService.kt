@@ -16,7 +16,9 @@ import android.telecom.CallAudioState
 import android.telecom.InCallService
 import android.telecom.VideoProfile
 import android.telephony.SubscriptionManager
+import androidx.compose.ui.util.fastAny
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.core.datastore.PreferencesKeys.INCOMING_CALL_FULLSCREEN
 import com.sosauce.cinnamon.core.datastore.dataStore
 import com.sosauce.cinnamon.core.repository.SimsRepository
 import com.sosauce.cinnamon.core.telephony.phone.AndroidCallCallback
@@ -123,8 +125,6 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         audioManager = (getSystemService(AUDIO_SERVICE) as AudioManager).apply {
             requestAudioFocus(audioFocus)
         }
-        // Start observing call state to show/hide bubble overlay over other apps
-        // M3 Expressive blur background via tonal surface in CallBubble
         try {
             callOverlayManager.observe(scope)
         } catch (_: Exception) {
@@ -157,10 +157,6 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
                         Intent.FLAG_ACTIVITY_NO_USER_ACTION
             )
         }
-        // InCallService is allowed to start activity, but on Android 10+ background
-        // launches are restricted — ensure we are foreground or use fullScreenIntent.
-        // Callers (CallManager/ViewModel) also launch CallActivity directly as immediate UI,
-        // this is a fallback for Telecom-triggered calls (incoming / from other apps).
         safeStartActivity(intent)
     }
 
@@ -168,8 +164,6 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
     @SuppressLint("MissingPermission")
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
-
-        println("CALL ADDED: ${call.rawNumber()}")
 
         callManager.registerCallServiceCallback(this)
         callManager.registerAndroidCallCallback(this)
@@ -179,13 +173,13 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
             Call.STATE_RINGING, Call.STATE_DIALING, Call.STATE_CONNECTING -> launchUiFor = call
 
             Call.STATE_SELECT_PHONE_ACCOUNT -> {
-                // Fallback if Telecom still asks to select SIM — pick first available and proceed
+                // Fallback if Telecom still asks to select SIM - pick first available and proceed
                 // This prevents system SIM chooser from opening default dialer
                 try {
                     @Suppress("MissingPermission")
                     val tm = getSystemService(android.telecom.TelecomManager::class.java)
                     val firstHandle =
-                        tm.callCapablePhoneAccounts?.firstOrNull() as? android.telecom.PhoneAccountHandle
+                        tm.callCapablePhoneAccounts?.firstOrNull()
                     if (firstHandle != null) {
                         call.phoneAccountSelected(firstHandle, false)
                     } else {
@@ -289,7 +283,7 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
 
         // Timer: derived from each call's connect time, so hold/unhold/swap never resets it
         handler.removeCallbacks(runnable)
-        if (live.any { it.currentState() == Call.STATE_ACTIVE || it.currentState() == Call.STATE_HOLDING }) {
+        if (live.fastAny { it.currentState() == Call.STATE_ACTIVE || it.currentState() == Call.STATE_HOLDING }) {
             handler.post(runnable)
         } else {
             callManager.updateTimeSpent(0L)
@@ -311,23 +305,19 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
     private fun postNotification(call: Call, type: NotificationType) {
         notificationJob?.cancel()
         notificationJob = scope.launch {
-            val useFullScreen = if (type == NotificationType.INCOMING) {
-                // Check incoming call popup setting — if disabled, show bubble/notification only, not full-screen
-                try {
-                    applicationContext.dataStore.data.first()[com.sosauce.cinnamon.core.datastore.PreferencesKeys.INCOMING_CALL_FULLSCREEN]
-                        ?: true
-                } catch (_: Exception) {
-                    true
-                }
-            } else true
+            val useFullScreen = type != NotificationType.INCOMING || try {
+                applicationContext.dataStore.data.first()[INCOMING_CALL_FULLSCREEN]
+                    ?: true
+            } catch (_: Exception) {
+                true
+            }
+            // Check incoming call popup setting — if disabled, show bubble/notification only, not full-screen
 
             val notification: Notification? = when (type) {
                 NotificationType.INCOMING -> callNotificationManager.createIncomingNotification(
                     call.details,
                     useFullScreen
-                ) {
-                    primaryCall == call && call.currentState() == Call.STATE_RINGING
-                }
+                )
 
                 NotificationType.OUTGOING -> callNotificationManager.createOutgoingNotification(call.details)
                 NotificationType.ONGOING -> callNotificationManager.createOngoingNotification(call.details)

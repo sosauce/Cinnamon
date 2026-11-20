@@ -6,16 +6,20 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.telecom.Call
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.graphics.drawable.IconCompat
+import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.system.receivers.CallReceiver
 import com.sosauce.cinnamon.core.utils.ACCEPT_INCOMING_CALL
 import com.sosauce.cinnamon.core.utils.DECLINE_INCOMING_CALL
 import com.sosauce.cinnamon.core.utils.HANGUP_ONGOING_CALL
+import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
 
 class CallNotificationManager(
@@ -71,21 +75,8 @@ class CallNotificationManager(
     @SuppressLint("MissingPermission")
     suspend fun createIncomingNotification(
         callDetails: Call.Details,
-        useFullScreen: Boolean = true,
-        // Re-checked after the suspending photo load below: a stale RINGING coroutine
-        // (e.g. answered/rejected/ended while the photo was loading) must not re-post
-        // a sounding notification over the silent ongoing one, or the ringtone restarts.
-        isStillRinging: () -> Boolean = { true }
-    ): Notification? {
-
-        val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart
-            ?: callDetails.handle?.schemeSpecificPart ?: context.getString(R.string.unknown)
-
-        val personIcon = numberLookup.fetchPersonIcon(number)
-
-        if (!isStillRinging()) return null
-
-
+        useFullScreen: Boolean = true
+    ): Notification {
         val builder = NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
             .setSmallIcon(R.drawable.round_call_received_24)
             .setCategory(Notification.CATEGORY_CALL)
@@ -94,7 +85,7 @@ class CallNotificationManager(
             .setFullScreenIntent(pendingIntent, useFullScreen)
             .setStyle(
                 NotificationCompat.CallStyle.forIncomingCall(
-                    callerPerson(number, personIcon),
+                    callDetails.createPerson(),
                     declinePendingIntent,
                     acceptPendingIntent
 
@@ -112,17 +103,11 @@ class CallNotificationManager(
         callDetails: Call.Details
     ): Notification {
 
-        val number = callDetails.callerNumber()
-
-        val personIcon = numberLookup.fetchPersonIcon(number)
-
-
         val builder = NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
             .setSmallIcon(R.drawable.call)
             .setCategory(Notification.CATEGORY_CALL)
             .setOngoing(true)
             .setRequestPromotedOngoing(true)
-            .setContentTitle("Hello world")
             .setContentIntent(pendingIntent)
             .setSilent(true)
             .setUsesChronometer(true)
@@ -133,7 +118,7 @@ class CallNotificationManager(
             .setFullScreenIntent(pendingIntent, true)
             .setStyle(
                 NotificationCompat.CallStyle.forOngoingCall(
-                    callerPerson(number, personIcon),
+                    callDetails.createPerson(),
                     hangupPendingIntent
 
                 )
@@ -150,12 +135,6 @@ class CallNotificationManager(
     suspend fun createOutgoingNotification(
         callDetails: Call.Details
     ): Notification {
-
-        val number = callDetails.callerNumber()
-
-        val personIcon = numberLookup.fetchPersonIcon(number)
-
-
         val builder = NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
             .setSmallIcon(R.drawable.round_call_made_24)
             .setCategory(Notification.CATEGORY_CALL)
@@ -166,7 +145,7 @@ class CallNotificationManager(
             .setFullScreenIntent(pendingIntent, false)
             .setStyle(
                 NotificationCompat.CallStyle.forOngoingCall(
-                    callerPerson(number, personIcon),
+                    callDetails.createPerson(),
                     hangupPendingIntent
 
                 )
@@ -182,13 +161,30 @@ class CallNotificationManager(
     private fun Call.Details.callerNumber(): String =
         gatewayInfo?.originalAddress?.schemeSpecificPart ?: handle.schemeSpecificPart
 
-    /**
-     * Who the call is with, named after the matching contact when there is one
-     */
-    private fun callerPerson(number: String, icon: IconCompat?): Person = Person.Builder()
-        .setIcon(icon)
-        .setName(numberLookup.fetchContactDisplayName(number) ?: number)
-        .build()
+    private suspend fun Call.Details.createPerson(): Person {
+
+        val callerNumber = callerNumber()
+
+        val photoUri = if (Build.VERSION.SDK_INT >= 34) contactPhotoUri else null
+        val name = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            contactDisplayName
+        } else {
+            numberLookup.fetchContactDisplayName(callerNumber)
+        } ?: callerNumber.beautifyNumber()
+
+        val icon = if (photoUri != null) {
+            IconCompat.createWithContentUri(photoUri)
+        } else {
+            numberLookup.fetchPersonIcon(callerNumber)
+        }
+
+
+        return Person.Builder()
+            .setIcon(icon)
+            .setName(name)
+            .build()
+    }
+
 
     companion object {
         private const val DECLINE_CALL_CODE = 0

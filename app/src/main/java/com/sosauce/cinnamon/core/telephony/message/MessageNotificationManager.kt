@@ -10,6 +10,8 @@ import android.os.Bundle
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
+import androidx.core.graphics.drawable.IconCompat
+import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.MainActivity
 import com.sosauce.cinnamon.core.NumberLookup
@@ -86,7 +88,7 @@ class MessageNotificationManager(
 
         if (ActiveThreadId.threadId == threadId) return
 
-        val personIcon = numberLookup.fetchPersonIcon(number ?: "")
+        val personIcon = number?.let { numberLookup.fetchPersonIcon(it) }
         val name = number?.let { numberLookup.fetchContactDisplayName(it) ?: it }
             ?: context.getString(R.string.unknown)
 
