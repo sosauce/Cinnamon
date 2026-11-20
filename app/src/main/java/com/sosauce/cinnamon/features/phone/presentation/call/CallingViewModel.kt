@@ -9,7 +9,6 @@ import androidx.compose.runtime.Stable
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
 import com.sosauce.cinnamon.core.telephony.phone.StartCallResult
 import com.sosauce.cinnamon.core.utils.getContactId
@@ -34,8 +33,7 @@ import kotlinx.coroutines.launch
 class CallingViewModel(
     private val application: Application,
     private val callManager: CallManager,
-    private val contactSettingsDao: ContactSettingsDao,
-    private val numberLookup: NumberLookup
+    private val contactSettingsDao: ContactSettingsDao
 ) : AndroidViewModel(application) {
 
 
@@ -54,19 +52,15 @@ class CallingViewModel(
     init {
         viewModelScope.launch(Dispatchers.IO) {
             state.mapLatest { it.number }.distinctUntilChanged().collectLatest { number ->
-                val (photo, poster) = try {
+                // The photo is resolved by CallManager.updatePhoto, from the call's details
+                val poster = try {
                     val contactId = number.getContactId(application.applicationContext)
-
-                    numberLookup.fetchPhoto(number, true) to
-                            contactSettingsDao.getContactPoster(contactId)
+                    contactSettingsDao.getContactPoster(contactId)
                 } catch (_: SecurityException) {
-                    null to null
+                    null
                 }
                 _state.update {
-                    it.copy(
-                        photo = photo?.toUri(),
-                        poster = poster?.toUri()
-                    )
+                    it.copy(poster = poster?.toUri())
                 }
             }
         }

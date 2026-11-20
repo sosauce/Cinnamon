@@ -63,15 +63,34 @@ class NumberLookup(
      * Round thumbnail of the contact associated with [number], meant for a notification's person
      * @return null if there is no photo
      */
-    suspend fun fetchPersonIcon(number: String): IconCompat? {
+    suspend fun fetchPersonIcon(number: String): IconCompat? =
+        fetchPersonIcon(fetchPhoto(number, false)?.toUri())
+
+    /**
+     * Round icon of [photo], meant for a notification's person
+     */
+    suspend fun fetchPersonIcon(photo: Uri?): IconCompat? {
+        if (photo == null) return null
+
         val request = ImageRequest.Builder(context)
-            .data(fetchPhoto(number, false)?.toUri())
+            .data(photo)
             .transformations(CircleCropTransformation())
             .build()
         val bitmap = context.imageLoader.execute(request).image?.toBitmap()
 
         return bitmap?.let { IconCompat.createWithBitmap(it) }
     }
+
+    /**
+     * Photo of the contact on a call: the one Telecom resolved (API 34+), else our own lookup for [number].
+     * @param fullQuality If false, our own lookup provides a thumbnail (Telecom's photo is always full size)
+     * @return null when there's no photo
+     */
+    suspend fun fetchCallerPhoto(
+        details: Call.Details?,
+        number: String,
+        fullQuality: Boolean
+    ): Uri? = details?.telecomContactPhotoUri ?: fetchPhoto(number, fullQuality)?.toUri()
 
     /**
      * Combined lookup for [fetchContactDisplayName] + [fetchPhoto] in a single
@@ -122,6 +141,7 @@ class NumberLookup(
         details: Call.Details?,
         number: String
     ): String? = details?.telecomContactName ?: fetchContactDisplayName(number)
+    
 
     /**
      * @return The display name of the contact associated with [number] if it exists.
@@ -163,3 +183,9 @@ val Call.Details.telecomContactName: String?
     } else {
         null
     }
+
+/**
+ * Contact photo Telecom resolved for this call, can show up later through onDetailsChanged. Always null below API 34.
+ */
+val Call.Details.telecomContactPhotoUri: Uri?
+    get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) contactPhotoUri else null

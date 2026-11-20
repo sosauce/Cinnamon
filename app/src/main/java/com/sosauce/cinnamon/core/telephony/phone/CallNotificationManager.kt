@@ -7,11 +7,9 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.telecom.Call
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
-import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.NumberLookup
@@ -165,15 +163,12 @@ class CallNotificationManager(
 
         val callerNumber = callerNumber()
 
-        val photoUri = if (Build.VERSION.SDK_INT >= 34) contactPhotoUri else null
         val name = numberLookup.fetchCallerName(this, callerNumber)
             ?: callerNumber.beautifyNumber()
 
-        val icon = if (photoUri != null) {
-            IconCompat.createWithContentUri(photoUri)
-        } else {
-            numberLookup.fetchPersonIcon(callerNumber)
-        }
+        val icon = numberLookup.fetchPersonIcon(
+            numberLookup.fetchCallerPhoto(this, callerNumber, fullQuality = false)
+        )
 
 
         return Person.Builder()

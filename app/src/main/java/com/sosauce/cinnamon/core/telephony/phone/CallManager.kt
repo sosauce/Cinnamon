@@ -256,11 +256,30 @@ class CallManager(
      * @param number raw number of the primary call
      */
     fun updateNumber(number: String, details: Call.Details?) {
+        val beautified = number.beautifyNumber()
         _callingState.update {
             it.copy(
-                number = number.beautifyNumber(),
-                displayName = numberLookup.fetchCallerName(details, number)
+                number = beautified,
+                displayName = numberLookup.fetchCallerName(details, number),
+                // Don't keep the previous caller's photo while the new one loads (see updatePhoto)
+                photo = if (it.number == beautified) it.photo else null
             )
+        }
+    }
+
+    /**
+     * @param number raw number of the primary call
+     */
+    suspend fun updatePhoto(number: String, details: Call.Details?) {
+        val photo = try {
+            numberLookup.fetchCallerPhoto(details, number, true)
+        } catch (_: SecurityException) {
+            null
+        }
+        val beautified = number.beautifyNumber()
+        _callingState.update {
+            // The primary call may have changed while the photo was loading
+            if (it.number == beautified) it.copy(photo = photo) else it
         }
     }
 

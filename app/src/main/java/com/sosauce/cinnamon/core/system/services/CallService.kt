@@ -8,6 +8,7 @@ import android.content.Intent
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -22,6 +23,7 @@ import com.sosauce.cinnamon.core.datastore.PreferencesKeys.INCOMING_CALL_FULLSCR
 import com.sosauce.cinnamon.core.datastore.dataStore
 import com.sosauce.cinnamon.core.repository.SimsRepository
 import com.sosauce.cinnamon.core.telecomContactName
+import com.sosauce.cinnamon.core.telecomContactPhotoUri
 import com.sosauce.cinnamon.core.telephony.phone.AndroidCallCallback
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
 import com.sosauce.cinnamon.core.telephony.phone.CallNotificationManager
@@ -67,6 +69,9 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
     private var primaryCall: Call? = null
     private var primaryNumber: String? = null
     private var primaryTelecomName: String? = null
+    // Same for the photo, which is loaded in the background by photoJob
+    private var primaryTelecomPhoto: Uri? = null
+    private var photoJob: Job? = null
 
     // (call, notification type) last posted, so we don't re-post (and restart the ringtone) on every refresh
     private var notifiedKey: Pair<Call, NotificationType>? = null
@@ -220,6 +225,8 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         primaryCall = null
         primaryNumber = null
         primaryTelecomName = null
+        primaryTelecomPhoto = null
+        photoJob = null
         launchUiFor = null
         pendingAnswerCall = null
         endedForAnswer = emptySet()
@@ -244,6 +251,8 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
             primaryCall = null
             primaryNumber = null
             primaryTelecomName = null
+            primaryTelecomPhoto = null
+            photoJob?.cancel()
             notificationJob?.cancel()
             notifiedKey = null
             handler.removeCallbacks(runnable)
@@ -258,11 +267,21 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         if (primaryChanged) callManager.updateActiveSim(simFor(primary))
 
         val number = primary.rawNumber()
-        val telecomName = primary.details?.telecomContactName
-        if (primaryChanged || number != primaryNumber || telecomName != primaryTelecomName) {
-            primaryNumber = number
+        val numberChanged = primaryChanged || number != primaryNumber
+        primaryNumber = number
+        val details = primary.details
+
+        val telecomName = details?.telecomContactName
+        if (numberChanged || telecomName != primaryTelecomName) {
             primaryTelecomName = telecomName
-            callManager.updateNumber(number, primary.details)
+            callManager.updateNumber(number, details)
+        }
+
+        val telecomPhoto = details?.telecomContactPhotoUri
+        if (numberChanged || telecomPhoto != primaryTelecomPhoto) {
+            primaryTelecomPhoto = telecomPhoto
+            photoJob?.cancel()
+            photoJob = scope.launch { callManager.updatePhoto(number, details) }
         }
 
         callManager.updateCallState(
