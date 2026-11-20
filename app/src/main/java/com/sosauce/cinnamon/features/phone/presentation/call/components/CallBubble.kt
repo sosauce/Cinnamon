@@ -87,7 +87,7 @@ fun CallBubble(
                 // Avatar — expressive squircle
                 Box(contentAlignment = Alignment.Center) {
                     DefaultContactIcon(
-                        firstLetter = state.displayName.firstOrNull(),
+                        firstLetter = state.displayName?.firstOrNull(),
                         size = 48.dp,
                         color = MaterialTheme.colorScheme.primaryContainer,
                         shape = MaterialShapes.Cookie9Sided.toShape(),
@@ -127,7 +127,7 @@ fun CallBubble(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        text = state.displayName.ifBlank { state.number.ifBlank { "Unknown" } },
+                        text = state.displayName ?: state.number.ifBlank { "Unknown" },
                         style = MaterialTheme.typography.titleMediumEmphasized.copy(
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.onSurface

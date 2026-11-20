@@ -5,12 +5,14 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.telecom.Call
 import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.core.repository.SimsRepository
+import com.sosauce.cinnamon.core.telecomContactName
 import com.sosauce.cinnamon.core.telephony.PhoneNumberNormalizer
 import com.sosauce.cinnamon.core.utils.beautifyNumber
 import com.sosauce.cinnamon.core.utils.safeStartActivity
@@ -250,12 +252,14 @@ class CallManager(
         }
     }
 
-    fun updateNumber(number: String) {
+    /**
+     * @param number raw number of the primary call
+     */
+    fun updateNumber(number: String, details: Call.Details?) {
         _callingState.update {
             it.copy(
                 number = number.beautifyNumber(),
-                displayName = numberLookup.fetchContactDisplayName(number)
-                    ?: number.beautifyNumber()
+                displayName = numberLookup.fetchCallerName(details, number)
             )
         }
     }
@@ -268,19 +272,27 @@ class CallManager(
 
     /**
      * @param number raw number of the other call, null when there's no other call
+     * @param details details of the other call
      */
-    fun updateOtherCall(number: String?, isHolding: Boolean, timeSpentInCall: Long) {
+    fun updateOtherCall(
+        number: String?,
+        details: Call.Details?,
+        isHolding: Boolean,
+        timeSpentInCall: Long
+    ) {
         _callingState.update { state ->
             if (number == null) return@update state.copy(otherCall = null)
 
             val current = state.otherCall
             val beautified = number.beautifyNumber()
-            // Only hit the contacts lookup when the other call actually changed
-            val displayName = if (current != null && current.number == beautified) {
-                current.displayName
-            } else {
-                numberLookup.fetchContactDisplayName(number) ?: beautified
-            }
+            // Only hit the contacts lookup when the other call actually changed,
+            // a name Telecom resolved late is still picked up (no query needed for it)
+            val displayName =
+                if (current != null && current.number == beautified && details?.telecomContactName == null) {
+                    current.displayName
+                } else {
+                    numberLookup.fetchCallerName(details, number)
+                }
             OtherCall(
                 number = beautified,
                 displayName = displayName,

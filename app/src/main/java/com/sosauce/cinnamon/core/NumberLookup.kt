@@ -2,7 +2,9 @@ package com.sosauce.cinnamon.core
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.provider.ContactsContract
+import android.telecom.Call
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
 import coil3.imageLoader
@@ -113,6 +115,15 @@ class NumberLookup(
     }
 
     /**
+     * Name of the contact on a call: the one Telecom resolved (API 30+), else our own lookup for [number].
+     * @return null when the caller isn't a contact
+     */
+    fun fetchCallerName(
+        details: Call.Details?,
+        number: String
+    ): String? = details?.telecomContactName ?: fetchContactDisplayName(number)
+
+    /**
      * @return The display name of the contact associated with [number] if it exists.
      */
     fun fetchContactDisplayName(
@@ -142,3 +153,13 @@ class NumberLookup(
     }
 
 }
+
+/**
+ * Always null below API 30.
+ */
+val Call.Details.telecomContactName: String?
+    get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        contactDisplayName?.takeIf { it.isNotBlank() }
+    } else {
+        null
+    }

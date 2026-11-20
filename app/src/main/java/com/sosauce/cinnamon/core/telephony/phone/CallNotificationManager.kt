@@ -166,11 +166,8 @@ class CallNotificationManager(
         val callerNumber = callerNumber()
 
         val photoUri = if (Build.VERSION.SDK_INT >= 34) contactPhotoUri else null
-        val name = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            contactDisplayName
-        } else {
-            numberLookup.fetchContactDisplayName(callerNumber)
-        } ?: callerNumber.beautifyNumber()
+        val name = numberLookup.fetchCallerName(this, callerNumber)
+            ?: callerNumber.beautifyNumber()
 
         val icon = if (photoUri != null) {
             IconCompat.createWithContentUri(photoUri)

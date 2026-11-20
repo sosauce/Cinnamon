@@ -275,7 +275,7 @@ private fun CallerInfo(
             )
             Box {
                 Avatar(
-                    firstLetter = callUiState.displayName.firstOrNull(),
+                    firstLetter = callUiState.displayName?.firstOrNull(),
                     photo = callUiState.photo,
                     size = avatarSize
                 )
@@ -309,7 +309,7 @@ private fun CallerInfo(
 
         Spacer(Modifier.height(20.dp))
         Text(
-            text = callUiState.displayName.ifBlank { callUiState.number.ifBlank { stringResource(R.string.unknown) } },
+            text = callUiState.displayName ?: callUiState.number.ifBlank { stringResource(R.string.unknown) },
             maxLines = 1,
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.displaySmallEmphasized,
@@ -319,7 +319,7 @@ private fun CallerInfo(
                 .basicMarquee()
         )
         AnimatedVisibility(
-            visible = callUiState.displayName.isNotBlank() && callUiState.number.isNotBlank() && callUiState.displayName != callUiState.number,
+            visible = callUiState.displayName != null && callUiState.number.isNotBlank(),
             enter = fadeIn(),
             exit = fadeOut()
         ) {
@@ -439,7 +439,7 @@ private fun OtherCallPill(
     val status =
         stringResource(if (otherCall.isHolding) R.string.on_hold else R.string.ongoing_call)
     val name =
-        otherCall.displayName.ifBlank { otherCall.number.ifBlank { stringResource(R.string.unknown) } }
+        otherCall.displayName ?: otherCall.number.ifBlank { stringResource(R.string.unknown) }
 
     Surface(
         shape = CircleShape,

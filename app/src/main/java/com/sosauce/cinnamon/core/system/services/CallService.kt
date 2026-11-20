@@ -21,6 +21,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.INCOMING_CALL_FULLSCREEN
 import com.sosauce.cinnamon.core.datastore.dataStore
 import com.sosauce.cinnamon.core.repository.SimsRepository
+import com.sosauce.cinnamon.core.telecomContactName
 import com.sosauce.cinnamon.core.telephony.phone.AndroidCallCallback
 import com.sosauce.cinnamon.core.telephony.phone.CallManager
 import com.sosauce.cinnamon.core.telephony.phone.CallNotificationManager
@@ -65,6 +66,7 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
     @Volatile
     private var primaryCall: Call? = null
     private var primaryNumber: String? = null
+    private var primaryTelecomName: String? = null
 
     // (call, notification type) last posted, so we don't re-post (and restart the ringtone) on every refresh
     private var notifiedKey: Pair<Call, NotificationType>? = null
@@ -217,6 +219,7 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         notifiedKey = null
         primaryCall = null
         primaryNumber = null
+        primaryTelecomName = null
         launchUiFor = null
         pendingAnswerCall = null
         endedForAnswer = emptySet()
@@ -240,6 +243,7 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
             // Every remaining call is disconnecting, onCallRemoved will tear down
             primaryCall = null
             primaryNumber = null
+            primaryTelecomName = null
             notificationJob?.cancel()
             notifiedKey = null
             handler.removeCallbacks(runnable)
@@ -254,9 +258,11 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         if (primaryChanged) callManager.updateActiveSim(simFor(primary))
 
         val number = primary.rawNumber()
-        if (primaryChanged || number != primaryNumber) {
+        val telecomName = primary.details?.telecomContactName
+        if (primaryChanged || number != primaryNumber || telecomName != primaryTelecomName) {
             primaryNumber = number
-            callManager.updateNumber(number)
+            primaryTelecomName = telecomName
+            callManager.updateNumber(number, primary.details)
         }
 
         callManager.updateCallState(
@@ -277,6 +283,7 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         val other = live.getOrNull(1)
         callManager.updateOtherCall(
             number = other?.rawNumber(),
+            details = other?.details,
             isHolding = other?.currentState() == Call.STATE_HOLDING,
             timeSpentInCall = other?.elapsedSeconds() ?: 0L
         )

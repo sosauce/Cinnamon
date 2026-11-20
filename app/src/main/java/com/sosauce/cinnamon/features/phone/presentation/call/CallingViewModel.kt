@@ -129,7 +129,7 @@ class CallingViewModel(
         callManager._callingState.update {
             it.copy(
                 number = number,
-                displayName = number,
+                displayName = null,
                 callState = CallState.DIALING
             )
         }
@@ -145,7 +145,7 @@ class CallingViewModel(
 data class CallingState(
     val callState: CallState = CallState.DIALING,
     val number: String = "",
-    val displayName: String = "",
+    val displayName: String? = null,
     val isMuted: Boolean = false,
     val isHolding: Boolean = false,
     val timeSpentInCall: Long = 0,
@@ -166,7 +166,7 @@ data class CallingState(
 @Stable
 data class OtherCall(
     val number: String = "",
-    val displayName: String = "",
+    val displayName: String? = null,
     val isHolding: Boolean = false,
     val timeSpentInCall: Long = 0
 )
