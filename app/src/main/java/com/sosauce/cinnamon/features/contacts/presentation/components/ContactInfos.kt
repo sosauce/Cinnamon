@@ -2,9 +2,16 @@
 
 package com.sosauce.cinnamon.features.contacts.presentation.components
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.media.RingtoneManager
+import android.net.Uri
 import android.provider.ContactsContract
+import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -33,6 +40,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.IntentCompat
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
@@ -66,7 +74,22 @@ fun ContactInfos(
     val infoItemCount = addressOffset + state.details.addresses.count()
     val eventOffset = state.details.websites.count()
     val noteOffset = eventOffset + state.details.events.count()
-    val aboutItemCount = noteOffset + if (state.details.note?.isNotEmpty() == true) 1 else 0
+    val ringtoneOffset = noteOffset + if (state.details.note?.isNotEmpty() == true) 1 else 0
+    val aboutItemCount = ringtoneOffset + 1
+
+    val ringtonePicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+
+            val ringtoneUri = result.data?.let {
+                IntentCompat.getParcelableExtra(
+                    it,
+                    RingtoneManager.EXTRA_RINGTONE_PICKED_URI,
+                    Uri::class.java
+                )
+            }
+            onHandleContactDetailsAction(ContactDetailsAction.SetRingtone(ringtoneUri))
+        }
 
     var valueToUnblock by remember { mutableStateOf<String?>(null) }
 
@@ -230,77 +253,121 @@ fun ContactInfos(
                 }
             }
         }
-        if (hasAbout) {
-            Column {
-                HeaderText(stringResource(R.string.about) + " ${state.contact.displayName}")
-                state.details.websites.forEachIndexed { index, website ->
-                    CuteListItem(
-                        onClick = {
-                            try {
-                                val formattedWebsite = if (!website.startsWith("https://")) {
-                                    "https://$website"
-                                } else website
-                                uriHandler.openUri(formattedWebsite)
-                            } catch (_: IllegalArgumentException) {
-                                Toast.makeText(context, "Couldn't open website", Toast.LENGTH_SHORT)
-                                    .show()
-                            }
-                        },
-                        shape = CuteListItemDefaults.getItemShape(index, aboutItemCount),
-                        backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-                        leadingContent = {
-                            InfoLeadingIcon(icon = R.drawable.website, visible = index == 0)
-                        }
-                    ) { Text(website) }
-                }
-                state.details.events.forEachIndexed { index, event ->
-                    CuteListItem(
-                        onClick = null,
-                        shape = CuteListItemDefaults.getItemShape(
-                            eventOffset + index,
-                            aboutItemCount
-                        ),
-                        backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-                        leadingContent = {
-                            InfoLeadingIcon(icon = R.drawable.event, visible = index == 0)
-                        }
-                    ) {
-                        Text(event.date.formateEventDate())
-                        Text(
-                            text = ContactsContract.CommonDataKinds.Event.getTypeLabel(
-                                resources,
-                                event.type,
-                                "Custom"
-                            ).toString(),
-                            style = MaterialTheme.typography.bodyMediumEmphasized.copy(
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                    }
-                }
-                state.details.note?.let { note ->
-                    CuteListItem(
-                        onClick = null,
-                        shape = CuteListItemDefaults.getItemShape(noteOffset, aboutItemCount),
-                        backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-                        leadingContent = {
-                            Icon(
-                                painter = painterResource(R.drawable.note),
-                                contentDescription = null,
-                                modifier = Modifier.padding(start = 10.dp)
-                            )
-                        }
-                    ) { Text(note) }
-                }
-            }
-        }
-
-        if (!hasAbout && !hasInfo) {
+        if (!hasInfo && !hasAbout) {
             NoXFound(
                 headlineText = R.string.no_contact_info,
                 bodyText = R.string.no_contact_info_desc,
                 icon = R.drawable.info
             )
+        }
+        Column {
+            HeaderText(stringResource(R.string.about) + " ${state.contact.displayName}")
+            state.details.websites.forEachIndexed { index, website ->
+                CuteListItem(
+                    onClick = {
+                        try {
+                            val formattedWebsite = if (!website.startsWith("https://")) {
+                                "https://$website"
+                            } else website
+                            uriHandler.openUri(formattedWebsite)
+                        } catch (_: IllegalArgumentException) {
+                            Toast.makeText(context, "Couldn't open website", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                    },
+                    shape = CuteListItemDefaults.getItemShape(index, aboutItemCount),
+                    backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                    leadingContent = {
+                        InfoLeadingIcon(icon = R.drawable.website, visible = index == 0)
+                    }
+                ) { Text(website) }
+            }
+            state.details.events.forEachIndexed { index, event ->
+                CuteListItem(
+                    onClick = null,
+                    shape = CuteListItemDefaults.getItemShape(
+                        eventOffset + index,
+                        aboutItemCount
+                    ),
+                    backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                    leadingContent = {
+                        InfoLeadingIcon(icon = R.drawable.event, visible = index == 0)
+                    }
+                ) {
+                    Text(event.date.formateEventDate())
+                    Text(
+                        text = ContactsContract.CommonDataKinds.Event.getTypeLabel(
+                            resources,
+                            event.type,
+                            "Custom"
+                        ).toString(),
+                        style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+            }
+            state.details.note?.let { note ->
+                CuteListItem(
+                    onClick = null,
+                    shape = CuteListItemDefaults.getItemShape(noteOffset, aboutItemCount),
+                    backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                    leadingContent = {
+                        Icon(
+                            painter = painterResource(R.drawable.note),
+                            contentDescription = null,
+                            modifier = Modifier.padding(start = 10.dp)
+                        )
+                    }
+                ) { Text(note) }
+            }
+            CuteListItem(
+                onClick = {
+                    val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_RINGTONE)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, resources.getString(R.string.ringtone))
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                        putExtra(
+                            RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI,
+                            Settings.System.DEFAULT_RINGTONE_URI
+                        )
+                        putExtra(
+                            RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
+                            state.details.ringtone ?: Settings.System.DEFAULT_RINGTONE_URI
+                        )
+                    }
+                    try {
+                        ringtonePicker.launch(intent)
+                    } catch (_: ActivityNotFoundException) {
+                        Toast.makeText(
+                            context,
+                            resources.getString(R.string.set_ringtone_error),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                },
+                shape = CuteListItemDefaults.getItemShape(ringtoneOffset, aboutItemCount),
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                leadingContent = {
+                    InfoLeadingIcon(icon = R.drawable.ringtone, visible = true)
+                }
+            ) {
+                Text(
+                    text = when {
+                        state.details.ringtone == null -> stringResource(R.string.default_ringtone)
+                        else -> state.ringtoneTitle ?: stringResource(R.string.unknown_ringtone)
+                    },
+                    maxLines = 1,
+                    modifier = Modifier.basicMarquee()
+                )
+                Text(
+                    text = stringResource(R.string.ringtone),
+                    style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                )
+            }
         }
     }
 }

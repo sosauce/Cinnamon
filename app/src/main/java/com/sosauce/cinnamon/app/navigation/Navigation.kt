@@ -167,6 +167,13 @@ fun Nav(
 
                                 is ContactDetailsEvent.Success -> backStack.navigateBack()
                                 is ContactDetailsEvent.RequestDefaultDialer -> requestDefaultDialer()
+                                is ContactDetailsEvent.RingtoneError -> {
+                                    Toast.makeText(
+                                        context,
+                                        resources.getString(R.string.set_ringtone_error),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             }
                         }
 

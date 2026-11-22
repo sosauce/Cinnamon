@@ -88,6 +88,29 @@ class ContactsRepository(
     fun observeContactChanges() =
         context.contentResolver.observe(ContactsContract.Contacts.CONTENT_URI)
 
+    suspend fun setContactRingtone(
+        contactId: Long,
+        ringtoneUri: Uri?
+    ): Boolean = withContext(Dispatchers.IO) {
+        val ringtone = ringtoneUri
+            ?.takeUnless { it == Uri.EMPTY }
+            ?.toString()
+            ?.ifBlank { null }
+
+        try {
+            context.contentResolver.update(
+                ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, contactId),
+                contentValuesOf(ContactsContract.Contacts.CUSTOM_RINGTONE to ringtone),
+                null,
+                null
+            ) > 0
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            e.printStackTrace()
+            false
+        }
+    }
+
     /**
      * A slice of the contacts matching [extraSelection], sorted by name.
      * Phone numbers and account names are only fetched for the returned contacts.
@@ -468,7 +491,8 @@ class ContactsRepository(
                 ContactsContract.Data.DATA2,
                 ContactsContract.Data.DATA3,
                 ContactsContract.Data.IS_PRIMARY,
-                ContactsContract.Data.PHOTO_URI
+                ContactsContract.Data.PHOTO_URI,
+                ContactsContract.Data.CUSTOM_RINGTONE
             ),
             "${ContactsContract.Data.CONTACT_ID} = ?",
             arrayOf(contactId.toString()),
@@ -487,9 +511,15 @@ class ContactsRepository(
                 cursor.getColumnIndexOrThrow(ContactsContract.Data.IS_PRIMARY)
             val photoColumn =
                 cursor.getColumnIndexOrThrow(ContactsContract.Data.PHOTO_URI)
+            val ringtoneColumn =
+                cursor.getColumnIndexOrThrow(ContactsContract.Data.CUSTOM_RINGTONE)
 
 
             while (cursor.moveToNext()) {
+                if (cursor.isFirst) {
+                    builder.setRingtone(cursor.getString(ringtoneColumn)?.ifBlank { null })
+                }
+
                 val mime = cursor.getString(mimeColumn)
                 val data1 = cursor.getString(data1Column) ?: continue
                 val data2 = cursor.getInt(data2Column)

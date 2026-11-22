@@ -41,9 +41,14 @@ data class CuteContactDetails(
     val firstName: String? = null,
     val middleName: String? = null,
     val lastName: String? = null,
-    val note: String? = null
+    val note: String? = null,
+    /**
+     * The contact's custom ringtone, null when it uses the default one
+     */
+    val ringtoneString: String? = null
 ) {
     val photo = photoString?.toUri()
+    val ringtone = ringtoneString?.toUri()
 }
 
 data class ContactPhone(
@@ -79,6 +84,7 @@ class CuteContactDetailsBuilder {
     private var lastName: String? = null
 
     private var photo: String? = null
+    private var ringtone: String? = null
 
 
     private val emails = mutableListOf<ContactEmail>()
@@ -115,6 +121,10 @@ class CuteContactDetailsBuilder {
         photo = contactPhoto
     }
 
+    fun setRingtone(contactRingtone: String?) {
+        ringtone = contactRingtone
+    }
+
 
     fun build(): CuteContactDetails {
         return CuteContactDetails(
@@ -127,7 +137,8 @@ class CuteContactDetailsBuilder {
             firstName = firstName,
             middleName = middleName,
             lastName = lastName,
-            photoString = photo
+            photoString = photo,
+            ringtoneString = ringtone
         )
     }
 }

@@ -104,6 +104,10 @@
     <string name="contact_info">Contact info</string>
     <string name="contact_photo">Contact photo</string>
     <string name="call_poster">Call poster</string>
+    <string name="ringtone">Ringtone</string>
+    <string name="default_ringtone">Default ringtone</string>
+    <string name="unknown_ringtone">Unknown ringtone</string>
+    <string name="set_ringtone_error">Couldn\'t set ringtone</string>
     <string name="choose_image">Choose image</string>
     <string name="remove_image">Remove image</string>
     <string name="about">About</string>

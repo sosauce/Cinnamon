@@ -103,6 +103,10 @@
     <string name="contact_info">Infos du contact</string>
     <string name="contact_photo">Photo du contact</string>
     <string name="call_poster">Affiche d\'appel</string>
+    <string name="ringtone">Sonnerie</string>
+    <string name="default_ringtone">Sonnerie par défaut</string>
+    <string name="unknown_ringtone">Sonnerie inconnue</string>
+    <string name="set_ringtone_error">Impossible de définir la sonnerie</string>
     <string name="choose_image">Choisir une image</string>
     <string name="remove_image">Retirer l\'image</string>
     <string name="about">À propos</string>
