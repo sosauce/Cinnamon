@@ -58,6 +58,7 @@ import com.sosauce.cinnamon.settings.AppLockSettingsViewModel
 import com.sosauce.cinnamon.settings.BackupViewModel
 import com.sosauce.cinnamon.settings.SimsViewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.singleOf
@@ -92,7 +93,8 @@ val appModule = module {
         ).addMigrations(MIGRATION_1_2_CONTACT_SETTINGS).build().dao
     }
 
-    single { CoroutineScope(SupervisorJob()) }
+    single { CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate) }
+
     single { WorkManager.getInstance(androidContext()) }
 
     single<TelecomManager> {

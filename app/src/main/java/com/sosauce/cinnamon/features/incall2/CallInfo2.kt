@@ -10,10 +10,8 @@ data class CallInfo2(
     // Caller identity
     val number: String?,
     val numberPresentation: Int,
-    val callerName: String?,
+    val contactName: String?,
     val contactPhotoUri: Uri?,
-    val contactThumbnailUri: Uri?,
-    val contactPosterUri: Uri?,
     // Call lifecycle
     val state: CallState2,
     val connectTimeMillis: Long?,
@@ -52,5 +50,6 @@ data class CallCapabilities2(
     val canSwap: Boolean = false,
     val canRespondViaText: Boolean = false,
     val canMute: Boolean = false,
-    val supportsDtmf: Boolean = false
+    val supportsDtmf: Boolean = false,
+    val isHd: Boolean = false
 )
