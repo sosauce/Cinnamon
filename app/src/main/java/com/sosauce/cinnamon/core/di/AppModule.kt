@@ -11,13 +11,14 @@ import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.applock.AppLockManager
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.core.repository.SimsRepository
-import com.sosauce.cinnamon.core.system.services.CallOverlayManager
 import com.sosauce.cinnamon.core.telephony.PhoneNumberNormalizer
 import com.sosauce.cinnamon.core.telephony.message.CuteTelephonyManager
 import com.sosauce.cinnamon.core.telephony.message.MessageNotificationManager
-import com.sosauce.cinnamon.core.telephony.phone.CallManager
-import com.sosauce.cinnamon.core.telephony.phone.CallNotificationManager
+import com.sosauce.cinnamon.features.incall.CallNotificationManager
 import com.sosauce.cinnamon.features.contacts.data.backup.ContactsBackupRepository
+import com.sosauce.cinnamon.features.incall.CallLauncher
+import com.sosauce.cinnamon.features.incall.InCallRepository
+import com.sosauce.cinnamon.features.incall.presentation.CallingStateMapper
 import com.sosauce.cinnamon.features.contacts.data.backup.ContactsImportRepository
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDatabase
@@ -50,7 +51,7 @@ import com.sosauce.cinnamon.features.phone.data.backup.CallLogsBackupRepository
 import com.sosauce.cinnamon.features.phone.data.backup.CallLogsImportRepository
 import com.sosauce.cinnamon.features.phone.data.repository.CallLogsRepository
 import com.sosauce.cinnamon.features.phone.data.repository.VoicemailsRepository
-import com.sosauce.cinnamon.features.phone.presentation.call.CallingViewModel
+import com.sosauce.cinnamon.features.incall.presentation.CallingViewModel
 import com.sosauce.cinnamon.features.phone.presentation.dialer.DialerViewModel
 import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsViewModel
 import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailViewModel
@@ -122,10 +123,11 @@ val appModule = module {
     singleOf(::AppLockManager)
     singleOf(::NumberLookup)
     singleOf(::ScheduledMessageManager)
-    singleOf(::CallManager)
+    singleOf(::InCallRepository)
+    singleOf(::CallLauncher)
+    singleOf(::CallingStateMapper)
     singleOf(::MessageNotificationManager)
     singleOf(::CallNotificationManager)
-    singleOf(::CallOverlayManager)
     singleOf(::CuteTelephonyManager)
     singleOf(::MessagesRepository)
     singleOf(::ContactsRepository)

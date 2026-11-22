@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
 
-package com.sosauce.cinnamon.features.phone.presentation.call.components
+package com.sosauce.cinnamon.features.incall.presentation.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -34,8 +34,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.features.phone.domain.AudioRoute
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
+import com.sosauce.cinnamon.features.incall.AudioRoute
+import com.sosauce.cinnamon.features.incall.presentation.CallAction
 import com.sosauce.nekobites.utils.groupedShape
 
 @Composable

@@ -46,7 +46,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <uses-permission android:name="android.hardware.sensor.proximity" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
 
     <!-- App lock biometric unlock -->
@@ -161,7 +160,7 @@
             android:exported="false" />
 
         <activity
-            android:name=".features.phone.presentation.call.CallActivity"
+            android:name=".features.incall.presentation.CallActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:showWhenLocked="true"
@@ -188,7 +187,7 @@
         </activity>
 
         <service
-            android:name=".core.system.services.CallService"
+            android:name=".features.incall.CallService"
             android:exported="true"
             android:enabled="true"
             android:foregroundServiceType="phoneCall"
@@ -253,7 +252,7 @@
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".core.system.receivers.CallReceiver" />
+        <receiver android:name=".features.incall.CallReceiver" />
 
     </application>
 

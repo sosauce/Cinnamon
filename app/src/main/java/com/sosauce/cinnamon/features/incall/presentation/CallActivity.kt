@@ -1,4 +1,4 @@
-package com.sosauce.cinnamon.features.phone.presentation.call
+package com.sosauce.cinnamon.features.incall.presentation
 
 import android.app.KeyguardManager
 import android.content.ActivityNotFoundException
@@ -17,17 +17,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import com.sosauce.cinnamon.core.ui.CinnamonTheme
 import com.sosauce.cinnamon.core.ui.components.dialogs.SimPickerDialog
 import com.sosauce.cinnamon.core.utils.APP_PACKAGE
 import com.sosauce.cinnamon.core.utils.createDefaultDialerIntent
 import com.sosauce.nekobites.helpers.ObserveAsEvents
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 class CallActivity : ComponentActivity() {
@@ -47,7 +42,7 @@ class CallActivity : ComponentActivity() {
             // is launched, don't finish meanwhile or the SIM picker would never show up
             var awaitingIntentCall by remember { mutableStateOf(intent.action == Intent.ACTION_CALL) }
             LaunchedEffect(callUiState.callState, simPicker) {
-                if (callUiState.callState != CallState.ENDED || simPicker != null) {
+                if (callUiState.callState != CallUiState.ENDED || simPicker != null) {
                     awaitingIntentCall = false
                 }
             }
@@ -72,6 +67,8 @@ class CallActivity : ComponentActivity() {
                         // didn't get the dialer role, too bad!
                         finishAndRemoveTask()
                     }
+
+                    is CallEvents.NoCallToShow -> finishAndRemoveTask()
                 }
             }
 
@@ -87,7 +84,7 @@ class CallActivity : ComponentActivity() {
             }
 
             LaunchedEffect(callUiState, simPicker, awaitingIntentCall) {
-                if (callUiState.callState == CallState.ENDED && simPicker == null && !awaitingIntentCall) {
+                if (callUiState.callState == CallUiState.ENDED && simPicker == null && !awaitingIntentCall) {
                     finishAndRemoveTask()
                 }
             }

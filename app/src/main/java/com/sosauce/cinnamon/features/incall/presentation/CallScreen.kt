@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
 
-package com.sosauce.cinnamon.features.phone.presentation.call
+package com.sosauce.cinnamon.features.incall.presentation
 
 import android.content.res.Configuration
 import android.net.Uri
@@ -77,10 +77,10 @@ import com.sosauce.cinnamon.core.datastore.rememberIsLandscape
 import com.sosauce.cinnamon.core.ui.CinnamonTheme
 import com.sosauce.cinnamon.core.ui.barsContentTransform
 import com.sosauce.cinnamon.core.ui.components.DefaultContactIcon
-import com.sosauce.cinnamon.features.phone.domain.AudioRoute
-import com.sosauce.cinnamon.features.phone.presentation.call.components.CallBottomBar
-import com.sosauce.cinnamon.features.phone.presentation.call.components.CallQualityIcons
-import com.sosauce.cinnamon.features.phone.presentation.call.components.IncomingBottomBar
+import com.sosauce.cinnamon.features.incall.AudioRoute
+import com.sosauce.cinnamon.features.incall.presentation.components.CallBottomBar
+import com.sosauce.cinnamon.features.incall.presentation.components.CallQualityIcons
+import com.sosauce.cinnamon.features.incall.presentation.components.IncomingBottomBar
 import com.sosauce.nekobites.animations.bouncySpec
 import kotlinx.coroutines.launch
 
@@ -90,8 +90,8 @@ fun CallScreen(
     onCallAction: (CallAction) -> Unit,
     callUiState: CallingState
 ) {
-    val isRinging = callUiState.callState == CallState.RINGING
-    val isDialing = callUiState.callState == CallState.DIALING
+    val isRinging = callUiState.callState == CallUiState.RINGING
+    val isDialing = callUiState.callState == CallUiState.DIALING
     val isLandscape = rememberIsLandscape()
     val shouldPulse = isRinging || isDialing
     val pulseScale1 = remember { Animatable(1f) }
@@ -371,21 +371,21 @@ private fun CallStatusPill(callUiState: CallingState) {
     val colors = MaterialTheme.colorScheme
     val container by animateColorAsState(
         when (callUiState.callState) {
-            CallState.RINGING -> colors.primary
-            CallState.DIALING -> colors.tertiaryContainer
-            CallState.ENDED -> colors.surfaceContainerHighest
-            CallState.ONGOING -> colors.primaryContainer
+            CallUiState.RINGING -> colors.primary
+            CallUiState.DIALING -> colors.tertiaryContainer
+            CallUiState.ENDED -> colors.surfaceContainerHighest
+            CallUiState.ONGOING -> colors.primaryContainer
         }
     )
     val content = contentColorFor(container)
     val icon = when (callUiState.callState) {
-        CallState.RINGING -> R.drawable.sim_card_filled
-        CallState.DIALING -> R.drawable.phone
-        CallState.ENDED -> R.drawable.hang_up_filled
-        CallState.ONGOING -> R.drawable.timer
+        CallUiState.RINGING -> R.drawable.sim_card_filled
+        CallUiState.DIALING -> R.drawable.phone
+        CallUiState.ENDED -> R.drawable.hang_up_filled
+        CallUiState.ONGOING -> R.drawable.timer
     }
     val label: AnnotatedString = when (callUiState.callState) {
-        CallState.RINGING -> buildAnnotatedString {
+        CallUiState.RINGING -> buildAnnotatedString {
             append(stringResource(R.string.via))
             append(" ")
 
@@ -396,9 +396,9 @@ private fun CallStatusPill(callUiState: CallingState) {
             }
         }
 
-        CallState.DIALING -> AnnotatedString(stringResource(R.string.ringing))
-        CallState.ENDED -> AnnotatedString(stringResource(R.string.call_ended))
-        CallState.ONGOING -> AnnotatedString(DateUtils.formatElapsedTime(callUiState.timeSpentInCall))
+        CallUiState.DIALING -> AnnotatedString(stringResource(R.string.ringing))
+        CallUiState.ENDED -> AnnotatedString(stringResource(R.string.call_ended))
+        CallUiState.ONGOING -> AnnotatedString(DateUtils.formatElapsedTime(callUiState.timeSpentInCall))
     }
 
     Surface(
@@ -488,7 +488,7 @@ private fun CallScreenPreviewRinging() {
             callUiState = CallingState(
                 number = "+1 555 0100",
                 displayName = "Ava Thompson",
-                callState = CallState.RINGING,
+                callState = CallUiState.RINGING,
                 availableAudioRoutes = listOf(
                     AudioRoute(name = "Speaker"),
                     AudioRoute(name = "Earpiece")
@@ -507,7 +507,7 @@ private fun CallScreenPreviewOngoing() {
             callUiState = CallingState(
                 number = "+1 555 0100",
                 displayName = "Ava Thompson",
-                callState = CallState.ONGOING,
+                callState = CallUiState.ONGOING,
                 timeSpentInCall = 127,
                 isHdAudio = true,
                 isWifiCall = true,
@@ -529,7 +529,7 @@ private fun CallScreenPreviewCallWaiting() {
             callUiState = CallingState(
                 number = "+1 555 0199",
                 displayName = "Bob Smith",
-                callState = CallState.RINGING,
+                callState = CallUiState.RINGING,
                 otherCall = OtherCall(
                     number = "+1 555 0100",
                     displayName = "Ava Thompson",

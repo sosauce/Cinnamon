@@ -1,11 +1,11 @@
-package com.sosauce.cinnamon.features.incall2
+package com.sosauce.cinnamon.features.incall
 
 import android.net.Uri
 import android.telecom.PhoneAccountHandle
 import androidx.compose.runtime.Immutable
 
 @Immutable
-data class CallInfo2(
+data class CallInfo(
     val id: String,
     // Caller identity
     val number: String?,
@@ -13,17 +13,17 @@ data class CallInfo2(
     val contactName: String?,
     val contactPhotoUri: Uri?,
     // Call lifecycle
-    val state: CallState2,
+    val state: CallState,
     val connectTimeMillis: Long?,
-    val capabilities: CallCapabilities2,
+    val capabilities: CallCapabilities,
     // Call metadata
-    val direction: CallDirection2,
+    val direction: CallDirection,
     val phoneAccountHandle: PhoneAccountHandle?,
     val parentCallId: String?,
     val childCallIds: List<String>
 )
 
-enum class CallState2 {
+enum class CallState {
     NEW,
     CONNECTING,
     DIALING,
@@ -34,13 +34,13 @@ enum class CallState2 {
     DISCONNECTED
 }
 
-enum class CallDirection2 {
+enum class CallDirection {
     INCOMING,
     OUTGOING
 }
 
 @Immutable
-data class CallCapabilities2(
+data class CallCapabilities(
     val canHold: Boolean = false,
     val canUnhold: Boolean = false,
     val canAnswer: Boolean = false,
@@ -51,5 +51,6 @@ data class CallCapabilities2(
     val canRespondViaText: Boolean = false,
     val canMute: Boolean = false,
     val supportsDtmf: Boolean = false,
-    val isHd: Boolean = false
+    val isHd: Boolean = false,
+    val isWifi: Boolean = false
 )

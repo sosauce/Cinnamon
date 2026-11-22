@@ -63,11 +63,12 @@ import com.sosauce.cinnamon.features.messaging.presentation.customization.Conver
 import com.sosauce.cinnamon.features.messaging.presentation.customization.ThemingViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.starter.StartConversation
 import com.sosauce.cinnamon.features.messaging.presentation.starter.StartConversationViewModel
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
-import com.sosauce.cinnamon.features.phone.presentation.call.CallEvents
-import com.sosauce.cinnamon.features.phone.presentation.call.CallingViewModel
+import com.sosauce.cinnamon.features.phone.presentation.dialer.DialerAction
+import com.sosauce.cinnamon.features.phone.presentation.dialer.DialerEvent
 import com.sosauce.cinnamon.features.phone.presentation.dialer.DialerScreen
 import com.sosauce.cinnamon.features.phone.presentation.dialer.DialerViewModel
+import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsAction
+import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsEvent
 import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsScreen
 import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsViewModel
 import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailScreen
@@ -187,22 +188,21 @@ fun Nav(
                     }
                     entry<Screen.Calls> {
                         val viewModel = koinViewModel<CallLogsViewModel>()
-                        val callViewModel = koinViewModel<CallingViewModel>()
                         val state by viewModel.state.collectAsStateWithLifecycle()
                         val callLogs = viewModel.callLogs.collectAsLazyPagingItems()
 
-                        ObserveAsEvents(callViewModel.events) { event ->
+                        ObserveAsEvents(viewModel.events) { event ->
                             when (event) {
-                                is CallEvents.RequestDefaultDialer -> requestDefaultDialer()
+                                is CallLogsEvent.RequestDefaultDialer -> requestDefaultDialer()
                             }
                         }
 
-                        val simPicker by callViewModel.simPicker.collectAsStateWithLifecycle()
+                        val simPicker by viewModel.simPicker.collectAsStateWithLifecycle()
                         simPicker?.let { picker ->
                             SimPickerDialog(
                                 state = picker,
-                                onPickSim = { callViewModel.handleCallAction(CallAction.PickSim(it)) },
-                                onDismissRequest = { callViewModel.handleCallAction(CallAction.DismissSimPicker) }
+                                onPickSim = { viewModel.handleCallLogsAction(CallLogsAction.PickSim(it)) },
+                                onDismissRequest = { viewModel.handleCallLogsAction(CallLogsAction.DismissSimPicker) }
                             )
                         }
 
@@ -211,7 +211,6 @@ fun Nav(
                             callLogs = callLogs,
                             textFieldState = viewModel.textFieldState,
                             onNavigate = backStack::navigate,
-                            onHandleCallActions = callViewModel::handleCallAction,
                             onHandleCallLogsActions = viewModel::handleCallLogsAction
                         )
                     }
@@ -320,25 +319,24 @@ fun Nav(
                     }
 
                     entry<Screen.Dialer> { key ->
-                        val callViewModel = koinViewModel<CallingViewModel>()
                         val viewModel = koinViewModel<DialerViewModel>(
                             parameters = { parametersOf(key.prefilledNumber) }
                         )
                         val state by viewModel.state.collectAsStateWithLifecycle()
                         val contacts = viewModel.contacts.collectAsLazyPagingItems()
 
-                        ObserveAsEvents(callViewModel.events) { event ->
+                        ObserveAsEvents(viewModel.events) { event ->
                             when (event) {
-                                is CallEvents.RequestDefaultDialer -> requestDefaultDialer()
+                                is DialerEvent.RequestDefaultDialer -> requestDefaultDialer()
                             }
                         }
 
-                        val simPicker by callViewModel.simPicker.collectAsStateWithLifecycle()
+                        val simPicker by viewModel.simPicker.collectAsStateWithLifecycle()
                         simPicker?.let { picker ->
                             SimPickerDialog(
                                 state = picker,
-                                onPickSim = { callViewModel.handleCallAction(CallAction.PickSim(it)) },
-                                onDismissRequest = { callViewModel.handleCallAction(CallAction.DismissSimPicker) }
+                                onPickSim = { viewModel.handleDialerAction(DialerAction.PickSim(it)) },
+                                onDismissRequest = { viewModel.handleDialerAction(DialerAction.DismissSimPicker) }
                             )
                         }
 
@@ -348,7 +346,7 @@ fun Nav(
                             textFieldState = viewModel.textFieldState,
                             onNavigate = backStack::navigate,
                             onNavigateUp = backStack::navigateBack,
-                            onHandleCallAction = callViewModel::handleCallAction
+                            onHandleDialerAction = viewModel::handleDialerAction
                         )
                     }
 

@@ -306,10 +306,10 @@
     <string name="call_with">Call with</string>
     <string name="conversations">Conversations</string>
     <string name="sending_settings">Sending</string>
-    <string name="default_dialer_desc">Required for the call screen and bubbles over other apps</string>
+    <string name="default_dialer_desc">Required for the call screen</string>
     <string name="default_sms_desc">Required to send and receive SMS/MMS</string>
     <string name="set_as_default_dialer">Set as default dialer</string>
-    <string name="bubbles_tip">Tip: bubbles and full-screen calls need \"Display over other apps\" and the notification permission.</string>
+    <string name="full_screen_calls_tip">Tip: full-screen calls need the notification permission.</string>
 
     <string name="grant_me">Hey, grant me &gt;:(</string>
     <plurals name="participants_count">

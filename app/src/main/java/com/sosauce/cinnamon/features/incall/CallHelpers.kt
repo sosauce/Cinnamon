@@ -1,4 +1,4 @@
-package com.sosauce.cinnamon.features.incall2
+package com.sosauce.cinnamon.features.incall
 
 import android.os.Build
 import android.telecom.Call
@@ -23,19 +23,16 @@ val Call.compatState
         state
     }
 
-val Call.Details.compatConnectTimeMillis: Long
-    get() = connectTimeMillis.takeIf { it > 0 } ?: System.currentTimeMillis()
-
-fun Call.toCallDirection(): CallDirection2 {
+fun Call.toCallDirection(): CallDirection {
     val direction =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) details?.callDirection else null
     return when (direction) {
-        Call.Details.DIRECTION_INCOMING -> CallDirection2.INCOMING
-        Call.Details.DIRECTION_OUTGOING -> CallDirection2.OUTGOING
+        Call.Details.DIRECTION_INCOMING -> CallDirection.INCOMING
+        Call.Details.DIRECTION_OUTGOING -> CallDirection.OUTGOING
         else -> if (compatState == Call.STATE_RINGING) {
-            CallDirection2.INCOMING
+            CallDirection.INCOMING
         } else {
-            CallDirection2.OUTGOING
+            CallDirection.OUTGOING
         }
     }
 }
@@ -43,26 +40,26 @@ fun Call.toCallDirection(): CallDirection2 {
 val Call.Details.isHd: Boolean
     get() = hasProperty(Call.Details.PROPERTY_HIGH_DEF_AUDIO)
 
-fun Int.toCallState(): CallState2 {
+fun Int.toCallState(): CallState {
     return when (this) {
-        Call.STATE_NEW -> CallState2.NEW
-        Call.STATE_CONNECTING -> CallState2.CONNECTING
-        Call.STATE_DIALING -> CallState2.DIALING
-        Call.STATE_RINGING -> CallState2.RINGING
-        Call.STATE_ACTIVE -> CallState2.ACTIVE
-        Call.STATE_HOLDING -> CallState2.HOLDING
-        Call.STATE_DISCONNECTING -> CallState2.DISCONNECTING
-        Call.STATE_DISCONNECTED -> CallState2.DISCONNECTED
-        Call.STATE_PULLING_CALL -> CallState2.CONNECTING
-        else -> CallState2.NEW
+        Call.STATE_NEW -> CallState.NEW
+        Call.STATE_CONNECTING -> CallState.CONNECTING
+        Call.STATE_DIALING -> CallState.DIALING
+        Call.STATE_RINGING -> CallState.RINGING
+        Call.STATE_ACTIVE -> CallState.ACTIVE
+        Call.STATE_HOLDING -> CallState.HOLDING
+        Call.STATE_DISCONNECTING -> CallState.DISCONNECTING
+        Call.STATE_DISCONNECTED -> CallState.DISCONNECTED
+        Call.STATE_PULLING_CALL -> CallState.CONNECTING
+        else -> CallState.NEW
     }
 }
 
-fun Call.toCapabilities(): CallCapabilities2 {
+fun Call.toCapabilities(): CallCapabilities {
     val callState = compatState
     val canHold = details.hasCapability(Call.Details.CAPABILITY_HOLD)
 
-    return CallCapabilities2(
+    return CallCapabilities(
         canHold = canHold && callState != Call.STATE_HOLDING,
         canUnhold = canHold && callState == Call.STATE_HOLDING,
         canAnswer = callState == Call.STATE_RINGING || callState == Call.STATE_SIMULATED_RINGING,
@@ -84,6 +81,7 @@ fun Call.toCapabilities(): CallCapabilities2 {
         canRespondViaText = details.hasCapability(Call.Details.CAPABILITY_RESPOND_VIA_TEXT),
         canMute = details.hasCapability(Call.Details.CAPABILITY_MUTE),
         isHd = details?.isHd == true,
+        isWifi = details?.hasProperty(Call.Details.PROPERTY_WIFI) == true,
         supportsDtmf = when (callState) {
             Call.STATE_DIALING,
             Call.STATE_CONNECTING,

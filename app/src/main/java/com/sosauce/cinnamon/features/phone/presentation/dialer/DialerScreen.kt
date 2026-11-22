@@ -40,7 +40,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -54,7 +53,6 @@ import androidx.compose.ui.util.fastMap
 import androidx.paging.compose.LazyPagingItems
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
-import com.sosauce.cinnamon.core.ui.components.ScreenSelection
 import com.sosauce.cinnamon.core.ui.components.buttons.LongClickButton
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.utils.backspace
@@ -65,9 +63,7 @@ import com.sosauce.cinnamon.features.contacts.presentation.ContactsListItem
 import com.sosauce.cinnamon.features.contacts.presentation.components.FavoriteContact
 import com.sosauce.cinnamon.features.contacts.presentation.components.dialogs.NumberPickerDialog
 import com.sosauce.cinnamon.features.contacts.presentation.contactsList
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
-import com.sosauce.cinnamon.features.phone.presentation.call.components.DisableSoftKeyboard
-import com.sosauce.nekobites.animations.AnimatedFab
+import com.sosauce.cinnamon.features.incall.presentation.components.DisableSoftKeyboard
 import com.sosauce.nekobites.components.LoadingBox
 import com.sosauce.nekobites.components.NoXFound
 
@@ -78,7 +74,7 @@ fun SharedTransitionScope.DialerScreen(
     textFieldState: TextFieldState,
     onNavigate: (Screen) -> Unit,
     onNavigateUp: () -> Unit,
-    onHandleCallAction: (CallAction) -> Unit
+    onHandleDialerAction: (DialerAction) -> Unit
 ) {
     val dialpadLayout = listOf(
         listOf("1", "2", "3"),
@@ -105,7 +101,7 @@ fun SharedTransitionScope.DialerScreen(
             onDismissRequest = { numberPickerContact = null },
             onPickNumber = { number ->
                 numberPickerContact = null
-                onHandleCallAction(CallAction.LaunchCall(number))
+                onHandleDialerAction(DialerAction.CallNumber(number))
             },
             phoneNumbers = contact.phoneNumbers.fastMap { it.number }
         )
@@ -230,7 +226,7 @@ fun SharedTransitionScope.DialerScreen(
                             }
                         }
                         FilledIconButton(
-                            onClick = { onHandleCallAction(CallAction.LaunchCall(textFieldState.text.toString())) },
+                            onClick = { onHandleDialerAction(DialerAction.CallNumber(textFieldState.text.toString())) },
                             shapes = IconButtonDefaults.shapes(),
                             modifier = Modifier
                                 .padding(top = 10.dp)
@@ -260,7 +256,7 @@ fun SharedTransitionScope.DialerScreen(
                     if (contact.phoneNumbers.size > 1) {
                         numberPickerContact = contact
                     } else {
-                        onHandleCallAction(CallAction.LaunchCall(contact.phoneNumbers.first().number))
+                        onHandleDialerAction(DialerAction.CallNumber(contact.phoneNumbers.first().number))
                     }
                 }
 

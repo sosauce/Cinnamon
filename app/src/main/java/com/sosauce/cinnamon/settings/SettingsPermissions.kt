@@ -166,7 +166,7 @@ fun SettingsPermissions() {
             )
         }
         Text(
-            text = stringResource(R.string.bubbles_tip),
+            text = stringResource(R.string.full_screen_calls_tip),
             style = MaterialTheme.typography.bodySmallEmphasized,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

@@ -1,4 +1,4 @@
-package com.sosauce.cinnamon.features.phone.presentation.call.components
+package com.sosauce.cinnamon.features.incall.presentation.components
 
 import android.telecom.CallAudioState
 import androidx.annotation.DrawableRes
@@ -47,10 +47,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.selfAlignHorizontally
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
-import com.sosauce.cinnamon.features.phone.presentation.call.CallState
-import com.sosauce.cinnamon.features.phone.presentation.call.CallingState
-import com.sosauce.cinnamon.features.phone.presentation.call.DialerPaneContent
+import com.sosauce.cinnamon.features.incall.presentation.CallAction
+import com.sosauce.cinnamon.features.incall.presentation.CallUiState
+import com.sosauce.cinnamon.features.incall.presentation.CallingState
+import com.sosauce.cinnamon.features.incall.presentation.DialerPaneContent
 import com.sosauce.nekobites.animations.bouncySpec
 
 @Composable
@@ -62,7 +62,7 @@ fun CallBottomBar(
     val interactionSources = List(4) { remember { MutableInteractionSource() } }
     var paneContent by remember { mutableStateOf(DialerPaneContent.NOTHING) }
 
-    val isEnded = callUiState.callState == CallState.ENDED
+    val isEnded = callUiState.callState == CallUiState.ENDED
     val isHolding = callUiState.isHolding
     val isMuted = callUiState.isMuted
 

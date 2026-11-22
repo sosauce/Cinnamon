@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalCoroutinesApi::class)
 
-package com.sosauce.cinnamon.features.phone.presentation.call
+package com.sosauce.cinnamon.features.incall.presentation
 
 import android.app.Application
 import android.net.Uri
@@ -9,62 +9,77 @@ import androidx.compose.runtime.Stable
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.sosauce.cinnamon.core.telephony.phone.CallManager
-import com.sosauce.cinnamon.core.telephony.phone.StartCallResult
 import com.sosauce.cinnamon.core.utils.getContactId
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
-import com.sosauce.cinnamon.features.phone.domain.AudioRoute
+import com.sosauce.cinnamon.features.incall.AudioRoute
+import com.sosauce.cinnamon.features.incall.CallLauncher
+import com.sosauce.cinnamon.features.incall.InCallRepository
+import com.sosauce.cinnamon.features.incall.InCallState
+import com.sosauce.cinnamon.features.incall.LaunchCallResult
 import com.sosauce.cinnamon.features.phone.domain.CuteSimCard
 import com.sosauce.cinnamon.features.phone.domain.SimChoice
 import com.sosauce.cinnamon.features.phone.domain.SimPickerState
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class CallingViewModel(
     private val application: Application,
-    private val callManager: CallManager,
+    private val inCallRepository: InCallRepository,
+    private val callLauncher: CallLauncher,
+    private val callingStateMapper: CallingStateMapper,
     private val contactSettingsDao: ContactSettingsDao
 ) : AndroidViewModel(application) {
 
+    // Poster of the contact that may be associated with the primary call's number
+    private val poster = callingStateMapper.callingState
+        .map { it.number }
+        .distinctUntilChanged()
+        .mapLatest { number ->
+            withContext(Dispatchers.IO) {
+                try {
+                    val contactId = number.getContactId(application.applicationContext)
+                    contactSettingsDao.getContactPoster(contactId)?.toUri()
+                } catch (_: SecurityException) {
+                    null
+                }
+            }
+        }
+        .onStart { emit(null) }
 
-    private val _state = callManager._callingState
-    val state = _state.asStateFlow()
+    val state = combine(callingStateMapper.callingState, poster) { state, poster ->
+        state.copy(poster = poster)
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        callingStateMapper.currentCallingState()
+    )
 
     private val _events = Channel<CallEvents>()
     val events = _events.receiveAsFlow()
 
-    // Not in CallingState, which is shared by every screen through CallManager
+    // Only for calls launched by CallActivity (ACTION_CALL intents)
     private val _simPicker = MutableStateFlow<SimPickerState?>(null)
     val simPicker = _simPicker.asStateFlow()
     private var pickedSimCallJob: Job? = null
 
+    private val activeState
+        get() = inCallRepository.inCallState.value as? InCallState.Active
 
-    init {
-        viewModelScope.launch(Dispatchers.IO) {
-            state.mapLatest { it.number }.distinctUntilChanged().collectLatest { number ->
-                // The photo is resolved by CallManager.updatePhoto, from the call's details
-                val poster = try {
-                    val contactId = number.getContactId(application.applicationContext)
-                    contactSettingsDao.getContactPoster(contactId)
-                } catch (_: SecurityException) {
-                    null
-                }
-                _state.update {
-                    it.copy(poster = poster?.toUri())
-                }
-            }
-        }
-    }
 
     fun handleCallAction(action: CallAction) {
         when (action) {
@@ -76,8 +91,6 @@ class CallingViewModel(
                 val number = _simPicker.value?.number ?: return
                 if (pickedSimCallJob?.isActive == true) return
                 pickedSimCallJob = viewModelScope.launch {
-                    // the picker is closed once the call state is updated, so CallActivity doesn't
-                    // finish in between because of the previous call's ENDED state
                     launchCall(number, action.sim.handle)
                     _simPicker.update { null }
                 }
@@ -85,47 +98,34 @@ class CallingViewModel(
 
             is CallAction.DismissSimPicker -> _simPicker.update { null }
 
-            is CallAction.AnswerCall -> callManager.answerCall()
-            is CallAction.DeclineCall -> callManager.declineCall()
-            is CallAction.HangUp -> callManager.hangupOngoingCall()
+            is CallAction.AnswerCall -> activeState?.ringingCall?.let { inCallRepository.answer(it.id) }
+            is CallAction.DeclineCall -> activeState?.ringingCall?.let { inCallRepository.reject(it.id) }
+            is CallAction.HangUp -> activeState?.let { inCallRepository.disconnect(it.primaryCall.id) }
             is CallAction.StartTone -> {
+                val id = activeState?.primaryCall?.id ?: return
                 viewModelScope.launch {
-                    callManager.startTone(action.char)
+                    inCallRepository.startTone(id, action.char)
                 }
             }
 
-            is CallAction.SwitchAudioTarget -> callManager.switchAudioRoute(action.route)
-            is CallAction.ToggleHold -> callManager.toggleHold()
-            is CallAction.ToggleMute -> callManager.toggleMute(action.mute)
-            is CallAction.HoldAndAnswer -> callManager.holdAndAnswer()
-            is CallAction.EndAndAnswer -> callManager.endAndAnswer()
-            is CallAction.SwapCalls -> callManager.swapCalls()
+            is CallAction.SwitchAudioTarget -> inCallRepository.setAudioRoute(action.route)
+            is CallAction.ToggleHold -> activeState?.let { inCallRepository.toggleHold(it.primaryCall.id) }
+            is CallAction.ToggleMute -> inCallRepository.setMuted(action.mute)
+            // Telecom holds the current active call itself when answering a waiting call
+            is CallAction.HoldAndAnswer -> activeState?.ringingCall?.let { inCallRepository.answer(it.id) }
+            is CallAction.EndAndAnswer -> activeState?.ringingCall?.let { inCallRepository.endAndAnswer(it.id) }
+            is CallAction.SwapCalls -> inCallRepository.swap()
         }
     }
 
     private suspend fun launchCall(number: String, handle: PhoneAccountHandle? = null) {
-        when (callManager.startCall(number, handle)) {
-            StartCallResult.NOT_ALLOWED -> {
-                _events.send(CallEvents.RequestDefaultDialer)
-                return
-            }
-
-            StartCallResult.NEEDS_SIM_SELECTION -> {
-                _simPicker.value = SimPickerState(number, callManager.fetchSimChoices())
-                return
-            }
-
-            else -> Unit
-        }
-        // Optimistically update state and launch UI even if placeCall
-        // threw, ensures call button always opens Cinnamon's CallScreen
-        // (incoming UI is handled separately via CallService fullScreenIntent).
-        callManager._callingState.update {
-            it.copy(
-                number = number,
-                displayName = null,
-                callState = CallState.DIALING
-            )
+        when (val result = callLauncher.launchCall(number, handle)) {
+            LaunchCallResult.NotAllowed -> _events.send(CallEvents.RequestDefaultDialer)
+            is LaunchCallResult.NeedsSimSelection -> _simPicker.value = SimPickerState(number, result.choices)
+            // CallService shows the call once Telecom adds it
+            LaunchCallResult.Started -> Unit
+            // Nothing to show
+            LaunchCallResult.ServiceCodeSent, LaunchCallResult.Failed -> _events.send(CallEvents.NoCallToShow)
         }
     }
 
@@ -137,7 +137,7 @@ class CallingViewModel(
  */
 @Stable
 data class CallingState(
-    val callState: CallState = CallState.DIALING,
+    val callState: CallUiState = CallUiState.DIALING,
     val number: String = "",
     val displayName: String? = null,
     val isMuted: Boolean = false,
@@ -186,4 +186,9 @@ sealed interface CallEvents {
      * The call couldn't be launched because Cinnamon isn't the default dialer app
      */
     data object RequestDefaultDialer : CallEvents
+
+    /**
+     * The launched number didn't become a call (service code, failure), CallActivity has nothing to show
+     */
+    data object NoCallToShow : CallEvents
 }

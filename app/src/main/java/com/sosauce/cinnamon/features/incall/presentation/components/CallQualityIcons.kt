@@ -1,4 +1,4 @@
-package com.sosauce.cinnamon.features.phone.presentation.call.components
+package com.sosauce.cinnamon.features.incall.presentation.components
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes

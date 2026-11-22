@@ -16,10 +16,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.core.di.appModule
 import com.sosauce.cinnamon.core.telephony.message.MessageNotificationManager
-import com.sosauce.cinnamon.core.telephony.phone.CallNotificationManager
-import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
+import com.sosauce.cinnamon.features.incall.CallNotificationManager
 import kotlinx.coroutines.runBlocking
 import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
@@ -28,14 +25,6 @@ import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.dsl.koinConfiguration
 
 class CinnamonApplication : Application(), KoinStartup, SingletonImageLoader.Factory {
-
-    companion object {
-        @Volatile
-        var isCallActivityVisible: Boolean = false
-
-        // StateFlow for overlay manager to observe visibility changes
-        val isCallActivityVisibleFlow = MutableStateFlow(false)
-    }
 
     override fun onCreate() {
         super.onCreate()
@@ -58,37 +47,6 @@ class CinnamonApplication : Application(), KoinStartup, SingletonImageLoader.Fac
         }
 
 
-        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
-            override fun onActivityResumed(activity: android.app.Activity) {
-                if (activity is CallActivity) {
-                    isCallActivityVisible = true
-                    isCallActivityVisibleFlow.update { true }
-                }
-            }
-
-            override fun onActivityPaused(activity: android.app.Activity) {
-                if (activity is CallActivity) {
-                    isCallActivityVisible = false
-                    isCallActivityVisibleFlow.update { false }
-                }
-            }
-
-            override fun onActivityCreated(a: android.app.Activity, b: android.os.Bundle?) {}
-            override fun onActivityStarted(a: android.app.Activity) {}
-            override fun onActivityStopped(a: android.app.Activity) {}
-            override fun onActivitySaveInstanceState(
-                a: android.app.Activity,
-                b: android.os.Bundle
-            ) {
-            }
-
-            override fun onActivityDestroyed(a: android.app.Activity) {
-                if (a is CallActivity) {
-                    isCallActivityVisible = false
-                    isCallActivityVisibleFlow.update { false }
-                }
-            }
-        })
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
 

@@ -23,10 +23,10 @@ import androidx.paging.cachedIn
 import com.sosauce.cinnamon.core.MediaManager
 import com.sosauce.cinnamon.core.telephony.message.CuteTelephonyManager
 import com.sosauce.cinnamon.core.telephony.message.MessageNotificationManager
-import com.sosauce.cinnamon.core.telephony.phone.CallManager
-import com.sosauce.cinnamon.core.telephony.phone.StartCallResult
 import com.sosauce.cinnamon.core.utils.isShortCode
 import com.sosauce.cinnamon.core.utils.unblock
+import com.sosauce.cinnamon.features.incall.CallLauncher
+import com.sosauce.cinnamon.features.incall.LaunchCallResult
 import com.sosauce.cinnamon.features.messaging.data.ScheduledMessageManager
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingActions
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsDao
@@ -75,7 +75,7 @@ class ConversationDetailsViewModel(
     private val conversationsRepository: ConversationsRepository,
     private val conversationSettingsDao: ConversationSettingsDao,
     private val cuteTelephonyManager: CuteTelephonyManager,
-    private val callManager: CallManager,
+    private val callLauncher: CallLauncher,
     private val scheduledMessagesDao: ScheduledMessagesDao,
     private val scheduledMessageManager: ScheduledMessageManager,
     private val messageNotificationManager: MessageNotificationManager,
@@ -346,14 +346,14 @@ class ConversationDetailsViewModel(
             }
 
             is ConversationActions.CallNumber -> viewModelScope.launch {
-                val result = callManager.startCall(
+                val result = callLauncher.launchCall(
                     action.number
                 )
-                if (result == StartCallResult.NOT_ALLOWED) {
+                if (result == LaunchCallResult.NotAllowed) {
                     _events.send(ConversationDetailsEvents.RequestDefaultDialer)
-                } else if (result == StartCallResult.NEEDS_SIM_SELECTION) {
+                } else if (result is LaunchCallResult.NeedsSimSelection) {
                     _simPicker.update {
-                        SimPickerState(action.number, callManager.fetchSimChoices())
+                        SimPickerState(action.number, result.choices)
                     }
                 }
             }
@@ -362,7 +362,7 @@ class ConversationDetailsViewModel(
                 val number = _simPicker.value?.number ?: return
                 _simPicker.value = null
                 viewModelScope.launch {
-                    if (callManager.startCall(number, action.sim.handle) == StartCallResult.NOT_ALLOWED) {
+                    if (callLauncher.launchCall(number, action.sim.handle) == LaunchCallResult.NotAllowed) {
                         _events.send(ConversationDetailsEvents.RequestDefaultDialer)
                     }
                 }

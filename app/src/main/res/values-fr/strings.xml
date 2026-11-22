@@ -305,10 +305,10 @@
     <string name="call_with">Appeler avec</string>
     <string name="conversations">Conversations</string>
     <string name="sending_settings">Envoi</string>
-    <string name="default_dialer_desc">Nécessaire pour l\'écran d\'appel et les bulles au-dessus des autres applications</string>
+    <string name="default_dialer_desc">Nécessaire pour l\'écran d\'appel</string>
     <string name="default_sms_desc">Nécessaire pour envoyer et recevoir des SMS/MMS</string>
     <string name="set_as_default_dialer">Définir comme téléphonie par défaut</string>
-    <string name="bubbles_tip">Astuce : les bulles et les appels en plein écran nécessitent « Afficher au-dessus des autres applications » et l\'autorisation de notification.</string>
+    <string name="full_screen_calls_tip">Astuce : les appels en plein écran nécessitent l\'autorisation de notification.</string>
 
     <string name="grant_me">Hé, accorde-moi &gt;:(</string>
     <plurals name="participants_count">

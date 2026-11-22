@@ -1,4 +1,4 @@
-package com.sosauce.cinnamon.core.telephony.phone
+package com.sosauce.cinnamon.features.incall
 
 import android.annotation.SuppressLint
 import android.app.Notification
@@ -6,19 +6,18 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.telecom.Call
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
-import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.NumberLookup
-import com.sosauce.cinnamon.core.system.receivers.CallReceiver
 import com.sosauce.cinnamon.core.utils.ACCEPT_INCOMING_CALL
 import com.sosauce.cinnamon.core.utils.DECLINE_INCOMING_CALL
 import com.sosauce.cinnamon.core.utils.HANGUP_ONGOING_CALL
 import com.sosauce.cinnamon.core.utils.beautifyNumber
-import com.sosauce.cinnamon.features.phone.presentation.call.CallActivity
+import com.sosauce.cinnamon.features.incall.presentation.CallActivity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class CallNotificationManager(
     private val context: Context,
@@ -163,7 +162,8 @@ class CallNotificationManager(
 
         val callerNumber = callerNumber()
 
-        val name = numberLookup.fetchCallerName(this, callerNumber)
+        // Contacts query, off the main thread (CallService runs there)
+        val name = withContext(Dispatchers.IO) { numberLookup.fetchCallerName(this@createPerson, callerNumber) }
             ?: callerNumber.beautifyNumber()
 
         val icon = numberLookup.fetchPersonIcon(

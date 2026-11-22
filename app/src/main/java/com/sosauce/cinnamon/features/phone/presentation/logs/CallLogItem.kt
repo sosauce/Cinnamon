@@ -51,7 +51,6 @@ import com.sosauce.cinnamon.features.messaging.presentation.conversation.compone
 import com.sosauce.cinnamon.features.phone.domain.CallPresentation
 import com.sosauce.cinnamon.features.phone.domain.CallType
 import com.sosauce.cinnamon.features.phone.domain.CuteCallLog
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
 import com.sosauce.nekobites.animations.AnimatedDrawable
 import com.sosauce.nekobites.animations.AnimatedDrawableFile
 import com.sosauce.nekobites.components.AnimatedSelectedIcon
@@ -68,7 +67,7 @@ fun CallLogItem(
     numberOfAppearance: Int,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onCallAction: (CallAction) -> Unit,
+    onCallLogsAction: (CallLogsAction) -> Unit,
     onNavigate: (Screen) -> Unit,
     onDeleteCallLog: () -> Unit
 ) {
@@ -104,7 +103,7 @@ fun CallLogItem(
             add(
                 MoreOptions(
                     onClick = {
-                        onCallAction(CallAction.LaunchCall(callLog.number))
+                        onCallLogsAction(CallLogsAction.CallNumber(callLog.number))
                     },
                     icon = R.drawable.phone,
                     text = R.string.call

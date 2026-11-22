@@ -18,33 +18,47 @@ import com.sosauce.cinnamon.core.utils.listPagingConfig
 import com.sosauce.cinnamon.features.phone.data.model.GroupedCallLog
 import com.sosauce.cinnamon.features.phone.data.repository.CallLogsPagingSource
 import com.sosauce.cinnamon.features.phone.data.repository.CallLogsRepository
+import com.sosauce.cinnamon.features.incall.CallLauncher
+import com.sosauce.cinnamon.features.incall.LaunchCallResult
 import com.sosauce.cinnamon.features.phone.domain.CuteCallLog
+import com.sosauce.cinnamon.features.phone.domain.SimChoice
+import com.sosauce.cinnamon.features.phone.domain.SimPickerState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 class CallLogsViewModel(
     private val callLogsRepository: CallLogsRepository,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val callLauncher: CallLauncher
 ) : ViewModel() {
 
     val textFieldState = TextFieldState()
+
+    private val _events = Channel<CallLogsEvent>()
+    val events = _events.receiveAsFlow()
+
+    private val _simPicker = MutableStateFlow<SimPickerState?>(null)
+    val simPicker = _simPicker.asStateFlow()
 
     private val filter = MutableStateFlow(CallLogsFilter.ALL)
 
@@ -169,6 +183,31 @@ class CallLogsViewModel(
             is CallLogsAction.DeleteLogs -> viewModelScope.launch(Dispatchers.IO) {
                 callLogsRepository.deleteCallLog(action.ids)
             }
+
+            is CallLogsAction.CallNumber -> {
+                viewModelScope.launch {
+                    when (val result = callLauncher.launchCall(action.number)) {
+                        LaunchCallResult.NotAllowed -> _events.send(CallLogsEvent.RequestDefaultDialer)
+                        is LaunchCallResult.NeedsSimSelection -> _simPicker.update {
+                            SimPickerState(action.number, result.choices)
+                        }
+
+                        else -> Unit
+                    }
+                }
+            }
+
+            is CallLogsAction.PickSim -> {
+                val number = _simPicker.value?.number ?: return
+                _simPicker.update { null }
+                viewModelScope.launch {
+                    if (callLauncher.launchCall(number, action.sim.handle) == LaunchCallResult.NotAllowed) {
+                        _events.send(CallLogsEvent.RequestDefaultDialer)
+                    }
+                }
+            }
+
+            is CallLogsAction.DismissSimPicker -> _simPicker.update { null }
         }
     }
 
@@ -212,6 +251,16 @@ sealed interface CallLogsAction {
     data object ChangeSort : CallLogsAction
     data class DeleteLogs(val ids: List<Long>) : CallLogsAction
     data class DefaultDialerChanged(val isDefault: Boolean) : CallLogsAction
+    data class CallNumber(val number: String) : CallLogsAction
+    data class PickSim(val sim: SimChoice) : CallLogsAction
+    data object DismissSimPicker : CallLogsAction
+}
+
+sealed interface CallLogsEvent {
+    /**
+     * The call couldn't be launched because Cinnamon isn't the default dialer app
+     */
+    data object RequestDefaultDialer : CallLogsEvent
 }
 
 enum class CallLogsFilter {

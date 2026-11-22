@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
 
-package com.sosauce.cinnamon.features.phone.presentation.call.components
+package com.sosauce.cinnamon.features.incall.presentation.components
 
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
@@ -36,7 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.CinnamonTheme
-import com.sosauce.cinnamon.features.phone.presentation.call.CallAction
+import com.sosauce.cinnamon.features.incall.presentation.CallAction
 import com.sosauce.nekobites.animations.bouncySpec
 
 @Composable

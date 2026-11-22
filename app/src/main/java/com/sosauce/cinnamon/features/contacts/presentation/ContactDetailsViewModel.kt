@@ -5,8 +5,8 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.sosauce.cinnamon.core.telephony.phone.CallManager
-import com.sosauce.cinnamon.core.telephony.phone.StartCallResult
+import com.sosauce.cinnamon.features.incall.CallLauncher
+import com.sosauce.cinnamon.features.incall.LaunchCallResult
 import com.sosauce.cinnamon.core.utils.unblock
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsEntity
@@ -35,7 +35,7 @@ class ContactDetailsViewModel(
     private val contactId: Long,
     private val contactsRepository: ContactsRepository,
     private val contactSettingsDao: ContactSettingsDao,
-    private val callManager: CallManager
+    private val callLauncher: CallLauncher
 ) : AndroidViewModel(application) {
 
 
@@ -162,10 +162,10 @@ class ContactDetailsViewModel(
 
             is ContactDetailsAction.CallNumber -> {
                 viewModelScope.launch {
-                    when (callManager.startCall(action.number)) {
-                        StartCallResult.NOT_ALLOWED -> _events.send(ContactDetailsEvent.RequestDefaultDialer)
-                        StartCallResult.NEEDS_SIM_SELECTION -> _simPicker.update {
-                            SimPickerState(action.number, callManager.fetchSimChoices())
+                    when (val result = callLauncher.launchCall(action.number)) {
+                        LaunchCallResult.NotAllowed -> _events.send(ContactDetailsEvent.RequestDefaultDialer)
+                        is LaunchCallResult.NeedsSimSelection -> _simPicker.update {
+                            SimPickerState(action.number, result.choices)
                         }
 
                         else -> Unit
@@ -177,7 +177,7 @@ class ContactDetailsViewModel(
                 val number = _simPicker.value?.number ?: return
                 _simPicker.update { null }
                 viewModelScope.launch {
-                    if (callManager.startCall(number, action.sim.handle) == StartCallResult.NOT_ALLOWED) {
+                    if (callLauncher.launchCall(number, action.sim.handle) == LaunchCallResult.NotAllowed) {
                         _events.send(ContactDetailsEvent.RequestDefaultDialer)
                     }
                 }
