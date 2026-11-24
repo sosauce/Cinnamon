@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.datastore.rememberEnableT9Dialing
 import com.sosauce.cinnamon.core.datastore.rememberGroupSubsequentCalls
+import com.sosauce.cinnamon.core.datastore.rememberProximitySensorInCall
 import com.sosauce.cinnamon.settings.components.AskEveryTimeSelector
 import com.sosauce.cinnamon.settings.components.PhoneAccountHandleSelector
 import com.sosauce.nekobites.components.settings.SettingsEmptyState
@@ -24,6 +25,7 @@ fun SettingsPhone() {
 
     var groupSubCalls by rememberGroupSubsequentCalls()
     var t9Dialing by rememberEnableT9Dialing()
+    var proximitySensor by rememberProximitySensorInCall()
     val simsViewModel = koinViewModel<SimsViewModel>()
     val allHandles = remember(simsViewModel) {
         try {
@@ -82,6 +84,12 @@ fun SettingsPhone() {
             title = stringResource(R.string.group_sub_calls),
             checked = groupSubCalls,
             onCheckedChange = { groupSubCalls = !groupSubCalls }
+        )
+        SettingsSwitch(
+            title = stringResource(R.string.proximity_sensor),
+            description = stringResource(R.string.proximity_sensor_desc),
+            checked = proximitySensor,
+            onCheckedChange = { proximitySensor = !proximitySensor }
         )
     }
 }

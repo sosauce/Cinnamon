@@ -165,6 +165,8 @@
     <string name="export_contact_to_vcf">Export contacts to a .vcf file</string>
     <string name="enable_t9_dialing">Enable T9 dialing</string>
     <string name="group_sub_calls">Group subsequent calls</string>
+    <string name="proximity_sensor">Proximity sensor</string>
+    <string name="proximity_sensor_desc">Turn off the screen when the phone is near your ear during a call</string>
     <string name="default_sim_phone">Default sim for phone functions.</string>
     <string name="chat_color">Chat color</string>
     <string name="default_sms_app">Default SMS app</string>

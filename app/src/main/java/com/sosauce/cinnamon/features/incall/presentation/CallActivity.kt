@@ -6,18 +6,21 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.telecom.CallAudioState
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sosauce.cinnamon.core.datastore.rememberProximitySensorInCall
 import com.sosauce.cinnamon.core.ui.CinnamonTheme
 import com.sosauce.cinnamon.core.ui.components.dialogs.SimPickerDialog
 import com.sosauce.cinnamon.core.utils.APP_PACKAGE
@@ -46,7 +49,6 @@ class CallActivity : ComponentActivity() {
                     awaitingIntentCall = false
                 }
             }
-
             val dialerRoleLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartActivityForResult()
             ) { result ->
@@ -83,6 +85,20 @@ class CallActivity : ComponentActivity() {
                 }
             }
 
+            val proximitySensorEnabled by rememberProximitySensorInCall()
+            val useProximitySensor = proximitySensorEnabled &&
+                    (callUiState.callState == CallUiState.DIALING || callUiState.callState == CallUiState.ONGOING) &&
+                    callUiState.currentAudioRoute.type == CallAudioState.ROUTE_EARPIECE
+
+            DisposableEffect(useProximitySensor) {
+                val wakeLock = if (useProximitySensor) acquireProximityWakeLock() else null
+                onDispose {
+                    if (wakeLock?.isHeld == true) {
+                        wakeLock.release(PowerManager.RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY)
+                    }
+                }
+            }
+
             LaunchedEffect(callUiState, simPicker, awaitingIntentCall) {
                 if (callUiState.callState == CallUiState.ENDED && simPicker == null && !awaitingIntentCall) {
                     finishAndRemoveTask()
@@ -114,6 +130,19 @@ class CallActivity : ComponentActivity() {
         }
     }
 
+
+    private fun acquireProximityWakeLock(): PowerManager.WakeLock? {
+        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
+        if (!powerManager.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) return null
+
+        return powerManager.newWakeLock(
+            PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK,
+            "${APP_PACKAGE}:proximity_wake_lock"
+        ).apply {
+            setReferenceCounted(false)
+            acquire(10*60*1000L /*10 minutes*/)
+        }
+    }
 
     private fun setLockScreenFlags() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {

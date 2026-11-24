@@ -85,6 +85,11 @@ android {
         buildConfig = true
     }
 
+    packaging {
+        resources {
+            excludes += listOf("/META-INF/*.version", "/kotlin/**", "DebugProbesKt.bin", "/META-INF/**/LICENSE.txt")
+        }
+    }
 
     dependenciesInfo {
         includeInApk = false

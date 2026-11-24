@@ -49,6 +49,7 @@ data object PreferencesKeys {
     val ENABLE_T9_DIALING = booleanPreferencesKey("ENABLE_T9_DIALING")
     val SORT_LOGS_ASCENDING = booleanPreferencesKey("SORT_LOGS_ASCENDING")
     val INCOMING_CALL_FULLSCREEN = booleanPreferencesKey("INCOMING_CALL_FULLSCREEN")
+    val PROXIMITY_SENSOR_IN_CALL = booleanPreferencesKey("PROXIMITY_SENSOR_IN_CALL")
     val ENABLE_PINCH_TO_ZOOM = booleanPreferencesKey("ENABLE_PINCH_TO_ZOOM")
     val CHAT_ZOOM_SCALE = floatPreferencesKey("CHAT_ZOOM_SCALE")
     val LAST_CRASH_LOG = stringPreferencesKey("LAST_CRASH_LOG")
@@ -136,6 +137,10 @@ fun rememberSortLogsAscending() = rememberPreference(PreferencesKeys.SORT_LOGS_A
 @Composable
 fun rememberIncomingCallFullscreen() =
     rememberPreference(PreferencesKeys.INCOMING_CALL_FULLSCREEN, true)
+
+@Composable
+fun rememberProximitySensorInCall() =
+    rememberPreference(PreferencesKeys.PROXIMITY_SENSOR_IN_CALL, true)
 
 @Composable
 fun rememberChatZoomScale() = rememberPreference(PreferencesKeys.CHAT_ZOOM_SCALE, 1f)
