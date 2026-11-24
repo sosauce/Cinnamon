@@ -64,7 +64,8 @@ import com.sosauce.nekobites.components.settings.SettingsPage
 
 @Composable
 fun SettingsScreen(
-    onNavigateUp: () -> Unit
+    onNavigateUp: () -> Unit,
+    onNavigateToGlobalChatTheme: () -> Unit
 ) {
     val backStack = rememberNavBackStack(SettingsScreens.Settings)
     val goBack: () -> Unit = {
@@ -104,7 +105,7 @@ fun SettingsScreen(
                     ScrollPage(paddingValues) { SettingsPhone() }
                 }
                 entry<SettingsScreens.LookAndFeel> {
-                    ScrollPage(paddingValues) { SettingsLookAndFeel() }
+                    ScrollPage(paddingValues) { SettingsLookAndFeel(onNavigateToGlobalChatTheme) }
                 }
                 entry<SettingsScreens.Behavior> {
                     ScrollPage(paddingValues) { SettingsBehavior() }

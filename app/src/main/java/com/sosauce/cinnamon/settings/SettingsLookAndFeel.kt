@@ -27,11 +27,13 @@ import com.sosauce.cinnamon.core.utils.CuteTheme
 import com.sosauce.cinnamon.settings.components.PaletteTile
 import com.sosauce.nekobites.components.settings.SelectableTile
 import com.sosauce.nekobites.components.settings.SettingsGroup
+import com.sosauce.nekobites.components.settings.SettingsItem
+import com.sosauce.nekobites.components.settings.SettingsRow
 import com.sosauce.nekobites.components.settings.SettingsPicker
 import com.sosauce.nekobites.components.settings.SettingsSwitch
 
 @Composable
-fun SettingsLookAndFeel() {
+fun SettingsLookAndFeel(onNavigateToGlobalChatTheme: () -> Unit) {
 
     var theme by rememberAppTheme()
     var useSystemFont by rememberUseSystemFont()
@@ -125,6 +127,13 @@ fun SettingsLookAndFeel() {
                     label = R.string.system
                 )
             }
+        }
+        SettingsItem(onClick = onNavigateToGlobalChatTheme) {
+            SettingsRow(
+                title = stringResource(R.string.global_chat_theme),
+                description = stringResource(R.string.global_chat_theme_desc),
+                icon = R.drawable.palette
+            )
         }
     }
 

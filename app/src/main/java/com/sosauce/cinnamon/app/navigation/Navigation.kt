@@ -59,6 +59,7 @@ import com.sosauce.cinnamon.features.messaging.presentation.conversation.Convers
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.about.AboutConversationScreen
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.forwarding.ForwardingScreen
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.forwarding.ForwardingViewModel
+import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.GLOBAL_THREAD_ID
 import com.sosauce.cinnamon.features.messaging.presentation.customization.ConversationTheming
 import com.sosauce.cinnamon.features.messaging.presentation.customization.ThemingViewModel
 import com.sosauce.cinnamon.features.messaging.presentation.starter.StartConversation
@@ -447,7 +448,10 @@ fun Nav(
 
                     entry<Screen.Settings> {
                         SettingsScreen(
-                            onNavigateUp = backStack::navigateBack
+                            onNavigateUp = backStack::navigateBack,
+                            onNavigateToGlobalChatTheme = {
+                                backStack.navigate(Screen.ConversationTheming(GLOBAL_THREAD_ID))
+                            }
                         )
                     }
 

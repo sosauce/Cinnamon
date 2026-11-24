@@ -30,6 +30,7 @@ import com.sosauce.cinnamon.features.incall.LaunchCallResult
 import com.sosauce.cinnamon.features.messaging.data.ScheduledMessageManager
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingActions
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsDao
+import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.GLOBAL_THREAD_ID
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsEntity
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.perform
 import com.sosauce.cinnamon.features.messaging.data.local.scheduledMessages.ScheduledMessageEntity
@@ -208,11 +209,18 @@ class ConversationDetailsViewModel(
     }
 
 
-    private val settings = conversationSettingsDao
-        .getConversationSettings(threadId)
-        .mapLatest {
-            (it ?: ConversationSettingsEntity(threadId = threadId)).toConversationSettings()
-        }
+    private val settings = combine(
+        conversationSettingsDao.getConversationSettings(threadId),
+        conversationSettingsDao.getConversationSettings(GLOBAL_THREAD_ID)
+    ) { own, global ->
+        val settings = (own ?: ConversationSettingsEntity(threadId = threadId)).toConversationSettings()
+        val fallback = global?.toConversationSettings() ?: return@combine settings
+        settings.copy(
+            wallpaper = settings.wallpaper ?: fallback.wallpaper,
+            wallpaperBlurIntensity = if (settings.wallpaper == null) fallback.wallpaperBlurIntensity else settings.wallpaperBlurIntensity,
+            color = settings.color ?: fallback.color
+        )
+    }
 
     private val _state = MutableStateFlow(
         ConversationDetailsState(

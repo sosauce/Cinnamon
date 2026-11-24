@@ -144,7 +144,7 @@ fun ConversationTheming(
     val removeWallpaper: () -> Unit = {
         scope.launch(Dispatchers.IO) {
             state.settings.wallpaper?.path?.let {
-                File(context.filesDir, it).delete()
+                File(it).delete()
             }
             onHandleConversationSettingsActions(
                 ConversationSettingActions.UpsertConversationSettings(
