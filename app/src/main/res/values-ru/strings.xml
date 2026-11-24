@@ -309,7 +309,6 @@
     <string name="default_dialer_desc">Требуется для экрана вызова и всплывающих окон поверх других приложений</string>
     <string name="default_sms_desc">Требуется для отправки и получения SMS/MMS</string>
     <string name="set_as_default_dialer">Сделать приложением телефона по умолчанию</string>
-    <string name="bubbles_tip">Совет: для пузырей и полноэкранных вызовов нужны разрешения «Показывать поверх других приложений» и на уведомления.</string>
 
     <string name="grant_me">Эй, дай мне разрешение &gt;:(</string>
     <plurals name="participants_count">
