@@ -117,16 +117,25 @@ class ContactsRepository(
     }
     private suspend fun getRingtoneName(ringtoneUri: Uri): String? = withContext(Dispatchers.IO) {
         runCatching {
-            context.contentResolver.query(ringtoneUri, null, null, null, null)?.use { cursor ->
-                if (!cursor.moveToFirst()) return@use null
 
-                listOf(MediaStore.MediaColumns.TITLE, OpenableColumns.DISPLAY_NAME)
-                    .firstNotNullOfOrNull { column ->
-                        cursor.getColumnIndex(column)
-                            .takeIf { it >= 0 }
-                            ?.let { cursor.getString(it) }
-                            ?.ifBlank { null }
-                    }
+            val projection = arrayOf(
+                MediaStore.MediaColumns.TITLE,
+                OpenableColumns.DISPLAY_NAME
+            )
+
+            context.contentResolver.query(
+                ringtoneUri,
+                projection,
+                null,
+                null,
+                null
+            )?.use { cursor ->
+                projection.firstNotNullOfOrNull { column ->
+                    cursor.getColumnIndex(column)
+                        .takeIf { it >= 0 }
+                        ?.let { cursor.getString(it) }
+                        ?.ifBlank { null }
+                }
             }
         }.getOrNull()
     }
