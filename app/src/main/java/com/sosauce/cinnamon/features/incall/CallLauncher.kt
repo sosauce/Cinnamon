@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
+import androidx.core.net.toUri
 import com.sosauce.cinnamon.core.datastore.UserPreferences
 import com.sosauce.cinnamon.core.repository.SimsRepository
 import com.sosauce.cinnamon.core.telephony.PhoneNumberNormalizer
@@ -40,22 +41,30 @@ class CallLauncher(
                 is HandleResolution.Use -> resolution.handle
                 is HandleResolution.AskUser -> return LaunchCallResult.NeedsSimSelection(fetchSimChoices())
             }
+            val bundle = Bundle().apply {
+                putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, phoneAccountHandle)
+            }
 
             if (number.isServiceCode()) {
-                val handled = if (phoneAccountHandle != null) {
+                val wasMmi = if (phoneAccountHandle != null) {
                     telecomManager.handleMmi(number, phoneAccountHandle)
                 } else {
                     telecomManager.handleMmi(number)
                 }
-                if (handled) {
+
+                if (wasMmi) {
                     LaunchCallResult.ServiceCodeSent
                 } else {
-                    LaunchCallResult.Failed
+                    val serviceCode = Uri.fromParts(
+                        PhoneAccount.SCHEME_TEL,
+                        number,
+                        null
+                    )
+
+                    telecomManager.placeCall(serviceCode, bundle)
+                    LaunchCallResult.ServiceCodeSent
                 }
             } else {
-                val bundle = Bundle().apply {
-                    putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, phoneAccountHandle)
-                }
                 val numberUri = Uri.fromParts(
                     PhoneAccount.SCHEME_TEL,
                     phoneNumberNormalizer.formatToE164(number),
@@ -74,8 +83,7 @@ class CallLauncher(
     }
 
     /**
-     * USSD/MMI codes start with * or # and end with #. Calls with a prefix code
-     * (*31#0612345678 to hide the caller ID...) don't end with # and are real calls
+     * USSD/MMI codes start with * or # and end with #.
      */
     private fun String.isServiceCode(): Boolean =
         length > 1 && (startsWith('*') || startsWith('#')) && endsWith('#')

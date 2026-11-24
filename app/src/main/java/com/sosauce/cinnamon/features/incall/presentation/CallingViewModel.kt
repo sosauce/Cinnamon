@@ -122,9 +122,7 @@ class CallingViewModel(
         when (val result = callLauncher.launchCall(number, handle)) {
             LaunchCallResult.NotAllowed -> _events.send(CallEvents.RequestDefaultDialer)
             is LaunchCallResult.NeedsSimSelection -> _simPicker.value = SimPickerState(number, result.choices)
-            // CallService shows the call once Telecom adds it
             LaunchCallResult.Started -> Unit
-            // Nothing to show
             LaunchCallResult.ServiceCodeSent, LaunchCallResult.Failed -> _events.send(CallEvents.NoCallToShow)
         }
     }
