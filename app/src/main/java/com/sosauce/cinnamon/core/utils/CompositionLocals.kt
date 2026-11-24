@@ -2,6 +2,7 @@ package com.sosauce.cinnamon.core.utils
 
 import androidx.compose.runtime.compositionLocalOf
 import androidx.navigation3.runtime.NavKey
+import com.sosauce.cinnamon.app.navigation.Screen
 
 val LocalScreen =
-    compositionLocalOf<NavKey> { throw IllegalStateException("Current screen can't be determined!") }
+    compositionLocalOf<Screen> { throw IllegalStateException("Current screen can't be determined!") }

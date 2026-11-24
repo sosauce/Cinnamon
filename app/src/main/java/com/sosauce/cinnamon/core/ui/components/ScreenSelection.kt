@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
 import com.sosauce.cinnamon.core.utils.LocalScreen
+import com.sosauce.nekobites.helpers.rememberInteractionSource
 
 @Composable
 fun ScreenSelection(
@@ -85,8 +86,8 @@ fun ScreenSelection(
     ) {
         screens.forEach { screen ->
             // compared by type, the dialer can be opened with a prefilled number
-            val selected = currentScreen::class == screen.screen::class
-            val interactionSource = remember { MutableInteractionSource() }
+            val selected = currentScreen == screen.screen::class
+            val interactionSource = rememberInteractionSource()
             val isPressed by interactionSource.collectIsPressedAsState()
             val weight by animateFloatAsState(
                 targetValue = when {
@@ -99,7 +100,7 @@ fun ScreenSelection(
             val corner by animateDpAsState(
                 targetValue = when {
                     isPressed -> 12.dp
-                    selected -> TextFieldDefaults.MinHeight / 2
+                    selected -> 50.dp
                     else -> 18.dp
                 },
                 animationSpec = motion.fastSpatialSpec()

@@ -107,7 +107,7 @@ fun Nav(
 
 
     CompositionLocalProvider(
-        LocalScreen provides (backStack.lastOrNull() ?: initialTab.tabToScreen())
+        LocalScreen provides (backStack.last() as Screen)
     ) {
         SharedTransitionLayout {
             NavDisplay(
