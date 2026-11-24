@@ -9,6 +9,9 @@ import android.net.Uri
 import android.provider.BlockedNumberContract
 import android.provider.BlockedNumberContract.BlockedNumbers
 import android.provider.ContactsContract
+import android.provider.MediaStore
+import android.provider.OpenableColumns
+import android.provider.Settings
 import android.telephony.PhoneNumberUtils
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
@@ -88,12 +91,15 @@ class ContactsRepository(
     fun observeContactChanges() =
         context.contentResolver.observe(ContactsContract.Contacts.CONTENT_URI)
 
+    /**
+     * @param ringtoneUri the new ringtone, null or [Settings.System.DEFAULT_RINGTONE_URI] resets it to the default one
+     */
     suspend fun setContactRingtone(
         contactId: Long,
         ringtoneUri: Uri?
     ): Boolean = withContext(Dispatchers.IO) {
         val ringtone = ringtoneUri
-            ?.takeUnless { it == Uri.EMPTY }
+            ?.takeUnless { it == Settings.System.DEFAULT_RINGTONE_URI }
             ?.toString()
             ?.ifBlank { null }
 
@@ -105,10 +111,24 @@ class ContactsRepository(
                 null
             ) > 0
         } catch (e: Exception) {
-            if (e is CancellationException) throw e
             e.printStackTrace()
             false
         }
+    }
+    private suspend fun getRingtoneName(ringtoneUri: Uri): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            context.contentResolver.query(ringtoneUri, null, null, null, null)?.use { cursor ->
+                if (!cursor.moveToFirst()) return@use null
+
+                listOf(MediaStore.MediaColumns.TITLE, OpenableColumns.DISPLAY_NAME)
+                    .firstNotNullOfOrNull { column ->
+                        cursor.getColumnIndex(column)
+                            .takeIf { it >= 0 }
+                            ?.let { cursor.getString(it) }
+                            ?.ifBlank { null }
+                    }
+            }
+        }.getOrNull()
     }
 
     /**
@@ -165,7 +185,7 @@ class ContactsRepository(
             }
         }
 
-        val ids = rows.map { it.id }
+        val ids = rows.fastMap { it.id }
         val phones = fetchAllPhoneNumbers(ids)
         val accountNames = fetchAccountNames(ids)
 
@@ -229,11 +249,16 @@ class ContactsRepository(
                 null,
                 null
             )?.use { cursor ->
+
+                val idColumn = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
+                val numberColumn = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                val normalizedNumberColumn = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER)
+
                 while (cursor.moveToNext()) {
-                    val number = cursor.getString(1).orEmpty().filter(Char::isDigit)
-                    val normalized = cursor.getString(2).orEmpty().filter(Char::isDigit)
+                    val number = cursor.getString(numberColumn).orEmpty().filter(Char::isDigit)
+                    val normalized = cursor.getString(normalizedNumberColumn).orEmpty().filter(Char::isDigit)
                     if (queryDigits in number || queryDigits in normalized) {
-                        ids.add(cursor.getLong(0))
+                        ids.add(cursor.getLong(idColumn))
                     }
                 }
             }
@@ -474,7 +499,7 @@ class ContactsRepository(
         return map.mapValues { it.value.values.toList() }
     }
 
-    private fun fetchContactDetails(contactId: Long): CuteContactDetails {
+    private suspend fun fetchContactDetails(contactId: Long): CuteContactDetails {
         val builder = CuteContactDetailsBuilder()
 
         // A contact merged from several sources has one row per source, so the same info is only kept once
@@ -516,8 +541,16 @@ class ContactsRepository(
 
 
             while (cursor.moveToNext()) {
+                // Contact-level columns, identical on every row
                 if (cursor.isFirst) {
-                    builder.setRingtone(cursor.getString(ringtoneColumn)?.ifBlank { null })
+
+                    val photo = cursor.getString(photoColumn)?.ifEmpty { null }
+                    val ringtone = cursor.getString(ringtoneColumn)?.ifBlank { null }?.toUri()
+                    val ringtoneName = ringtone?.let { getRingtoneName(it) }
+
+                    builder.setPhoto(photo)
+                    builder.setRingtone(ringtone)
+                    builder.setRingtoneName(ringtoneName)
                 }
 
                 val mime = cursor.getString(mimeColumn)
@@ -525,11 +558,6 @@ class ContactsRepository(
                 val data2 = cursor.getInt(data2Column)
                 val isDefault = cursor.getInt(isDefaultColumn) != 0
 
-
-                if (cursor.isFirst) {
-                    val photo = cursor.getString(photoColumn)?.ifEmpty { null }
-                    builder.setPhoto(photo)
-                }
 
                 when (mime) {
                     ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE -> {

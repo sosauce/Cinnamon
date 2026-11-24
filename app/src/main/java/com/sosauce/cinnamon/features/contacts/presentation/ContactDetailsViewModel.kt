@@ -3,7 +3,6 @@ package com.sosauce.cinnamon.features.contacts.presentation
 import android.app.Application
 import android.media.RingtoneManager
 import android.net.Uri
-import android.provider.Settings
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.AndroidViewModel
@@ -30,6 +29,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
@@ -54,34 +54,18 @@ class ContactDetailsViewModel(
 
     private val details = contactsRepository.fetchLatestContactsDetails(contactId)
         .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), replay = 1)
-
-    // Only looked up again when the ringtone itself changes
-    private val ringtoneTitle = details
-        .map { it.ringtone }
-        .distinctUntilChanged()
-        .map { uri ->
-            uri?.let {
-                runCatching {
-                    RingtoneManager.getRingtone(application, it)?.getTitle(application)
-                }.getOrNull()
-            }
-        }
-        .flowOn(Dispatchers.IO)
-
     private val _state = MutableStateFlow(ContactDetailsState())
     val state = combine(
         _state,
         contactsRepository.fetchContact(contactId),
         details,
-        contactSettingsDao.getContactSettings(contactId),
-        ringtoneTitle
-    ) { currentState, contact, details, settings, ringtoneTitle ->
+        contactSettingsDao.getContactSettings(contactId)
+    ) { currentState, contact, details, settings ->
         currentState.copy(
             isLoading = false,
             contact = contact,
             details = details,
-            settings = settings ?: ContactSettingsEntity(contactId = contactId),
-            ringtoneTitle = ringtoneTitle
+            settings = settings ?: ContactSettingsEntity(contactId = contactId)
         )
     }.stateIn(
         viewModelScope,
@@ -212,14 +196,14 @@ class ContactDetailsViewModel(
 
             is ContactDetailsAction.SetRingtone -> {
                 viewModelScope.launch {
-                    // Picking "Default ringtone" means the contact shouldn't have a custom one
-                    val ringtoneUri = action.uri
-                        ?.takeUnless { it == Settings.System.DEFAULT_RINGTONE_URI }
-
-                    if (!contactsRepository.setContactRingtone(contactId, ringtoneUri)) {
+                    if (!contactsRepository.setContactRingtone(contactId, action.uri)) {
                         _events.send(ContactDetailsEvent.RingtoneError)
                     }
                 }
+            }
+
+            is ContactDetailsAction.RingtonePickerUnavailable -> {
+                viewModelScope.launch { _events.send(ContactDetailsEvent.RingtoneError) }
             }
         }
     }
@@ -232,11 +216,7 @@ data class ContactDetailsState(
     val contact: CuteContact = CuteContact(),
     val rawContacts: List<CuteRawContact> = emptyList(),
     val details: CuteContactDetails = CuteContactDetails(),
-    val settings: ContactSettingsEntity = ContactSettingsEntity(),
-    /**
-     * Display name of [CuteContactDetails.ringtone], null when unknown or default
-     */
-    val ringtoneTitle: String? = null
+    val settings: ContactSettingsEntity = ContactSettingsEntity()
 )
 
 sealed interface ContactDetailsEvent {
@@ -268,4 +248,9 @@ sealed interface ContactDetailsAction {
      * @param uri the ringtone picker's result, null or the default ringtone uri resets it
      */
     data class SetRingtone(val uri: Uri?) : ContactDetailsAction
+
+    /**
+     * No app can handle the ringtone picker intent
+     */
+    data object RingtonePickerUnavailable : ContactDetailsAction
 }

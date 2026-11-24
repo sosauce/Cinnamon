@@ -65,7 +65,7 @@ fun SharedTransitionScope.ContactListItem(
                 )
                 .basicMarquee()
         )
-        if (showNumber) {
+        if (showNumber && contact.phoneNumbers.isNotEmpty()) {
             Text(
                 text = buildString {
                     append(contact.phoneNumbers.first().number)

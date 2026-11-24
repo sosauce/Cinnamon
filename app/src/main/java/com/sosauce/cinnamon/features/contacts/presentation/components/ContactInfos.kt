@@ -2,16 +2,11 @@
 
 package com.sosauce.cinnamon.features.contacts.presentation.components
 
-import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.media.RingtoneManager
-import android.net.Uri
 import android.provider.ContactsContract
-import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -40,7 +35,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.IntentCompat
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.navigation.Screen
@@ -53,7 +47,6 @@ import com.sosauce.cinnamon.core.utils.safeStartActivity
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsAction
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsState
 import com.sosauce.nekobites.animations.bouncySpec
-import com.sosauce.nekobites.components.NoXFound
 
 @Composable
 fun ContactInfos(
@@ -67,8 +60,6 @@ fun ContactInfos(
     val uriHandler = LocalUriHandler.current
     val hasInfo =
         state.contact.phoneNumbers.isNotEmpty() || state.details.emails.isNotEmpty() || state.details.addresses.isNotEmpty()
-    val hasAbout =
-        state.details.websites.isNotEmpty() || state.details.note?.isNotEmpty() == true || state.details.events.isNotEmpty()
     val emailOffset = state.contact.phoneNumbers.count()
     val addressOffset = emailOffset + state.details.emails.count()
     val infoItemCount = addressOffset + state.details.addresses.count()
@@ -77,19 +68,9 @@ fun ContactInfos(
     val ringtoneOffset = noteOffset + if (state.details.note?.isNotEmpty() == true) 1 else 0
     val aboutItemCount = ringtoneOffset + 1
 
-    val ringtonePicker =
-        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
-
-            val ringtoneUri = result.data?.let {
-                IntentCompat.getParcelableExtra(
-                    it,
-                    RingtoneManager.EXTRA_RINGTONE_PICKED_URI,
-                    Uri::class.java
-                )
-            }
-            onHandleContactDetailsAction(ContactDetailsAction.SetRingtone(ringtoneUri))
-        }
+    val ringtonePicker = rememberLauncherForActivityResult(PickRingtone()) { picked ->
+        picked?.let { onHandleContactDetailsAction(ContactDetailsAction.SetRingtone(it.uri)) }
+    }
 
     var valueToUnblock by remember { mutableStateOf<String?>(null) }
 
@@ -253,13 +234,6 @@ fun ContactInfos(
                 }
             }
         }
-        if (!hasInfo && !hasAbout) {
-            NoXFound(
-                headlineText = R.string.no_contact_info,
-                bodyText = R.string.no_contact_info_desc,
-                icon = R.drawable.info
-            )
-        }
         Column {
             HeaderText(stringResource(R.string.about) + " ${state.contact.displayName}")
             state.details.websites.forEachIndexed { index, website ->
@@ -323,28 +297,10 @@ fun ContactInfos(
             }
             CuteListItem(
                 onClick = {
-                    val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_RINGTONE)
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, resources.getString(R.string.ringtone))
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
-                        putExtra(
-                            RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI,
-                            Settings.System.DEFAULT_RINGTONE_URI
-                        )
-                        putExtra(
-                            RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
-                            state.details.ringtone ?: Settings.System.DEFAULT_RINGTONE_URI
-                        )
-                    }
                     try {
-                        ringtonePicker.launch(intent)
+                        ringtonePicker.launch(state.details.ringtone)
                     } catch (_: ActivityNotFoundException) {
-                        Toast.makeText(
-                            context,
-                            resources.getString(R.string.set_ringtone_error),
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        onHandleContactDetailsAction(ContactDetailsAction.RingtonePickerUnavailable)
                     }
                 },
                 shape = CuteListItemDefaults.getItemShape(ringtoneOffset, aboutItemCount),
@@ -354,9 +310,10 @@ fun ContactInfos(
                 }
             ) {
                 Text(
-                    text = when {
-                        state.details.ringtone == null -> stringResource(R.string.default_ringtone)
-                        else -> state.ringtoneTitle ?: stringResource(R.string.unknown_ringtone)
+                    text = if (state.details.ringtone == null) {
+                        stringResource(R.string.default_ringtone)
+                    } else {
+                        state.details.ringtoneName ?: stringResource(R.string.unknown_ringtone)
                     },
                     maxLines = 1,
                     modifier = Modifier.basicMarquee()

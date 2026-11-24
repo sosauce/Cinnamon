@@ -20,7 +20,7 @@ fun FavoriteContact(
     isInSelectionMode: Boolean = false
 ) {
 
-    val subtitle = if (showNumber) {
+    val subtitle = if (showNumber && contact.phoneNumbers.isNotEmpty()) {
         buildString {
             append(contact.phoneNumbers.first().number)
             if (contact.phoneNumbers.size > 1) {

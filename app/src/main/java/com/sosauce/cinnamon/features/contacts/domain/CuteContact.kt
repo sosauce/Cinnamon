@@ -16,15 +16,7 @@ data class CuteContact(
     val accountName: String = "",
     val accountType: String? = null,
     val phoneNumbers: List<ContactPhone> = emptyList()
-) {
-    val searchIndex: String by lazy {
-        buildString {
-            append(displayName)
-            append(" ")
-            phoneNumbers.fastForEach { append("${it.number} ") }
-        }
-    }
-}
+)
 
 data class CuteRawContact(
     val id: Long,
@@ -43,12 +35,12 @@ data class CuteContactDetails(
     val lastName: String? = null,
     val note: String? = null,
     /**
-     * The contact's custom ringtone, null when it uses the default one
+     * null = default system one
      */
-    val ringtoneString: String? = null
+    val ringtone: Uri? = null,
+    val ringtoneName: String? = null
 ) {
     val photo = photoString?.toUri()
-    val ringtone = ringtoneString?.toUri()
 }
 
 data class ContactPhone(
@@ -84,7 +76,9 @@ class CuteContactDetailsBuilder {
     private var lastName: String? = null
 
     private var photo: String? = null
-    private var ringtone: String? = null
+    private var ringtone: Uri? = null
+
+    private var ringtoneName: String? = null
 
 
     private val emails = mutableListOf<ContactEmail>()
@@ -121,8 +115,12 @@ class CuteContactDetailsBuilder {
         photo = contactPhoto
     }
 
-    fun setRingtone(contactRingtone: String?) {
+    fun setRingtone(contactRingtone: Uri?) {
         ringtone = contactRingtone
+    }
+
+    fun setRingtoneName(name: String?) {
+        ringtoneName = name
     }
 
 
@@ -138,7 +136,8 @@ class CuteContactDetailsBuilder {
             middleName = middleName,
             lastName = lastName,
             photoString = photo,
-            ringtoneString = ringtone
+            ringtone = ringtone,
+            ringtoneName = ringtoneName
         )
     }
 }

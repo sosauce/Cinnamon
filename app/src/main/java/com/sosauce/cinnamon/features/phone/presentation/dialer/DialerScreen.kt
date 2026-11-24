@@ -256,7 +256,9 @@ fun SharedTransitionScope.DialerScreen(
                     if (contact.phoneNumbers.size > 1) {
                         numberPickerContact = contact
                     } else {
-                        onHandleDialerAction(DialerAction.CallNumber(contact.phoneNumbers.first().number))
+                        contact.phoneNumbers.firstOrNull()?.let {
+                            onHandleDialerAction(DialerAction.CallNumber(it.number))
+                        }
                     }
                 }
 

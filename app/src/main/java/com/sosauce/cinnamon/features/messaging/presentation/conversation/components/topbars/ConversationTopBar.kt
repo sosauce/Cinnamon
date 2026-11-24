@@ -171,8 +171,9 @@ fun ConversationTopBar(
             if (!state.participants.isGroupChat()) {
                 FilledTonalIconButton(
                     onClick = {
-                        val number = state.participants.first().rawNumber
-                        onHandleConversationActions(ConversationActions.CallNumber(number))
+                        state.participants.firstOrNull()?.let {
+                            onHandleConversationActions(ConversationActions.CallNumber(it.rawNumber))
+                        }
                     },
                     shapes = IconButtonDefaults.shapes(),
                     modifier = Modifier.size(

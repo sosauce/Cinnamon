@@ -106,7 +106,7 @@ fun Nav(
 
 
     CompositionLocalProvider(
-        LocalScreen provides backStack.last()
+        LocalScreen provides (backStack.lastOrNull() ?: initialTab.tabToScreen())
     ) {
         SharedTransitionLayout {
             NavDisplay(
@@ -517,7 +517,7 @@ private fun showConversationEventToast(
                 resources.getString(
                     if (event.success) R.string.blocked_one
                     else R.string.block_one_fail,
-                    numbers.first()
+                    numbers.firstOrNull().orEmpty()
                 )
             }
         }
