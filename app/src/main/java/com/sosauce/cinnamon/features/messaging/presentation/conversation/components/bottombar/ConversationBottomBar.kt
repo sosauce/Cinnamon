@@ -44,6 +44,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -81,6 +82,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -459,6 +461,7 @@ private fun MessageTextField(
             minHeightInLines = 1,
             maxHeightInLines = 6
         ),
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
         modifier = modifier,
         colors = TextFieldDefaults.colors(
             unfocusedIndicatorColor = Color.Transparent,
