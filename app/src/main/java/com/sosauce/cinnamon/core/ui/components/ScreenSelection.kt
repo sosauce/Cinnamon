@@ -85,8 +85,7 @@ fun ScreenSelection(
             .height(TextFieldDefaults.MinHeight)
     ) {
         screens.forEach { screen ->
-            // compared by type, the dialer can be opened with a prefilled number
-            val selected = currentScreen == screen.screen::class
+            val selected = currentScreen == screen.screen
             val interactionSource = rememberInteractionSource()
             val isPressed by interactionSource.collectIsPressedAsState()
             val weight by animateFloatAsState(

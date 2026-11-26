@@ -58,12 +58,7 @@ fun SharedTransitionScope.ContactListItem(
             text = contact.displayName,
             style = MaterialTheme.typography.titleMediumEmphasized,
             maxLines = 1,
-            modifier = Modifier
-                .sharedBounds(
-                    sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_NAME + contact.id),
-                    animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                )
-                .basicMarquee()
+            modifier = Modifier.basicMarquee()
         )
         if (showNumber && contact.phoneNumbers.isNotEmpty()) {
             Text(
@@ -75,8 +70,7 @@ fun SharedTransitionScope.ContactListItem(
                 },
                 maxLines = 1,
                 style = MaterialTheme.typography.bodyMediumEmphasized,
-                modifier = Modifier
-                    .basicMarquee(),
+                modifier = Modifier.basicMarquee(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

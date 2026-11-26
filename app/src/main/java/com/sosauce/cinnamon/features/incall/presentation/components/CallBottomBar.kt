@@ -80,7 +80,7 @@ fun CallBottomBar(
                 } else DialerPaneContent.AUDIO_SWITCHER
             },
             isActive = callUiState.currentAudioRoute.type != CallAudioState.ROUTE_EARPIECE || paneContent == DialerPaneContent.AUDIO_SWITCHER,
-            icon = callUiState.currentAudioRoute.type.routeToIcon(),
+            icon = callUiState.currentAudioRoute.type.routeToIcon(true ),
             label = R.string.audio
         ),
         // With a second call, hold becomes swap (holds this call and resumes the other one)
@@ -155,7 +155,8 @@ fun CallBottomBar(
                                 DialerPaneContent.AUDIO_SWITCHER -> AudioSwitcher(
                                     onCallAction = onCallAction,
                                     routes = callUiState.availableAudioRoutes,
-                                    currentRoute = callUiState.currentAudioRoute
+                                    currentRoute = callUiState.currentAudioRoute,
+                                    onDismiss = { paneContent = DialerPaneContent.NOTHING }
                                 )
                             }
                         }

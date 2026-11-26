@@ -42,7 +42,8 @@ import com.sosauce.nekobites.utils.groupedShape
 fun AudioSwitcher(
     onCallAction: (CallAction) -> Unit,
     routes: List<AudioRoute>,
-    currentRoute: AudioRoute
+    currentRoute: AudioRoute,
+    onDismiss: () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
 
@@ -66,7 +67,10 @@ fun AudioSwitcher(
             )
 
             Surface(
-                onClick = { onCallAction(CallAction.SwitchAudioTarget(route)) },
+                onClick = {
+                    onCallAction(CallAction.SwitchAudioTarget(route))
+                    onDismiss()
+                },
                 shape = groupedShape(isFirst = index == 0, isLast = index == routes.lastIndex),
                 color = container,
                 modifier = Modifier.fillMaxWidth()
