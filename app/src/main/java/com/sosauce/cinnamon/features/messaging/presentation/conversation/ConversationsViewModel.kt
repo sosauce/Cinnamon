@@ -16,6 +16,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
 import com.sosauce.cinnamon.core.datastore.UserPreferences
+import com.sosauce.cinnamon.core.telephony.message.MessageNotificationManager
 import com.sosauce.cinnamon.core.utils.listPagingConfig
 import com.sosauce.cinnamon.features.messaging.data.local.conversationSettings.ConversationSettingsDao
 import com.sosauce.cinnamon.features.messaging.data.model.CuteConversationEntity
@@ -45,7 +46,8 @@ import kotlin.time.Duration.Companion.milliseconds
 class ConversationsViewModel(
     private val conversationsRepository: ConversationsRepository,
     private val userPreferences: UserPreferences,
-    private val conversationSettingsDao: ConversationSettingsDao
+    private val conversationSettingsDao: ConversationSettingsDao,
+    private val messageNotificationManager: MessageNotificationManager
 ) : ViewModel() {
 
     val textFieldState = TextFieldState()
@@ -212,7 +214,7 @@ class ConversationsViewModel(
 
     fun handleThreadsAction(action: ConversationsAction) {
         viewModelScope.launch {
-            action.perform(userPreferences, conversationsRepository)
+            action.perform(userPreferences, conversationsRepository, messageNotificationManager)
         }
     }
 
@@ -247,7 +249,8 @@ sealed interface ConversationsAction {
  */
 suspend fun ConversationsAction.perform(
     userPreferences: UserPreferences,
-    conversationsRepository: ConversationsRepository
+    conversationsRepository: ConversationsRepository,
+    messageNotificationManager: MessageNotificationManager
 ) {
     when (this) {
         is ConversationsAction.ArchiveConversations -> userPreferences.toggleArchiveThreads(
@@ -255,8 +258,9 @@ suspend fun ConversationsAction.perform(
         )
 
         is ConversationsAction.PinConversations -> userPreferences.pinThreads(threadIds)
-        is ConversationsAction.DeleteConversations -> conversationsRepository.deleteThreads(
-            threadIds
-        )
+        is ConversationsAction.DeleteConversations -> {
+            conversationsRepository.deleteThreads(threadIds)
+            messageNotificationManager.removeConversations(threadIds)
+        }
     }
 }

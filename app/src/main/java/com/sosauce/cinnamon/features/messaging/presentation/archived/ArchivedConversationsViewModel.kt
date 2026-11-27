@@ -11,6 +11,7 @@ import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.core.datastore.UserPreferences
+import com.sosauce.cinnamon.core.telephony.message.MessageNotificationManager
 import com.sosauce.cinnamon.features.messaging.data.model.toCuteConversation
 import com.sosauce.cinnamon.features.messaging.data.repository.ConversationsRepository
 import com.sosauce.cinnamon.features.messaging.domain.CuteConversation
@@ -27,7 +28,8 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class ArchivedConversationsViewModel(
     private val userPreferences: UserPreferences,
-    private val conversationsRepository: ConversationsRepository
+    private val conversationsRepository: ConversationsRepository,
+    private val messageNotificationManager: MessageNotificationManager
 ) : ViewModel() {
 
 
@@ -55,7 +57,7 @@ class ArchivedConversationsViewModel(
 
     fun handleThreadsAction(action: ConversationsAction) {
         viewModelScope.launch {
-            action.perform(userPreferences, conversationsRepository)
+            action.perform(userPreferences, conversationsRepository, messageNotificationManager)
         }
     }
 

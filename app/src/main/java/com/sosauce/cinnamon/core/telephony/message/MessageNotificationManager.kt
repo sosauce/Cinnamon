@@ -1,15 +1,20 @@
 package com.sosauce.cinnamon.core.telephony.message
 
+import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ShortcutInfo
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
@@ -22,9 +27,13 @@ import com.sosauce.cinnamon.core.utils.CuteIntents
 import com.sosauce.cinnamon.core.utils.RESULT_KEY
 import com.sosauce.cinnamon.core.utils.THREAD_ID
 import com.sosauce.cinnamon.core.utils.getAddressFromThreadId
+import com.sosauce.cinnamon.features.messaging.data.repository.ConversationsRepository
+import com.sosauce.cinnamon.features.messaging.domain.name
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MessageNotificationManager(
     private val context: Context,
@@ -32,7 +41,8 @@ class MessageNotificationManager(
     private val scope: CoroutineScope,
     private val notificationManager: NotificationManager,
     private val numberLookup: NumberLookup,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val conversationsRepository: ConversationsRepository
 ) {
 
     private val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -112,6 +122,8 @@ class MessageNotificationManager(
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
+        prepareConversation(threadId)
+
         val appLockEnabled = userPreferences.appLockEnabled.first()
 
         // app lock disables certain things about message notif
@@ -139,7 +151,8 @@ class MessageNotificationManager(
 
             notificationManager.notify(
                 threadId.toInt(),
-                NotificationCompat.Builder(context, INCOMING_MESSAGES_CHANNEL_ID)
+                NotificationCompat.Builder(context, threadChannelId(threadId))
+                    .setShortcutId(threadId.toString())
                     .setSmallIcon(R.drawable.app_icon)
                     .setPriority(NotificationCompat.PRIORITY_MAX)
                     .setCategory(NotificationCompat.CATEGORY_MESSAGE)
@@ -195,9 +208,9 @@ class MessageNotificationManager(
         threadId: Long,
         style: NotificationCompat.Style?
     ): NotificationCompat.Builder {
-        return NotificationCompat.Builder(context, INCOMING_MESSAGES_CHANNEL_ID)
+        return NotificationCompat.Builder(context, threadChannelId(threadId))
             .setContentIntent(contentIntent)
-            .setChannelId(INCOMING_MESSAGES_CHANNEL_ID)
+            .setShortcutId(threadId.toString())
             .setSmallIcon(R.drawable.app_icon)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
@@ -243,9 +256,101 @@ class MessageNotificationManager(
 
     fun clearThreadNotifications(threadId: Long) = notificationManager.cancel(threadId.toInt())
 
+    suspend fun openConversationNotificationSettings(threadId: Long) {
+        prepareConversation(threadId)
+
+        val intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                putExtra(Settings.EXTRA_CHANNEL_ID, INCOMING_MESSAGES_CHANNEL_ID)
+                putExtra(Settings.EXTRA_CONVERSATION_ID, threadId.toString())
+            } else {
+                putExtra(Settings.EXTRA_CHANNEL_ID, threadChannelId(threadId))
+            }
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+    }
+
+    fun removeConversations(threadIds: List<Long>) {
+        threadIds.forEach { threadId ->
+            notificationManager.cancel(threadId.toInt())
+            notificationManager.deleteNotificationChannel(threadChannelId(threadId))
+        }
+        ShortcutManagerCompat.removeLongLivedShortcuts(context, threadIds.map { it.toString() })
+    }
+
+    /**
+     * Creates the thread's own notification channel (a conversation channel on Android 11+)
+     * and publishes its conversation shortcut, so the system can show per-chat settings
+     */
+    private suspend fun prepareConversation(threadId: Long) {
+        val participants = withContext(Dispatchers.IO) {
+            conversationsRepository.fetchParticipantsForThreadId(threadId)
+        }
+        val name = participants.name().ifEmpty { context.getString(R.string.unknown) }
+        val channelId = threadChannelId(threadId)
+
+        val channel = notificationManager.getNotificationChannel(channelId)
+            ?: buildThreadChannel(threadId, channelId, name)
+        channel.name = name
+        notificationManager.createNotificationChannel(channel)
+
+        val persons = participants.map { participant ->
+            Person.Builder()
+                .setName(participant.displayName)
+                .setKey(participant.rawNumber)
+                .setUri("tel:${participant.rawNumber}")
+                .build()
+        }
+        val icon = participants.singleOrNull()?.let { numberLookup.fetchPersonIcon(it.photoUri) }
+            ?: IconCompat.createWithResource(context, R.drawable.app_icon)
+        val shortcutIntent = Intent(context, MainActivity::class.java).apply {
+            action = CuteIntents.NOTIFICATION_NAVIGATE_TO_THREAD
+            putExtra("threadId", threadId)
+        }
+        val shortcut = ShortcutInfoCompat.Builder(context, threadId.toString())
+            .setShortLabel(name)
+            .setLongLived(true)
+            .setPersons(persons.toTypedArray())
+            .setIcon(icon)
+            .setIntent(shortcutIntent)
+            .setCategories(setOf(ShortcutInfo.SHORTCUT_CATEGORY_CONVERSATION))
+            .build()
+        ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+    }
+
+    private fun buildThreadChannel(
+        threadId: Long,
+        channelId: String,
+        name: String
+    ): NotificationChannel {
+        val parent = notificationManager.getNotificationChannel(INCOMING_MESSAGES_CHANNEL_ID)
+        return NotificationChannel(
+            channelId,
+            name,
+            parent?.importance ?: NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            group = MESSAGES_GROUP
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                setConversationId(INCOMING_MESSAGES_CHANNEL_ID, threadId.toString())
+            }
+            parent?.let {
+                setSound(it.sound, it.audioAttributes)
+                enableVibration(it.shouldVibrate())
+                vibrationPattern = it.vibrationPattern
+                enableLights(it.shouldShowLights())
+                lightColor = it.lightColor
+            }
+        }
+    }
+
+    private fun threadChannelId(threadId: Long) = "$THREAD_CHANNEL_PREFIX$threadId"
+
     companion object {
         const val INCOMING_MESSAGES_CHANNEL_ID = "incoming_messages_channel"
         const val MESSAGES_GROUP = "messages_group"
+        private const val THREAD_CHANNEL_PREFIX = "thread_channel_"
 
         /** Marks notifications posted while the app lock hides message content */
         private const val EXTRA_CONTENT_HIDDEN = "com.sosauce.cinnamon.CONTENT_HIDDEN"

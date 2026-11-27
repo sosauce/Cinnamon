@@ -42,7 +42,7 @@ class ConversationsRepository(private val context: Context) {
             .flowOn(Dispatchers.IO)
 
 
-    private fun fetchParticipantsForThreadId(threadId: Long): List<Participant> {
+    fun fetchParticipantsForThreadId(threadId: Long): List<Participant> {
 
         val uri = Telephony.Threads.CONTENT_URI
             .buildUpon()

@@ -29,6 +29,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -67,6 +68,7 @@ import com.sosauce.cinnamon.features.messaging.domain.isGroupChat
 import com.sosauce.cinnamon.features.messaging.domain.name
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationActions
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.ConversationDetailsState
+import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bottombar.MoreOptions
 import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.dialogs.DeleteConversationDialog
 import com.sosauce.nekobites.components.LoadingBox
 
@@ -85,6 +87,34 @@ fun AboutConversationScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
     val name = state.participants.name()
+
+    val actions = buildList {
+        add(
+            MoreOptions(
+                text = R.string.notifications,
+                icon = R.drawable.notifications,
+                onClick = { onHandleConversationActions(ConversationActions.OpenNotificationSettings) }
+            )
+        )
+        if (soloParticipant != null) {
+            add(
+                MoreOptions(
+                    text = if (soloParticipant.isBlocked) R.string.unblock else R.string.block,
+                    icon = R.drawable.block,
+                    onClick = { showBlockDialog = true },
+                    tint = MaterialTheme.colorScheme.error
+                )
+            )
+        }
+        add(
+            MoreOptions(
+                text = R.string.delete_conversation,
+                icon = R.drawable.delete,
+                onClick = { showDeleteDialog = true },
+                tint = MaterialTheme.colorScheme.error
+            )
+        )
+    }
 
     if (showBlockDialog && soloParticipant != null) {
         BlockUnblockDialog(
@@ -123,6 +153,7 @@ fun AboutConversationScreen(
         Scaffold(
             bottomBar = { CuteNavigationButton(onNavigateUp = onNavigateBack) }
         ) { pv ->
+            val localColor = LocalContentColor.current
             val posterHeight = 280.dp
             val iconSize = 170.dp
             val cardOverlap = 25.dp
@@ -274,37 +305,19 @@ fun AboutConversationScreen(
                                 }
                                 Spacer(Modifier.height(25.dp))
                             }
-                            val dangerActions = buildList {
-                                if (soloParticipant != null) {
-                                    add(
-                                        DangerAction(
-                                            text = if (soloParticipant.isBlocked) R.string.unblock else R.string.block,
-                                            icon = R.drawable.block,
-                                            onClick = { showBlockDialog = true }
-                                        )
-                                    )
-                                }
-                                add(
-                                    DangerAction(
-                                        text = R.string.delete_conversation,
-                                        icon = R.drawable.delete,
-                                        onClick = { showDeleteDialog = true }
-                                    )
-                                )
-                            }
-                            dangerActions.fastForEachIndexed { index, action ->
+                            actions.fastForEachIndexed { index, action ->
                                 CuteListItem(
                                     onClick = action.onClick,
                                     shape = CuteListItemDefaults.getItemShape(
                                         index,
-                                        dangerActions.size
+                                        actions.count()
                                     ),
                                     backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                                     leadingContent = {
                                         Icon(
                                             painter = painterResource(action.icon),
                                             contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.error,
+                                            tint = action.tint ?: localColor,
                                             modifier = Modifier.padding(start = 10.dp)
                                         )
                                     }
@@ -312,7 +325,7 @@ fun AboutConversationScreen(
                                     Text(
                                         text = stringResource(action.text),
                                         style = MaterialTheme.typography.bodyLargeEmphasized,
-                                        color = MaterialTheme.colorScheme.error
+                                        color = action.tint ?: localColor,
                                     )
                                 }
                             }
@@ -423,8 +436,4 @@ private data class QuickAction(
     val onClick: () -> Unit
 )
 
-private data class DangerAction(
-    @StringRes val text: Int,
-    @DrawableRes val icon: Int,
-    val onClick: () -> Unit
-)
+

@@ -259,7 +259,10 @@ class ConversationDetailsViewModel(
 
 
     fun deleteConversation() =
-        viewModelScope.launch(Dispatchers.IO) { messagesRepository.deleteConversation(threadId) }
+        viewModelScope.launch(Dispatchers.IO) {
+            messagesRepository.deleteConversation(threadId)
+            messageNotificationManager.removeConversations(listOf(threadId))
+        }
 
     fun handleConversationSettingsActions(action: ConversationSettingActions) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -297,6 +300,12 @@ class ConversationDetailsViewModel(
             is ConversationActions.ClearThreadNotifications -> messageNotificationManager.clearThreadNotifications(
                 threadId
             )
+
+            is ConversationActions.OpenNotificationSettings -> {
+                viewModelScope.launch {
+                    messageNotificationManager.openConversationNotificationSettings(threadId)
+                }
+            }
 
             is ConversationActions.ToggleBlock -> {
                 viewModelScope.launch(Dispatchers.IO) {
@@ -455,6 +464,7 @@ data class SearchMatch(
 sealed interface ConversationActions {
     data object MarkAsRead : ConversationActions
     data object ClearThreadNotifications : ConversationActions
+    data object OpenNotificationSettings : ConversationActions
     data class SendMessage(
         val addresses: List<String>,
         val message: String,
