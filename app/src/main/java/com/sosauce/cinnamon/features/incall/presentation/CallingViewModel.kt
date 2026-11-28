@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -63,6 +64,8 @@ class CallingViewModel(
 
     val state = combine(callingStateMapper.callingState, poster) { state, poster ->
         state.copy(poster = poster)
+    }.scan(callingStateMapper.currentCallingState()) { previous, new ->
+        if (new.callState == CallUiState.ENDED) previous.copy(callState = CallUiState.ENDED) else new
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),

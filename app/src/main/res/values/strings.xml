@@ -446,4 +446,8 @@
         <item quantity="other">Delete %1$d conversations? This action cannot be undone.</item>
     </plurals>
     <string name="about_contact">About %1$s</string>
+    <string name="speed_dial">Speed dial</string>
+    <string name="speed_dial_desc">Long-press a key on the dialpad to call its contact</string>
+    <string name="unassign_speed_dial">Remove speed dial</string>
+    <string name="not_assigned">Not assigned</string>
 </resources>
