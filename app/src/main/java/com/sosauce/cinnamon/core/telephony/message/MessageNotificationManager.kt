@@ -21,6 +21,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.MainActivity
 import com.sosauce.cinnamon.core.NumberLookup
 import com.sosauce.cinnamon.core.datastore.UserPreferences
+import com.sosauce.cinnamon.core.system.receivers.CopyOtpReceiver
 import com.sosauce.cinnamon.core.system.receivers.MarkAsReadReceiver
 import com.sosauce.cinnamon.core.system.receivers.MessageReplyReceiver
 import com.sosauce.cinnamon.core.utils.CuteIntents
@@ -175,6 +176,7 @@ class MessageNotificationManager(
                 }
         val notificationStyle = NotificationCompat.MessagingStyle(person)
             .addMessage(receivedMessage)
+        val otp = extractOtp(message)
 
         // A hidden "x messages" notification has nothing worth appending to, start a new one
         threadIdAsNotif
@@ -186,14 +188,14 @@ class MessageNotificationManager(
 
             notificationManager.notify(
                 threadId.toInt(),
-                messageNotificationBuilder(threadId, activeStyle)
+                messageNotificationBuilder(threadId, activeStyle, otp)
                     .setContentIntent(pendingIntent)
                     .setAutoCancel(true)
                     .build()
             )
         } ?: notificationManager.notify(
             threadId.toInt(),
-            messageNotificationBuilder(threadId, notificationStyle)
+            messageNotificationBuilder(threadId, notificationStyle, otp)
                 .addAction(markAsReadAction(threadId))
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
@@ -206,7 +208,8 @@ class MessageNotificationManager(
      */
     private fun messageNotificationBuilder(
         threadId: Long,
-        style: NotificationCompat.Style?
+        style: NotificationCompat.Style?,
+        otp: String? = null
     ): NotificationCompat.Builder {
         return NotificationCompat.Builder(context, threadChannelId(threadId))
             .setContentIntent(contentIntent)
@@ -216,6 +219,29 @@ class MessageNotificationManager(
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setStyle(style)
             .addAction(replyAction(threadId))
+            .apply { otp?.let { addAction(copyOtpAction(threadId, it)) } }
+    }
+
+    private fun copyOtpAction(
+        threadId: Long,
+        otp: String
+    ): NotificationCompat.Action {
+        val copyIntent = Intent(context, CopyOtpReceiver::class.java).apply {
+            putExtra(THREAD_ID, threadId)
+            putExtra(CopyOtpReceiver.EXTRA_OTP, otp)
+        }
+        val copyPendingIntent = PendingIntent.getBroadcast(
+            context,
+            threadId.toInt(),
+            copyIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        return NotificationCompat.Action.Builder(
+            0,
+            context.getString(R.string.copy_code, otp),
+            copyPendingIntent
+        ).build()
     }
 
     private fun replyAction(
@@ -356,6 +382,13 @@ class MessageNotificationManager(
         private const val EXTRA_CONTENT_HIDDEN = "com.sosauce.cinnamon.CONTENT_HIDDEN"
     }
 }
+
+// otp detection is english only
+
+private val otpKeyword = Regex("\\b(code|otp|verif\\w*|pass(word|code)?|pin)\\b", RegexOption.IGNORE_CASE)
+private val otpCode = Regex("\\b\\d{4,8}\\b")
+private fun extractOtp(message: String): String? =
+    if (otpKeyword.containsMatchIn(message)) otpCode.find(message)?.value else null
 
 /**
  * Used to prevent notifications for current threadId

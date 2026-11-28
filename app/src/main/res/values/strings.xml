@@ -195,6 +195,8 @@
     <string name="answer">Answer</string>
     <string name="decline">Decline</string>
     <string name="mark_as_read">Mark as read</string>
+    <string name="copy_code">Copy %1$s</string>
+    <string name="code_copied">Code copied</string>
     <string name="add_contact">Add contact</string>
     <string name="clear_search">Clear search</string>
     <string name="wallpaper">Wallpaper</string>
