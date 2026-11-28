@@ -460,4 +460,11 @@
     <string name="delete_label_u_sure">Delete the label \"%1$s\"? Its contacts won\'t be deleted.</string>
     <string name="no_labels">No labels yet</string>
     <string name="label_error">Couldn\'t update the label</string>
+    <string name="contact_settings">Contact settings</string>
+    <string name="add_to_home_screen">Add to home screen</string>
+    <string name="pin_shortcut_unsupported">Your launcher doesn\'t support adding shortcuts</string>
+    <string name="delete_contact">Delete contact</string>
+    <string name="send_to_voicemail">Send to voicemail</string>
+    <string name="send_to_voicemail_error">Couldn\'t update voicemail setting</string>
+    <string name="delete_contact_u_sure">Delete %1$s? This action cannot be undone.</string>
 </resources>

@@ -175,6 +175,14 @@ fun Nav(
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
+
+                                is ContactDetailsEvent.SendToVoicemailError -> {
+                                    Toast.makeText(
+                                        context,
+                                        resources.getString(R.string.send_to_voicemail_error),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             }
                         }
 

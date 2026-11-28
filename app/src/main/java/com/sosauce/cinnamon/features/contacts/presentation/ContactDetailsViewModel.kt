@@ -212,6 +212,14 @@ class ContactDetailsViewModel(
                 }
             }
 
+            is ContactDetailsAction.SetSendToVoicemail -> {
+                viewModelScope.launch {
+                    if (!contactsRepository.setSendToVoicemail(contactId, action.enabled)) {
+                        _events.send(ContactDetailsEvent.SendToVoicemailError)
+                    }
+                }
+            }
+
             is ContactDetailsAction.RingtonePickerUnavailable -> {
                 viewModelScope.launch { _events.send(ContactDetailsEvent.RingtoneError) }
             }
@@ -243,6 +251,8 @@ sealed interface ContactDetailsEvent {
      * The contact's ringtone couldn't be saved
      */
     data object RingtoneError : ContactDetailsEvent
+
+    data object SendToVoicemailError : ContactDetailsEvent
 }
 
 sealed interface ContactDetailsAction {
@@ -264,4 +274,6 @@ sealed interface ContactDetailsAction {
      * No app can handle the ringtone picker intent
      */
     data object RingtonePickerUnavailable : ContactDetailsAction
+
+    data class SetSendToVoicemail(val enabled: Boolean) : ContactDetailsAction
 }

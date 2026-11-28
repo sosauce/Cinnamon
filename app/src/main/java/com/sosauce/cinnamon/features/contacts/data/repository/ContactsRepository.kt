@@ -115,6 +115,23 @@ class ContactsRepository(
             false
         }
     }
+    suspend fun setSendToVoicemail(
+        contactId: Long,
+        enabled: Boolean
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            context.contentResolver.update(
+                ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, contactId),
+                contentValuesOf(ContactsContract.Contacts.SEND_TO_VOICEMAIL to if (enabled) 1 else 0),
+                null,
+                null
+            ) > 0
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     private suspend fun getRingtoneName(ringtoneUri: Uri): String? = withContext(Dispatchers.IO) {
         runCatching {
 
@@ -526,7 +543,8 @@ class ContactsRepository(
                 ContactsContract.Data.DATA3,
                 ContactsContract.Data.IS_PRIMARY,
                 ContactsContract.Data.PHOTO_URI,
-                ContactsContract.Data.CUSTOM_RINGTONE
+                ContactsContract.Data.CUSTOM_RINGTONE,
+                ContactsContract.Data.SEND_TO_VOICEMAIL
             ),
             "${ContactsContract.Data.CONTACT_ID} = ?",
             arrayOf(contactId.toString()),
@@ -547,6 +565,8 @@ class ContactsRepository(
                 cursor.getColumnIndexOrThrow(ContactsContract.Data.PHOTO_URI)
             val ringtoneColumn =
                 cursor.getColumnIndexOrThrow(ContactsContract.Data.CUSTOM_RINGTONE)
+            val voicemailColumn =
+                cursor.getColumnIndexOrThrow(ContactsContract.Data.SEND_TO_VOICEMAIL)
 
 
             while (cursor.moveToNext()) {
@@ -560,6 +580,7 @@ class ContactsRepository(
                     builder.setPhoto(photo)
                     builder.setRingtone(ringtone)
                     builder.setRingtoneName(ringtoneName)
+                    builder.setSendToVoicemail(cursor.getInt(voicemailColumn) == 1)
                 }
 
                 val mime = cursor.getString(mimeColumn)

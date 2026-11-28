@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ShortcutInfo
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -13,9 +12,6 @@ import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
-import androidx.core.content.pm.ShortcutInfoCompat
-import androidx.core.content.pm.ShortcutManagerCompat
-import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.app.MainActivity
@@ -71,15 +67,17 @@ class MessageNotificationManager(
         val messageStyle =
             NotificationCompat.MessagingStyle.Message(message, System.currentTimeMillis(), person)
 
-        threadIdAsNotif?.let { notification ->
-            val activeStyle = NotificationCompat.MessagingStyle
-                .extractMessagingStyleFromNotification(notification.notification)
-                ?.addMessage(messageStyle)
-            notificationManager.notify(
-                threadId.toInt(),
-                messageNotificationBuilder(threadId, activeStyle)
-                    .build()
-            )
+        scope.launch {
+            threadIdAsNotif?.let { notification ->
+                val activeStyle = NotificationCompat.MessagingStyle
+                    .extractMessagingStyleFromNotification(notification.notification)
+                    ?.addMessage(messageStyle)
+                notificationManager.notify(
+                    threadId.toInt(),
+                    messageNotificationBuilder(threadId, getOrCreateThreadChannel(threadId), activeStyle)
+                        .build()
+                )
+            }
         }
         scope.launch {
             cuteTelephonyManager.sendMessage(
@@ -123,7 +121,7 @@ class MessageNotificationManager(
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        prepareConversation(threadId)
+        val channelId = getOrCreateThreadChannel(threadId)
 
         val appLockEnabled = userPreferences.appLockEnabled.first()
 
@@ -152,8 +150,7 @@ class MessageNotificationManager(
 
             notificationManager.notify(
                 threadId.toInt(),
-                NotificationCompat.Builder(context, threadChannelId(threadId))
-                    .setShortcutId(threadId.toString())
+                NotificationCompat.Builder(context, channelId)
                     .setSmallIcon(R.drawable.app_icon)
                     .setPriority(NotificationCompat.PRIORITY_MAX)
                     .setCategory(NotificationCompat.CATEGORY_MESSAGE)
@@ -188,14 +185,14 @@ class MessageNotificationManager(
 
             notificationManager.notify(
                 threadId.toInt(),
-                messageNotificationBuilder(threadId, activeStyle, otp)
+                messageNotificationBuilder(threadId, channelId, activeStyle, otp)
                     .setContentIntent(pendingIntent)
                     .setAutoCancel(true)
                     .build()
             )
         } ?: notificationManager.notify(
             threadId.toInt(),
-            messageNotificationBuilder(threadId, notificationStyle, otp)
+            messageNotificationBuilder(threadId, channelId, notificationStyle, otp)
                 .addAction(markAsReadAction(threadId))
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
@@ -208,12 +205,12 @@ class MessageNotificationManager(
      */
     private fun messageNotificationBuilder(
         threadId: Long,
+        channelId: String,
         style: NotificationCompat.Style?,
         otp: String? = null
     ): NotificationCompat.Builder {
-        return NotificationCompat.Builder(context, threadChannelId(threadId))
+        return NotificationCompat.Builder(context, channelId)
             .setContentIntent(contentIntent)
-            .setShortcutId(threadId.toString())
             .setSmallIcon(R.drawable.app_icon)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
@@ -286,16 +283,9 @@ class MessageNotificationManager(
     fun clearThreadNotifications(threadId: Long) = notificationManager.cancel(threadId.toInt())
 
     suspend fun openConversationNotificationSettings(threadId: Long) {
-        prepareConversation(threadId)
-
         val intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
             putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                putExtra(Settings.EXTRA_CHANNEL_ID, INCOMING_MESSAGES_CHANNEL_ID)
-                putExtra(Settings.EXTRA_CONVERSATION_ID, threadId.toString())
-            } else {
-                putExtra(Settings.EXTRA_CHANNEL_ID, threadChannelId(threadId))
-            }
+            putExtra(Settings.EXTRA_CHANNEL_ID, getOrCreateThreadChannel(threadId))
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(intent)
@@ -306,14 +296,13 @@ class MessageNotificationManager(
             notificationManager.cancel(threadId.toInt())
             notificationManager.deleteNotificationChannel(threadChannelId(threadId))
         }
-        ShortcutManagerCompat.removeLongLivedShortcuts(context, threadIds.map { it.toString() })
     }
 
     /**
-     * Creates the thread's own notification channel (a conversation channel on Android 11+)
-     * and publishes its conversation shortcut, so the system can show per-chat settings
+     * Creates the thread's own channel from the incoming messages channel's defaults, or renames it if it exists
+     * @return the thread's channel id
      */
-    private suspend fun prepareConversation(threadId: Long) {
+    private suspend fun getOrCreateThreadChannel(threadId: Long): String {
         val participants = withContext(Dispatchers.IO) {
             conversationsRepository.fetchParticipantsForThreadId(threadId)
         }
@@ -321,36 +310,14 @@ class MessageNotificationManager(
         val channelId = threadChannelId(threadId)
 
         val channel = notificationManager.getNotificationChannel(channelId)
-            ?: buildThreadChannel(threadId, channelId, name)
+            ?: buildThreadChannel(channelId, name)
         channel.name = name
         notificationManager.createNotificationChannel(channel)
 
-        val persons = participants.map { participant ->
-            Person.Builder()
-                .setName(participant.displayName)
-                .setKey(participant.rawNumber)
-                .setUri("tel:${participant.rawNumber}")
-                .build()
-        }
-        val icon = participants.singleOrNull()?.let { numberLookup.fetchPersonIcon(it.photoUri) }
-            ?: IconCompat.createWithResource(context, R.drawable.app_icon)
-        val shortcutIntent = Intent(context, MainActivity::class.java).apply {
-            action = CuteIntents.NOTIFICATION_NAVIGATE_TO_THREAD
-            putExtra("threadId", threadId)
-        }
-        val shortcut = ShortcutInfoCompat.Builder(context, threadId.toString())
-            .setShortLabel(name)
-            .setLongLived(true)
-            .setPersons(persons.toTypedArray())
-            .setIcon(icon)
-            .setIntent(shortcutIntent)
-            .setCategories(setOf(ShortcutInfo.SHORTCUT_CATEGORY_CONVERSATION))
-            .build()
-        ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+        return channelId
     }
 
     private fun buildThreadChannel(
-        threadId: Long,
         channelId: String,
         name: String
     ): NotificationChannel {
@@ -361,9 +328,6 @@ class MessageNotificationManager(
             parent?.importance ?: NotificationManager.IMPORTANCE_HIGH
         ).apply {
             group = MESSAGES_GROUP
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                setConversationId(INCOMING_MESSAGES_CHANNEL_ID, threadId.toString())
-            }
             parent?.let {
                 setSound(it.sound, it.audioAttributes)
                 enableVibration(it.shouldVibrate())

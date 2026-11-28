@@ -54,6 +54,7 @@ object CuteIntents {
     const val SHORTCUT_MESSAGES = "messages"
     const val SHORTCUT_CONTACTS = "contacts"
     const val SHORTCUT_DIALPAD = "dialpad"
+    const val SHORTCUT_CONTACT_DETAILS = "contact details"
 }
 
 object DefaultTabOption {

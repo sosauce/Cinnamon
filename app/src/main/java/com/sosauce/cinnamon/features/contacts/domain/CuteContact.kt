@@ -38,7 +38,8 @@ data class CuteContactDetails(
      * null = default system one
      */
     val ringtone: Uri? = null,
-    val ringtoneName: String? = null
+    val ringtoneName: String? = null,
+    val sendToVoicemail: Boolean = false
 ) {
     val photo = photoString?.toUri()
 }
@@ -79,6 +80,7 @@ class CuteContactDetailsBuilder {
     private var ringtone: Uri? = null
 
     private var ringtoneName: String? = null
+    private var sendToVoicemail = false
 
 
     private val emails = mutableListOf<ContactEmail>()
@@ -123,6 +125,10 @@ class CuteContactDetailsBuilder {
         ringtoneName = name
     }
 
+    fun setSendToVoicemail(enabled: Boolean) {
+        sendToVoicemail = enabled
+    }
+
 
     fun build(): CuteContactDetails {
         return CuteContactDetails(
@@ -137,7 +143,8 @@ class CuteContactDetailsBuilder {
             lastName = lastName,
             photoString = photo,
             ringtone = ringtone,
-            ringtoneName = ringtoneName
+            ringtoneName = ringtoneName,
+            sendToVoicemail = sendToVoicemail
         )
     }
 }

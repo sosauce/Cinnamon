@@ -9,6 +9,8 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
@@ -37,10 +39,12 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.contentColorFor
@@ -50,15 +54,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.zIndex
@@ -76,14 +82,12 @@ import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurfa
 import com.sosauce.cinnamon.core.ui.components.dialogs.BlockUnblockDialog
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItem
 import com.sosauce.cinnamon.core.ui.components.items.CuteListItemDefaults
-import com.sosauce.cinnamon.core.ui.components.menus.MoreOptionsMenu
+import com.sosauce.cinnamon.core.ui.components.text.HeaderText
 import com.sosauce.cinnamon.core.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.features.contacts.presentation.components.ContactActionsRow
 import com.sosauce.cinnamon.features.contacts.presentation.components.ContactInfos
-import com.sosauce.cinnamon.features.messaging.presentation.conversation.components.bottombar.MoreOptions
-import com.sosauce.nekobites.animations.AnimatedDrawable
-import com.sosauce.nekobites.animations.AnimatedDrawableFile
 import com.sosauce.nekobites.components.LoadingBox
+import kotlinx.coroutines.launch
 
 @Composable
 fun SharedTransitionScope.ContactDetailsScreen(
@@ -93,28 +97,53 @@ fun SharedTransitionScope.ContactDetailsScreen(
     onHandleContactDetailsAction: (ContactDetailsAction) -> Unit
 ) {
 
-    var showMoreOptions by remember { mutableStateOf(false) }
     var showBlockDialog by remember { mutableStateOf(false) }
     var blockEmailsToo by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     var playFavoriteAnimation by remember { mutableStateOf(false) }
-    val moreOptionsDescription = stringResource(R.string.more_options)
     var showAccountPicker by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val shortcutBackground = MaterialTheme.colorScheme.primary.toArgb()
+    val shortcutForeground = MaterialTheme.colorScheme.onPrimary.toArgb()
 
-    val moreOptions = listOf(
-        MoreOptions(
-            onClick = { showBlockDialog = true },
-            icon = R.drawable.block,
-            text = R.string.block,
-            tint = MaterialTheme.colorScheme.error
-        ),
-        MoreOptions(
-            onClick = { onHandleContactDetailsAction(ContactDetailsAction.DeleteContact) },
-            icon = R.drawable.delete,
-            text = R.string.delete,
-            tint = MaterialTheme.colorScheme.error
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            icon = {
+                Icon(
+                    painter = painterResource(R.drawable.delete),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = { Text(stringResource(R.string.delete_contact)) },
+            text = { Text(stringResource(R.string.delete_contact_u_sure, state.contact.displayName)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onHandleContactDetailsAction(ContactDetailsAction.DeleteContact)
+                        showDeleteDialog = false
+                    },
+                    shapes = ButtonDefaults.shapes()
+                ) {
+                    Text(
+                        text = stringResource(R.string.delete),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteDialog = false },
+                    shapes = ButtonDefaults.shapes()
+                ) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
         )
-    )
+    }
 
     if (showAccountPicker) {
         AlertDialog(
@@ -291,23 +320,6 @@ fun SharedTransitionScope.ContactDetailsScreen(
                                     contentDescription = stringResource(R.string.edit_contact)
                                 )
                             }
-                            IconButton(
-                                onClick = { showMoreOptions = true },
-                                shapes = IconButtonDefaults.shapes(),
-                                modifier = Modifier.semantics {
-                                    contentDescription = moreOptionsDescription
-                                }
-                            ) {
-                                AnimatedDrawable(
-                                    atEnd = showMoreOptions,
-                                    drawable = AnimatedDrawableFile.MORE_VERT
-                                )
-                            }
-                            MoreOptionsMenu(
-                                expanded = showMoreOptions,
-                                onDismissRequest = { showMoreOptions = false },
-                                options = moreOptions
-                            )
                         }
                     }
                 }
@@ -411,6 +423,70 @@ fun SharedTransitionScope.ContactDetailsScreen(
                                 onHandleContactDetailsAction = onHandleContactDetailsAction,
                                 onNavigate = onNavigate
                             )
+                            Spacer(Modifier.height(16.dp))
+                            Column {
+                                HeaderText(stringResource(R.string.contact_settings))
+                                ContactSettingItem(
+                                    icon = R.drawable.add_to_home_screen,
+                                    text = R.string.add_to_home_screen,
+                                    shape = CuteListItemDefaults.getItemShape(0, 4),
+                                    onClick = {
+                                        scope.launch {
+                                            val pinned = pinContactShortcut(
+                                                context = context,
+                                                contact = state.contact,
+                                                photo = state.details.photo,
+                                                background = shortcutBackground,
+                                                foreground = shortcutForeground
+                                            )
+                                            if (!pinned) {
+                                                Toast.makeText(context, R.string.pin_shortcut_unsupported, Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }
+                                )
+                                CuteListItem(
+                                    onClick = {
+                                        onHandleContactDetailsAction(
+                                            ContactDetailsAction.SetSendToVoicemail(!state.details.sendToVoicemail)
+                                        )
+                                    },
+                                    shape = CuteListItemDefaults.getItemShape(1, 4),
+                                    backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                                    leadingContent = {
+                                        Icon(
+                                            painter = painterResource(R.drawable.voicemail),
+                                            contentDescription = null,
+                                            modifier = Modifier.padding(start = 10.dp)
+                                        )
+                                    },
+                                    trailingContent = {
+                                        Switch(
+                                            checked = state.details.sendToVoicemail,
+                                            onCheckedChange = {
+                                                onHandleContactDetailsAction(ContactDetailsAction.SetSendToVoicemail(it))
+                                            },
+                                            modifier = Modifier.padding(end = 10.dp)
+                                        )
+                                    }
+                                ) {
+                                    Text(stringResource(R.string.send_to_voicemail))
+                                }
+                                ContactSettingItem(
+                                    icon = R.drawable.block,
+                                    text = R.string.block,
+                                    shape = CuteListItemDefaults.getItemShape(2, 4),
+                                    tint = MaterialTheme.colorScheme.error,
+                                    onClick = { showBlockDialog = true }
+                                )
+                                ContactSettingItem(
+                                    icon = R.drawable.delete,
+                                    text = R.string.delete,
+                                    shape = CuteListItemDefaults.getItemShape(3, 4),
+                                    tint = MaterialTheme.colorScheme.error,
+                                    onClick = { showDeleteDialog = true }
+                                )
+                            }
                         }
                     }
                     Box(
@@ -441,6 +517,34 @@ fun SharedTransitionScope.ContactDetailsScreen(
     }
 
 
+}
+
+@Composable
+private fun ContactSettingItem(
+    @DrawableRes icon: Int,
+    @StringRes text: Int,
+    shape: Shape,
+    tint: Color = LocalContentColor.current,
+    onClick: () -> Unit
+) {
+    CuteListItem(
+        onClick = onClick,
+        shape = shape,
+        backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+        leadingContent = {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.padding(start = 10.dp)
+            )
+        }
+    ) {
+        Text(
+            text = stringResource(text),
+            color = tint
+        )
+    }
 }
 
 @Composable
