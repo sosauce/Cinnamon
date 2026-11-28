@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
@@ -82,7 +83,42 @@ fun SharedTransitionScope.ContactsScreen(
                 sortingMenu = {
                     SortingDropdownMenu(
                         isSortedAscending = sortContactsAscending,
-                        onChangeSorting = { sortContactsAscending = it }
+                        onChangeSorting = { sortContactsAscending = it },
+                        topContent = {
+                            val labelsCount = state.labelsToCount.size + 1
+
+                            SelectableDropdownMenuItem(
+                                selected = state.labelFilter == null,
+                                onClick = {
+                                    onHandleContactsAction(ContactsAction.ChangeLabelFiltering(null))
+                                },
+                                shapes = MenuDefaults.itemShape(0, labelsCount),
+                                leadingIcon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.label),
+                                        contentDescription = null
+                                    )
+                                },
+                                text = { Text(stringResource(R.string.all)) }
+                            )
+                            state.labelsToCount.onEachIndexed { index, (label, count) ->
+                                SelectableDropdownMenuItem(
+                                    selected = state.labelFilter == label,
+                                    onClick = {
+                                        onHandleContactsAction(ContactsAction.ChangeLabelFiltering(label))
+                                    },
+                                    shapes = MenuDefaults.itemShape(index + 1, labelsCount),
+                                    leadingIcon = {
+                                        Icon(
+                                            painter = painterResource(R.drawable.label),
+                                            contentDescription = null
+                                        )
+                                    },
+                                    text = { Text(label) },
+                                    trailingContent = { Text(count.toString()) }
+                                )
+                            }
+                        }
                     ) {
                         state.accountsToCount.onEachIndexed { index, (account, count) ->
                             SelectableDropdownMenuItem(

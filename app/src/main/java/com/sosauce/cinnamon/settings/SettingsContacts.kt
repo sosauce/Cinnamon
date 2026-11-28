@@ -5,6 +5,7 @@ package com.sosauce.cinnamon.settings
 import android.accounts.Account
 import android.accounts.AccountManager
 import android.content.Context
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -20,12 +21,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -34,94 +37,56 @@ import androidx.compose.ui.util.fastForEachIndexed
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.utils.copyMutate
 import com.sosauce.cinnamon.core.utils.getItemShape
+import com.sosauce.cinnamon.features.contacts.presentation.components.ContactGroupsSheet
 import com.sosauce.nekobites.components.settings.SettingsClickable
 import com.sosauce.nekobites.components.settings.SettingsGroup
+import com.sosauce.nekobites.helpers.ObserveAsEvents
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun SettingsContacts() {
 
     val context = LocalContext.current
-    val backupViewModel = koinViewModel<BackupViewModel>()
-    var importSource by remember { mutableStateOf("" to "") }
-    val accountManager =
-        remember(context) { context.getSystemService(Context.ACCOUNT_SERVICE) as AccountManager }
-    var showContactsImportSheet by remember { mutableStateOf(false) }
+    val resources = LocalResources.current
+    val labelsViewModel = koinViewModel<ContactLabelsViewModel>()
+    val labelsState by labelsViewModel.state.collectAsStateWithLifecycle()
+    var showLabelsSheet by remember { mutableStateOf(false) }
 
-    val vcfPicker =
-        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            if (uri == null) return@rememberLauncherForActivityResult
-
-            backupViewModel.handleMigrationAction(
-                MigrationAction.ImportContacts(
-                    importSource,
-                    uri
-                )
-            )
-
+    ObserveAsEvents(labelsViewModel.events) { event ->
+        when (event) {
+            is ContactLabelsEvent.Error -> Toast.makeText(
+                context,
+                resources.getString(R.string.label_error),
+                Toast.LENGTH_SHORT
+            ).show()
         }
+    }
 
-    if (showContactsImportSheet) {
-        ModalBottomSheet(
-            sheetState = rememberBottomSheetState(
-                initialValue = SheetValue.Hidden
-            ),
-            onDismissRequest = { showContactsImportSheet = false }
-        ) {
-
-            val accounts =
-                accountManager.accounts.toList().copyMutate { add(Account("Device", "device")) }
-
-            Column {
-                Text(
-                    text = stringResource(R.string.choose_import_account),
-                    style = MaterialTheme.typography.titleSmallEmphasized.copy(
-                        textAlign = TextAlign.Start
-                    ),
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                )
-                accounts.fastForEachIndexed { index, account ->
-                    DropdownMenuItem(
-                        onClick = {
-                            importSource = account.type to account.name
-                            vcfPicker.launch(arrayOf("text/vcard", "text/x-vcard"))
-                            showContactsImportSheet = false
-                        },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.mobile),
-                                contentDescription = null,
-                                modifier = Modifier.alpha(if (account.type == "device") 1f else 0f)
-                            )
-                        },
-                        text = {
-                            Column {
-                                Text(if (account.type == "device") stringResource(R.string.device) else account.name)
-
-                                if (account.type == "device") {
-                                    Text(
-                                        text = stringResource(R.string.device_contacts_no_sync),
-                                        style = MaterialTheme.typography.bodySmallEmphasized.copy(
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    )
-                                }
-
-                            }
-                        },
-                        shape = MenuDefaults.getItemShape(index, accounts.lastIndex)
-                    )
-                }
+    if (showLabelsSheet) {
+        ContactGroupsSheet(
+            groups = labelsState.groups,
+            accounts = labelsState.accounts,
+            memberIds = null,
+            onDismissRequest = { showLabelsSheet = false },
+            onToggle = {},
+            onCreate = { title, account ->
+                labelsViewModel.handleContactLabelsAction(ContactLabelsAction.Create(title, account))
+            },
+            onRename = { group, title ->
+                labelsViewModel.handleContactLabelsAction(ContactLabelsAction.Rename(group, title))
+            },
+            onDelete = { group ->
+                labelsViewModel.handleContactLabelsAction(ContactLabelsAction.Delete(group))
             }
-        }
+        )
     }
 
 
     SettingsGroup(title = stringResource(R.string.contacts)) {
         SettingsClickable(
-            title = stringResource(R.string.import_contact_from_vcf),
-            icon = R.drawable.contacts,
-            onClick = { showContactsImportSheet = true }
+            title = stringResource(R.string.manage_labels),
+            icon = R.drawable.label,
+            onClick = { showLabelsSheet = true }
         )
     }
 }

@@ -23,6 +23,7 @@ import com.sosauce.cinnamon.features.contacts.data.backup.ContactsImportReposito
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDatabase
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.MIGRATION_1_2_CONTACT_SETTINGS
+import com.sosauce.cinnamon.features.contacts.data.repository.ContactGroupsRepository
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
 import com.sosauce.cinnamon.features.contacts.presentation.ContactDetailsViewModel
 import com.sosauce.cinnamon.features.contacts.presentation.ContactsViewModel
@@ -57,6 +58,7 @@ import com.sosauce.cinnamon.features.phone.presentation.logs.CallLogsViewModel
 import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailViewModel
 import com.sosauce.cinnamon.settings.AppLockSettingsViewModel
 import com.sosauce.cinnamon.settings.BackupViewModel
+import com.sosauce.cinnamon.settings.ContactLabelsViewModel
 import com.sosauce.cinnamon.settings.SimsViewModel
 import com.sosauce.cinnamon.settings.SpeedDialViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -132,6 +134,7 @@ val appModule = module {
     singleOf(::CuteTelephonyManager)
     singleOf(::MessagesRepository)
     singleOf(::ContactsRepository)
+    singleOf(::ContactGroupsRepository)
     singleOf(::ConversationsRepository)
     singleOf(::CallLogsRepository)
     singleOf(::VoicemailsRepository)
@@ -157,6 +160,7 @@ val appModule = module {
     viewModelOf(::CallingViewModel)
     viewModelOf(::BottomBarViewModel)
     viewModelOf(::BackupViewModel)
+    viewModelOf(::ContactLabelsViewModel)
     viewModelOf(::StartConversationViewModel)
     viewModelOf(::EditContactViewModel)
     viewModelOf(::SimsViewModel)

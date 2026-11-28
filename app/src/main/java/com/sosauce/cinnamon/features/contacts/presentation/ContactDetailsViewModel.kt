@@ -12,6 +12,7 @@ import com.sosauce.cinnamon.features.incall.LaunchCallResult
 import com.sosauce.cinnamon.core.utils.unblock
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsDao
 import com.sosauce.cinnamon.features.contacts.data.local.contactSettings.ContactSettingsEntity
+import com.sosauce.cinnamon.features.contacts.data.repository.ContactGroupsRepository
 import com.sosauce.cinnamon.features.contacts.data.repository.ContactsRepository
 import com.sosauce.cinnamon.features.contacts.domain.CuteContact
 import com.sosauce.cinnamon.features.contacts.domain.CuteContactDetails
@@ -42,7 +43,8 @@ class ContactDetailsViewModel(
     private val contactId: Long,
     private val contactsRepository: ContactsRepository,
     private val contactSettingsDao: ContactSettingsDao,
-    private val callLauncher: CallLauncher
+    private val callLauncher: CallLauncher,
+    private val contactGroupsRepository: ContactGroupsRepository
 ) : AndroidViewModel(application) {
 
 
@@ -54,18 +56,26 @@ class ContactDetailsViewModel(
 
     private val details = contactsRepository.fetchLatestContactsDetails(contactId)
         .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), replay = 1)
+    private val labels = combine(
+        contactGroupsRepository.observeGroups(),
+        contactGroupsRepository.observeMemberships(contactId)
+    ) { groups, memberships ->
+        groups.filter { it.id in memberships }.map { it.title }.distinct()
+    }
     private val _state = MutableStateFlow(ContactDetailsState())
     val state = combine(
         _state,
         contactsRepository.fetchContact(contactId),
         details,
-        contactSettingsDao.getContactSettings(contactId)
-    ) { currentState, contact, details, settings ->
+        contactSettingsDao.getContactSettings(contactId),
+        labels
+    ) { currentState, contact, details, settings, labels ->
         currentState.copy(
             isLoading = false,
             contact = contact,
             details = details,
-            settings = settings ?: ContactSettingsEntity(contactId = contactId)
+            settings = settings ?: ContactSettingsEntity(contactId = contactId),
+            labels = labels
         )
     }.stateIn(
         viewModelScope,
@@ -216,7 +226,8 @@ data class ContactDetailsState(
     val contact: CuteContact = CuteContact(),
     val rawContacts: List<CuteRawContact> = emptyList(),
     val details: CuteContactDetails = CuteContactDetails(),
-    val settings: ContactSettingsEntity = ContactSettingsEntity()
+    val settings: ContactSettingsEntity = ContactSettingsEntity(),
+    val labels: List<String> = emptyList()
 )
 
 sealed interface ContactDetailsEvent {

@@ -16,6 +16,7 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
@@ -100,6 +101,7 @@ import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
+import com.sosauce.cinnamon.features.contacts.presentation.components.ContactGroupsSheet
 import com.sosauce.cinnamon.features.contacts.presentation.crop.CropMode
 import com.sosauce.cinnamon.features.contacts.presentation.crop.ImageCropperDialog
 import com.sosauce.cinnamon.core.utils.copyMutate
@@ -131,11 +133,30 @@ fun SharedTransitionScope.EditContactScreen(
 
     var rawContact by retain(state.rawContact) { mutableStateOf(state.rawContact) }
     var showUnsavedChangesWarning by remember { mutableStateOf(false) }
+    var showGroupsSheet by remember { mutableStateOf(false) }
+    val assignedGroups = state.groups.filter { it.id in state.groupIds }
 
     val hasUnsavedChanges = state.rawContact != rawContact
 
     BackHandler(hasUnsavedChanges) {
         showUnsavedChangesWarning = true
+    }
+
+    if (showGroupsSheet) {
+        ContactGroupsSheet(
+            groups = state.groups,
+            accounts = listOfNotNull(state.groupAccount),
+            memberIds = state.groupIds,
+            onDismissRequest = { showGroupsSheet = false },
+            onToggle = { group -> onHandeEditContactAction(EditContactAction.ToggleGroup(group)) },
+            onCreate = { title, account ->
+                onHandeEditContactAction(EditContactAction.CreateGroup(title, account))
+            },
+            onRename = { group, title ->
+                onHandeEditContactAction(EditContactAction.RenameGroup(group, title))
+            },
+            onDelete = { group -> onHandeEditContactAction(EditContactAction.DeleteGroup(group)) }
+        )
     }
 
     if (showUnsavedChangesWarning) {
@@ -429,6 +450,20 @@ fun SharedTransitionScope.EditContactScreen(
                         },
                         onClickRemove = null
                     )
+                }
+
+                if (assignedGroups.isNotEmpty()) {
+                    Spacer(Modifier.height(25.dp))
+                    FieldGroup {
+                        assignedGroups.forEach { group ->
+                            LabelRow(
+                                title = group.title,
+                                onClickRemove = {
+                                    onHandeEditContactAction(EditContactAction.ToggleGroup(group))
+                                }
+                            )
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(25.dp))
@@ -790,6 +825,12 @@ fun SharedTransitionScope.EditContactScreen(
                         icon = R.drawable.event,
                         text = R.string.add_event,
                         onClick = { eventPickerIndex = -1 }
+                    )
+                    AddDataButton(
+                        isVisible = state.groupAccount != null,
+                        icon = R.drawable.label,
+                        text = R.string.add_label,
+                        onClick = { showGroupsSheet = true }
                     )
                     AddDataButton(
                         isVisible = rawContact.note == null,
@@ -1220,6 +1261,47 @@ private fun TypeMenuButton(
                         text = { Text(typeLabel(option)) }
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LabelRow(
+    title: String,
+    onClickRemove: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(2.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.label),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = title,
+                maxLines = 1,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp)
+                    .basicMarquee()
+            )
+            IconButton(
+                onClick = onClickRemove,
+                shapes = IconButtonDefaults.shapes()
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.remove_all_filled),
+                    contentDescription = stringResource(R.string.remove_field),
+                    tint = MaterialTheme.colorScheme.error
+                )
             }
         }
     }

@@ -169,6 +169,12 @@ private fun SettingsHome(
             onClick = { backStack.add(SettingsScreens.Messages) }
         ),
         SettingsEntry(
+            icon = R.drawable.contacts,
+            name = stringResource(R.string.contacts),
+            description = stringResource(R.string.contacts_settings_desc),
+            onClick = { backStack.add(SettingsScreens.Contacts) }
+        ),
+        SettingsEntry(
             icon = R.drawable.phone,
             name = stringResource(R.string.phone),
             description = stringResource(R.string.phone_settings_desc),

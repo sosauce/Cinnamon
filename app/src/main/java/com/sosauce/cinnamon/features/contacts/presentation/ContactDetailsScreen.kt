@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 
 package com.sosauce.cinnamon.features.contacts.presentation
 
@@ -8,11 +8,14 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -374,29 +377,25 @@ fun SharedTransitionScope.ContactDetailsScreen(
                                     .basicMarquee(),
                                 style = MaterialTheme.typography.headlineLargeEmphasized
                             )
-                            state.details.company?.let { company ->
+                            if (state.details.company != null || state.labels.isNotEmpty()) {
                                 Spacer(Modifier.height(5.dp))
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                                    modifier = Modifier
-                                        .background(
-                                            color = MaterialTheme.colorScheme.secondaryContainer,
-                                            shape = CircleShape
-                                        )
-                                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
+                                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                                    itemVerticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.company),
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSecondaryContainer
-                                    )
-                                    Text(
-                                        text = company,
-                                        style = MaterialTheme.typography.bodyMediumEmphasized.copy(
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    state.details.company?.let { company ->
+                                        DetailsChip(
+                                            icon = R.drawable.company,
+                                            text = company
                                         )
-                                    )
+                                    }
+                                    state.labels.forEach { label ->
+                                        DetailsChip(
+                                            icon = R.drawable.label,
+                                            text = label
+                                        )
+                                    }
                                 }
                             }
                             Spacer(Modifier.height(15.dp))
@@ -442,4 +441,35 @@ fun SharedTransitionScope.ContactDetailsScreen(
     }
 
 
+}
+
+@Composable
+private fun DetailsChip(
+    @DrawableRes icon: Int,
+    text: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        modifier = Modifier
+            .background(
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                shape = CircleShape
+            )
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            ),
+            maxLines = 1,
+            modifier = Modifier.basicMarquee()
+        )
+    }
 }

@@ -450,4 +450,14 @@
     <string name="speed_dial_desc">Long-press a key on the dialpad to call its contact</string>
     <string name="unassign_speed_dial">Remove speed dial</string>
     <string name="not_assigned">Not assigned</string>
+    <string name="labels">Labels</string>
+    <string name="add_label">Add label</string>
+    <string name="manage_labels">Manage labels</string>
+    <string name="new_label">New label</string>
+    <string name="create_label">Create label</string>
+    <string name="rename_label">Rename label</string>
+    <string name="delete_label">Delete label</string>
+    <string name="delete_label_u_sure">Delete the label \"%1$s\"? Its contacts won\'t be deleted.</string>
+    <string name="no_labels">No labels yet</string>
+    <string name="label_error">Couldn\'t update the label</string>
 </resources>

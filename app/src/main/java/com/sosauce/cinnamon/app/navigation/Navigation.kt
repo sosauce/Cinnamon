@@ -476,6 +476,13 @@ fun Nav(
                                 }
 
                                 is EditContactEvent.Success -> backStack.navigateBack()
+                                is EditContactEvent.GroupError -> {
+                                    Toast.makeText(
+                                        context,
+                                        resources.getString(R.string.label_error),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             }
                         }
 

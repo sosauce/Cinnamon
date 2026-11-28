@@ -140,16 +140,6 @@ fun ContactInfos(
                                     )
                                 }
                             }
-                            IconButton(
-                                onClick = { copyValue(number.number, R.string.number_copied) },
-                                shapes = IconButtonDefaults.shapes(),
-                                modifier = Modifier.padding(end = 5.dp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.copy),
-                                    contentDescription = stringResource(R.string.copy_number)
-                                )
-                            }
                         }
                     ) {
                         Text(
