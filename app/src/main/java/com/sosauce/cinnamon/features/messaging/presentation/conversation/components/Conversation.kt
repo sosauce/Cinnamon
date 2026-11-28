@@ -174,7 +174,7 @@ fun Conversation(
                             color = MaterialTheme.colorScheme.primary,
                             fontStyle = FontStyle.Italic
                         )
-                    ) { append("Draft:") }
+                    ) { append(stringResource(R.string.draft_prefix)) }
                     append(" ")
                     append(conversation.draft)
                 }

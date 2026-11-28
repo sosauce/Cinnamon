@@ -19,6 +19,9 @@ import com.materialkolor.DynamicMaterialExpressiveTheme
 import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicMaterialThemeState
 import com.sosauce.cinnamon.core.datastore.rememberAppTheme
+import androidx.compose.ui.res.stringResource
+import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.core.utils.CutePaletteStyle
 import com.sosauce.cinnamon.core.utils.CuteTheme
 import com.sosauce.cinnamon.core.utils.toPaletteStyle
 import com.sosauce.nekobites.components.settings.SelectableTile
@@ -44,10 +47,21 @@ fun PaletteTile(
         style = paletteStyle.toPaletteStyle()
     )
 
+    val displayLabel = when (paletteStyle) {
+        CutePaletteStyle.TONAL_SPOT -> stringResource(R.string.palette_tonal_spot)
+        CutePaletteStyle.EXPRESSIVE -> stringResource(R.string.palette_expressive)
+        CutePaletteStyle.VIBRANT -> stringResource(R.string.palette_vibrant)
+        CutePaletteStyle.FIDELITY -> stringResource(R.string.palette_fidelity)
+        CutePaletteStyle.NEUTRAL -> stringResource(R.string.palette_neutral)
+        CutePaletteStyle.MONOCHROME -> stringResource(R.string.palette_monochrome)
+        CutePaletteStyle.FRUIT_SALAD -> stringResource(R.string.palette_fruit_salad)
+        else -> paletteStyle
+    }
+
     SelectableTile(
         selected = selected,
         onClick = onClick,
-        label = paletteStyle
+        label = displayLabel
     ) {
         DynamicMaterialExpressiveTheme(state = state, animate = true) {
             val scheme = MaterialTheme.colorScheme

@@ -124,7 +124,7 @@ fun SettingsLookAndFeel(onNavigateToGlobalChatTheme: () -> Unit) {
                     selected = useSystemFont,
                     onClick = { useSystemFont = true },
                     icon = R.drawable.system_font,
-                    label = R.string.system
+                    label = R.string.system_font_option
                 )
             }
         }

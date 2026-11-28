@@ -51,6 +51,7 @@ fun CrashScreen(
 ) {
 
     val context = LocalContext.current
+    val chooseEmailClientLabel = stringResource(R.string.choose_email_client)
 
     Scaffold(
         bottomBar = {
@@ -88,7 +89,7 @@ fun CrashScreen(
                         context.safeStartActivity(
                             Intent.createChooser(
                                 emailIntent,
-                                "Choose an Email client : "
+                                chooseEmailClientLabel
                             )
                         )
                         onClose()
@@ -168,11 +169,11 @@ fun CrashScreen(
                     Spacer(5.dp)
                     Column {
                         Text(
-                            text = "Cinnamon crashed last time you used it!",
+                            text = stringResource(R.string.crash_title),
                             style = MaterialTheme.typography.titleMediumEmphasized
                         )
                         Text(
-                            text = "You can report the crash if you want",
+                            text = stringResource(R.string.crash_subtitle),
                             style = MaterialTheme.typography.labelMediumEmphasized.copy(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

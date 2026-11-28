@@ -74,7 +74,7 @@ fun SettingsContacts() {
 
             Column {
                 Text(
-                    text = "Choose where to save imported contacts",
+                    text = stringResource(R.string.choose_import_account),
                     style = MaterialTheme.typography.titleSmallEmphasized.copy(
                         textAlign = TextAlign.Start
                     ),
@@ -96,11 +96,11 @@ fun SettingsContacts() {
                         },
                         text = {
                             Column {
-                                Text(account.name)
+                                Text(if (account.type == "device") stringResource(R.string.device) else account.name)
 
                                 if (account.type == "device") {
                                     Text(
-                                        text = "Contacts may not sync or be available on other devices",
+                                        text = stringResource(R.string.device_contacts_no_sync),
                                         style = MaterialTheme.typography.bodySmallEmphasized.copy(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )

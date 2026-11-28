@@ -1,6 +1,7 @@
 package com.sosauce.cinnamon.features.contacts.presentation.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sosauce.chocola.core.designsystem.components.FavoriteBubble
@@ -20,11 +21,12 @@ fun FavoriteContact(
     isInSelectionMode: Boolean = false
 ) {
 
+    val moreLabel = if (contact.phoneNumbers.size > 1) stringResource(R.string.and_x_more, contact.phoneNumbers.size - 1) else ""
     val subtitle = if (showNumber && contact.phoneNumbers.isNotEmpty()) {
         buildString {
             append(contact.phoneNumbers.first().number)
             if (contact.phoneNumbers.size > 1) {
-                append(" and ${contact.phoneNumbers.size - 1} more")
+                append(" " + moreLabel)
             }
         }
     } else ""

@@ -132,7 +132,7 @@ fun CallLogItem(
                                     ClipData.newPlainText(callLog.number, callLog.number)
                                 )
                             )
-                            Toast.makeText(context, "Copied!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, R.string.number_copied, Toast.LENGTH_SHORT).show()
                         }
                     },
                     icon = R.drawable.copy,

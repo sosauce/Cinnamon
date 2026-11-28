@@ -172,10 +172,6 @@
     <string name="group_sub_calls">Group subsequent calls</string>
     <string name="proximity_sensor">Proximity sensor</string>
     <string name="proximity_sensor_desc">Turn off the screen when the phone is near your ear during a call</string>
-    <string name="speed_dial">Speed dial</string>
-    <string name="speed_dial_desc">Long-press a key on the dialpad to call its contact</string>
-    <string name="not_assigned">Not assigned</string>
-    <string name="unassign_speed_dial">Remove speed dial</string>
     <string name="default_sim_phone">Default sim for phone functions.</string>
     <string name="chat_color">Chat color</string>
     <string name="default_sms_app">Default SMS app</string>
@@ -362,7 +358,6 @@
         <item quantity="one">File is too large to be sent by MMS! (carrier limit)</item>
         <item quantity="other">%d files too large to be sent by MMS! (carrier limit)</item>
     </plurals>
-    >
     <plurals name="matching_messages">
         <item quantity="one">%d message</item>
         <item quantity="other">%d messages</item>
@@ -423,4 +418,32 @@
         <item quantity="one">%d message</item>
         <item quantity="other">%d messages</item>
     </plurals>
+    <string name="system_font_option">System</string>
+    <string name="palette_tonal_spot">Tonal spot</string>
+    <string name="palette_expressive">Expressive</string>
+    <string name="palette_vibrant">Vibrant</string>
+    <string name="palette_fidelity">Fidelity</string>
+    <string name="number_copied">Number copied</string>
+    <string name="choose_import_account">Choose where to save imported contacts</string>
+    <string name="device_contacts_no_sync">Contacts saved on device do not sync with other devices</string>
+    <string name="couldnt_open_website">Couldn\'t open website</string>
+    <string name="palette_neutral">Neutral</string>
+    <string name="palette_monochrome">Monochrome</string>
+    <string name="palette_fruit_salad">Fruit salad</string>
+    <string name="custom_label">Custom</string>
+    <string name="copied_to_clipboard">Copied to clipboard</string>
+    <string name="draft_prefix">Draft:</string>
+    <string name="and_x_more">and %1$d more</string>
+    <string name="unnamed_contact_index">Contact %1$d</string>
+    <string name="crash_title">Cinnamon crashed last time you used it!</string>
+    <string name="crash_subtitle">You can report the crash if you want</string>
+    <string name="choose_email_client">Choose an email app</string>
+    <string name="scheduled_msg_not_exists">Scheduled message does not exist</string>
+    <string name="not_default_sms_app">Cinnamon is not the default SMS app</string>
+    <string name="unknown_error">Unknown error</string>
+    <plurals name="delete_x_conversations_confirm">
+        <item quantity="one">Delete this conversation? This action cannot be undone.</item>
+        <item quantity="other">Delete %1$d conversations? This action cannot be undone.</item>
+    </plurals>
+    <string name="about_contact">About %1$s</string>
 </resources>
