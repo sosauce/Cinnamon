@@ -3,6 +3,7 @@ package com.sosauce.cinnamon.settings
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
@@ -13,6 +14,8 @@ import com.sosauce.cinnamon.core.datastore.rememberGroupSubsequentCalls
 import com.sosauce.cinnamon.core.datastore.rememberProximitySensorInCall
 import com.sosauce.cinnamon.settings.components.AskEveryTimeSelector
 import com.sosauce.cinnamon.settings.components.PhoneAccountHandleSelector
+import com.sosauce.cinnamon.settings.components.SpeedDialDialog
+import com.sosauce.nekobites.components.settings.SettingsClickable
 import com.sosauce.nekobites.components.settings.SettingsEmptyState
 import com.sosauce.nekobites.components.settings.SettingsGroup
 import com.sosauce.nekobites.components.settings.SettingsPicker
@@ -26,6 +29,7 @@ fun SettingsPhone() {
     var groupSubCalls by rememberGroupSubsequentCalls()
     var t9Dialing by rememberEnableT9Dialing()
     var proximitySensor by rememberProximitySensorInCall()
+    var showSpeedDial by remember { mutableStateOf(false) }
     val simsViewModel = koinViewModel<SimsViewModel>()
     val allHandles = remember(simsViewModel) {
         try {
@@ -74,7 +78,17 @@ fun SettingsPhone() {
         }
     }
 
+    if (showSpeedDial) {
+        SpeedDialDialog(onDismissRequest = { showSpeedDial = false })
+    }
+
     SettingsGroup(title = stringResource(R.string.phone)) {
+        SettingsClickable(
+            title = stringResource(R.string.speed_dial),
+            description = stringResource(R.string.speed_dial_desc),
+            icon = R.drawable.dialpad,
+            onClick = { showSpeedDial = true }
+        )
         SettingsSwitch(
             title = stringResource(R.string.enable_t9_dialing),
             checked = t9Dialing,

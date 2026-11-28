@@ -92,11 +92,13 @@ class DialerViewModel(
 
     val state = combine(
         pager.favorites,
-        pager.loaded
-    ) { favorites, loaded ->
+        pager.loaded,
+        userPreferences.speedDials
+    ) { favorites, loaded, speedDials ->
         DialerState(
             isLoading = !loaded || favorites == null,
-            favorites = favorites.orEmpty()
+            favorites = favorites.orEmpty(),
+            speedDials = speedDials
         )
     }.stateIn(
         viewModelScope,
@@ -140,7 +142,8 @@ data class DialerState(
     /**
      * Favorite contacts aren't paged, the others are in [DialerViewModel.contacts]
      */
-    val favorites: List<CuteContact> = emptyList()
+    val favorites: List<CuteContact> = emptyList(),
+    val speedDials: Map<Int, String> = emptyMap()
 )
 
 sealed interface DialerAction {

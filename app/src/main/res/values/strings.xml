@@ -167,6 +167,10 @@
     <string name="group_sub_calls">Group subsequent calls</string>
     <string name="proximity_sensor">Proximity sensor</string>
     <string name="proximity_sensor_desc">Turn off the screen when the phone is near your ear during a call</string>
+    <string name="speed_dial">Speed dial</string>
+    <string name="speed_dial_desc">Long-press a key on the dialpad to call its contact</string>
+    <string name="not_assigned">Not assigned</string>
+    <string name="unassign_speed_dial">Remove speed dial</string>
     <string name="default_sim_phone">Default sim for phone functions.</string>
     <string name="chat_color">Chat color</string>
     <string name="default_sms_app">Default SMS app</string>

@@ -33,6 +33,7 @@ import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SETUP_COMPLETED
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SORT_CONTACTS_ASCENDING
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SORT_CONVERSATIONS_ASCENDING
 import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SORT_LOGS_ASCENDING
+import com.sosauce.cinnamon.core.datastore.PreferencesKeys.SPEED_DIALS
 import com.sosauce.cinnamon.core.utils.copyMutate
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -127,6 +128,32 @@ class UserPreferences(
             }
 
             it[PINNED_CONVOS] = newPinned
+        }
+    }
+
+    val speedDials: Flow<Map<Int, String>> = context.dataStore.data.map { preferences ->
+        preferences[SPEED_DIALS].orEmpty().mapNotNull { entry ->
+            val digit = entry.substringBefore(":").toIntOrNull()?.takeIf { it in 1..9 }
+            val number = entry.substringAfter(":", "").ifBlank { null }
+            if (digit != null && number != null) digit to number else null
+        }.toMap()
+    }
+
+    suspend fun saveSpeedDial(digit: Int, number: String) {
+        require(digit in 1..9)
+        context.dataStore.edit { preferences ->
+            preferences[SPEED_DIALS] = preferences[SPEED_DIALS].orEmpty().copyMutate {
+                removeAll { it.startsWith("$digit:") }
+                add("$digit:$number")
+            }
+        }
+    }
+
+    suspend fun removeSpeedDial(digit: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[SPEED_DIALS] = preferences[SPEED_DIALS].orEmpty().copyMutate {
+                removeAll { it.startsWith("$digit:") }
+            }
         }
     }
 

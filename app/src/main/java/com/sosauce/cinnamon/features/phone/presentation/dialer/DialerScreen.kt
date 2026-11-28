@@ -42,6 +42,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -94,6 +96,7 @@ fun SharedTransitionScope.DialerScreen(
         "0" to "+"
     )
     val focusRequester = rememberFocusRequester()
+    val haptic = LocalHapticFeedback.current
     var numberPickerContact by remember { mutableStateOf<CuteContact?>(null) }
 
     numberPickerContact?.let { contact ->
@@ -184,10 +187,28 @@ fun SharedTransitionScope.DialerScreen(
                             ) {
                                 rowKeys.fastForEach { number ->
                                     val letters = t9Map[number] ?: ""
-                                    val onLongClick = remember {
-                                        if (letters == "+") {
-                                            { textFieldState.edit { insert(selection.start, "+") } }
-                                        } else null
+                                    val speedDialNumber = number.toIntOrNull()?.let { state.speedDials[it] }
+                                    val onLongClick = remember(speedDialNumber) {
+                                        when {
+                                            letters == "+" -> {
+                                                { textFieldState.edit { insert(selection.start, "+") } }
+                                            }
+
+                                            speedDialNumber != null -> {
+                                                {
+                                                    if (textFieldState.text.isEmpty()) {
+                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                        onHandleDialerAction(DialerAction.CallNumber(speedDialNumber))
+                                                    } else {
+                                                        textFieldState.edit {
+                                                            insert(textFieldState.text.length, number)
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            else -> null
+                                        }
                                     }
 
                                     LongClickButton(

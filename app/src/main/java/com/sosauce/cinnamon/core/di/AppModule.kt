@@ -58,6 +58,7 @@ import com.sosauce.cinnamon.features.phone.presentation.voicemail.VoicemailViewM
 import com.sosauce.cinnamon.settings.AppLockSettingsViewModel
 import com.sosauce.cinnamon.settings.BackupViewModel
 import com.sosauce.cinnamon.settings.SimsViewModel
+import com.sosauce.cinnamon.settings.SpeedDialViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -159,6 +160,7 @@ val appModule = module {
     viewModelOf(::StartConversationViewModel)
     viewModelOf(::EditContactViewModel)
     viewModelOf(::SimsViewModel)
+    viewModelOf(::SpeedDialViewModel)
     viewModelOf(::ForwardingViewModel)
     viewModelOf(::AppLockSettingsViewModel)
 }

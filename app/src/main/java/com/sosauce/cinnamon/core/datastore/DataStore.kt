@@ -55,6 +55,7 @@ data object PreferencesKeys {
     val LAST_CRASH_LOG = stringPreferencesKey("LAST_CRASH_LOG")
     val SEARCH_MESSAGE_CONTENT = booleanPreferencesKey("SEARCH_MESSAGE_CONTENT")
     val SETUP_COMPLETED = booleanPreferencesKey("SETUP_COMPLETED")
+    val SPEED_DIALS = stringSetPreferencesKey("speed_dials")
 
     // App lock, only written through AppLockManager
     val APP_LOCK_ENABLED = booleanPreferencesKey("APP_LOCK_ENABLED")
