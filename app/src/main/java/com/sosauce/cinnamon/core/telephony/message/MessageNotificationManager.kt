@@ -47,8 +47,8 @@ class MessageNotificationManager(
 ) {
 
     private val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        PendingIntent.FLAG_MUTABLE
-    } else 0
+        PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+    } else PendingIntent.FLAG_UPDATE_CURRENT
 
     // TODO: make this navigate to the discussion
     private val intent = Intent(context, MainActivity::class.java)
@@ -261,7 +261,10 @@ class MessageNotificationManager(
             0,
             context.getString(R.string.reply),
             replyPendingIntent
-        ).addRemoteInput(remoteInput).build()
+        )
+            .addRemoteInput(remoteInput)
+            .setAllowGeneratedReplies(true)
+            .build()
     }
 
     private fun markAsReadAction(
