@@ -159,7 +159,7 @@ fun SharedTransitionScope.ContactDetailsScreen(
                                 )
                             }
                         ) {
-                            Text(rawContact.accountName)
+                            Text(if (rawContact.accountName.equals("Device", ignoreCase = true) || rawContact.accountName.isBlank()) stringResource(R.string.device) else rawContact.accountName)
                         }
                     }
                 }

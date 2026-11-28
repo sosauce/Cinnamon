@@ -31,12 +31,13 @@ fun DeleteConversationsDialog(
             Text(
                 text = pluralStringResource(
                     R.plurals.plural_delete_conversations,
+                    numberOfConversations,
                     numberOfConversations
                 ),
                 textAlign = TextAlign.Center
             )
         },
-        text = "Are you sure you want to delete $numberOfConversations conversations ? This cannot be undone!",
+        text = pluralStringResource(R.plurals.delete_x_conversations_confirm, numberOfConversations, numberOfConversations),
         onDismissRequest = onDismissRequest,
         onDelete = onDelete
     )

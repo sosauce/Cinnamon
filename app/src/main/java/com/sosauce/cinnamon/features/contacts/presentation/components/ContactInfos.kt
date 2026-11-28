@@ -6,6 +6,13 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.provider.ContactsContract
 import android.widget.Toast
+import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.runtime.rememberCoroutineScope
+import android.content.ClipData
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
@@ -57,6 +64,16 @@ fun ContactInfos(
 
     val resources = LocalResources.current
     val context = LocalContext.current
+    val clipboard = LocalClipboard.current
+    val haptics = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
+    val copyValue: (String, Int) -> Unit = { value, toastRes ->
+        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        scope.launch {
+            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(value, value)))
+            Toast.makeText(context, toastRes, Toast.LENGTH_SHORT).show()
+        }
+    }
     val uriHandler = LocalUriHandler.current
     val hasInfo =
         state.contact.phoneNumbers.isNotEmpty() || state.details.emails.isNotEmpty() || state.details.addresses.isNotEmpty()
@@ -99,6 +116,9 @@ fun ContactInfos(
                                 )
                             )
                         },
+                        onLongClick = {
+                            copyValue(number.number, R.string.number_copied)
+                        },
                         shape = CuteListItemDefaults.getItemShape(index, infoItemCount),
                         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                         leadingContent = {
@@ -112,14 +132,23 @@ fun ContactInfos(
                             ) {
                                 IconButton(
                                     onClick = { valueToUnblock = number.number },
-                                    shapes = IconButtonDefaults.shapes(),
-                                    modifier = Modifier.padding(end = 5.dp)
+                                    shapes = IconButtonDefaults.shapes()
                                 ) {
                                     Icon(
                                         painter = painterResource(R.drawable.block),
                                         contentDescription = null
                                     )
                                 }
+                            }
+                            IconButton(
+                                onClick = { copyValue(number.number, R.string.number_copied) },
+                                shapes = IconButtonDefaults.shapes(),
+                                modifier = Modifier.padding(end = 5.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.copy),
+                                    contentDescription = stringResource(R.string.copy_number)
+                                )
                             }
                         }
                     ) {
@@ -132,7 +161,7 @@ fun ContactInfos(
                             typeLabel = ContactsContract.CommonDataKinds.Phone.getTypeLabel(
                                 resources,
                                 number.type,
-                                "Custom"
+                                stringResource(R.string.custom_label)
                             ),
                             isDefault = number.isDefault
                         )
@@ -140,6 +169,7 @@ fun ContactInfos(
                 }
                 state.details.emails.forEachIndexed { index, email ->
                     CuteListItem(
+                        onLongClick = { copyValue(email.email, R.string.copied_to_clipboard) },
                         onClick = {
                             val intent = Intent(Intent.ACTION_SENDTO, "mailto:".toUri())
                                 .apply {
@@ -188,7 +218,7 @@ fun ContactInfos(
                             typeLabel = ContactsContract.CommonDataKinds.Email.getTypeLabel(
                                 resources,
                                 email.type,
-                                "Custom"
+                                stringResource(R.string.custom_label)
                             ),
                             isDefault = email.isDefault
                         )
@@ -196,6 +226,7 @@ fun ContactInfos(
                 }
                 state.details.addresses.forEachIndexed { index, address ->
                     CuteListItem(
+                        onLongClick = { copyValue(address.address, R.string.copied_to_clipboard) },
                         onClick = {
                             val intent = Intent(
                                 Intent.ACTION_VIEW,
@@ -226,7 +257,7 @@ fun ContactInfos(
                             typeLabel = ContactsContract.CommonDataKinds.StructuredPostal.getTypeLabel(
                                 resources,
                                 address.type,
-                                "Custom"
+                                stringResource(R.string.custom_label)
                             ),
                             isDefault = address.isDefault
                         )
@@ -235,9 +266,10 @@ fun ContactInfos(
             }
         }
         Column {
-            HeaderText(stringResource(R.string.about) + " ${state.contact.displayName}")
+            HeaderText(stringResource(R.string.about_contact, state.contact.displayName))
             state.details.websites.forEachIndexed { index, website ->
                 CuteListItem(
+                    onLongClick = { copyValue(website, R.string.copied_to_clipboard) },
                     onClick = {
                         try {
                             val formattedWebsite = if (!website.startsWith("https://")) {
@@ -245,7 +277,7 @@ fun ContactInfos(
                             } else website
                             uriHandler.openUri(formattedWebsite)
                         } catch (_: IllegalArgumentException) {
-                            Toast.makeText(context, "Couldn't open website", Toast.LENGTH_SHORT)
+                            Toast.makeText(context, R.string.couldnt_open_website, Toast.LENGTH_SHORT)
                                 .show()
                         }
                     },
@@ -273,7 +305,7 @@ fun ContactInfos(
                         text = ContactsContract.CommonDataKinds.Event.getTypeLabel(
                             resources,
                             event.type,
-                            "Custom"
+                            stringResource(R.string.custom_label)
                         ).toString(),
                         style = MaterialTheme.typography.bodyMediumEmphasized.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -284,6 +316,7 @@ fun ContactInfos(
             state.details.note?.let { note ->
                 CuteListItem(
                     onClick = null,
+                    onLongClick = { copyValue(note, R.string.copied_to_clipboard) },
                     shape = CuteListItemDefaults.getItemShape(noteOffset, aboutItemCount),
                     backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                     leadingContent = {

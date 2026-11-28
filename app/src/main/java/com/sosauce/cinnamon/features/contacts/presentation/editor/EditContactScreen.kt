@@ -426,7 +426,7 @@ fun SharedTransitionScope.EditContactScreen(
                             types = PhoneTypes,
                             typeLabel = {
                                 ContactsContract.CommonDataKinds.Phone
-                                    .getTypeLabel(resources, it, "Custom").toString()
+                                    .getTypeLabel(resources, it, resources.getString(R.string.custom_label)).toString()
                             },
                             isDefault = phone.isDefault,
                             onTypeChange = { type ->
@@ -486,7 +486,7 @@ fun SharedTransitionScope.EditContactScreen(
                             types = EmailTypes,
                             typeLabel = {
                                 ContactsContract.CommonDataKinds.Email
-                                    .getTypeLabel(resources, it, "Custom").toString()
+                                    .getTypeLabel(resources, it, resources.getString(R.string.custom_label)).toString()
                             },
                             isDefault = email.isDefault,
                             onTypeChange = { type ->
@@ -548,7 +548,7 @@ fun SharedTransitionScope.EditContactScreen(
                             types = AddressTypes,
                             typeLabel = {
                                 ContactsContract.CommonDataKinds.StructuredPostal
-                                    .getTypeLabel(resources, it, "Custom").toString()
+                                    .getTypeLabel(resources, it, resources.getString(R.string.custom_label)).toString()
                             },
                             isDefault = address.isDefault,
                             onTypeChange = { type ->
@@ -641,7 +641,7 @@ fun SharedTransitionScope.EditContactScreen(
                                     type = event.type,
                                     typeLabel = {
                                         ContactsContract.CommonDataKinds.Event
-                                            .getTypeLabel(resources, it, "Custom").toString()
+                                            .getTypeLabel(resources, it, resources.getString(R.string.custom_label)).toString()
                                     },
                                     onTypeChange = { type ->
                                         rawContact = rawContact.copy(

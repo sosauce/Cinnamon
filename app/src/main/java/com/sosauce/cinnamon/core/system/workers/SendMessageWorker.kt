@@ -1,6 +1,7 @@
 package com.sosauce.cinnamon.core.system.workers
 
 import android.content.Context
+import com.sosauce.cinnamon.R
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
@@ -26,7 +27,7 @@ class SendMessageWorker(
                 val scheduledMessageId =
                     workerParameters.inputData.getLong(SCHEDULED_MESSAGE_ID, -1L)
                 if (scheduledMessageId == -1L) return@withContext Result.failure(
-                    workDataOf(MESSAGE_NOT_SENT to "Scheduled message doesn't exist")
+                    workDataOf(MESSAGE_NOT_SENT to context.getString(R.string.scheduled_msg_not_exists))
                 )
 
                 val scheduledMessage =
@@ -39,14 +40,14 @@ class SendMessageWorker(
                 )
                 // keep the scheduled message so it isn't lost
                 if (!sent) return@withContext Result.failure(
-                    workDataOf(MESSAGE_NOT_SENT to "Cinnamon isn't the default SMS app")
+                    workDataOf(MESSAGE_NOT_SENT to context.getString(R.string.not_default_sms_app))
                 )
 
                 scheduledMessagesDao.deleteScheduledMessage(scheduledMessage)
                 Result.success()
             } catch (e: Exception) {
                 Result.failure(
-                    workDataOf(MESSAGE_NOT_SENT to (e.message ?: "Unknown error"))
+                    workDataOf(MESSAGE_NOT_SENT to (e.message ?: context.getString(R.string.unknown_error)))
                 )
             }
         }

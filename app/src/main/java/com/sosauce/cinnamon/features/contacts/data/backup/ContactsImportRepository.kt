@@ -66,7 +66,7 @@ class ContactsImportRepository(
                 ).joinToString(" ").takeIf { it.isNotBlank() }
                 ?: phones.firstOrNull()
                 ?: emails.firstOrNull()
-                ?: "Contact ${index + 1}"
+                ?: context.getString(R.string.unnamed_contact_index, index + 1)
             ImportableContact(
                 key = index,
                 displayName = name,

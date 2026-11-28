@@ -405,4 +405,32 @@
         <item quantity="one">%d message</item>
         <item quantity="other">%d messages</item>
     </plurals>
+    <string name="system_font_option">Système</string>
+    <string name="palette_tonal_spot">Nuancée</string>
+    <string name="palette_expressive">Expressive</string>
+    <string name="palette_vibrant">Vibrante</string>
+    <string name="palette_fidelity">Fidèle</string>
+    <string name="palette_neutral">Neutre</string>
+    <string name="palette_monochrome">Monochrome</string>
+    <string name="palette_fruit_salad">Salade de fruits</string>
+    <string name="custom_label">Personnalisé</string>
+    <string name="number_copied">Numéro copié</string>
+    <string name="copied_to_clipboard">Copié dans le presse-papiers</string>
+    <string name="choose_import_account">Choisissez où enregistrer les contacts importés</string>
+    <string name="device_contacts_no_sync">Les contacts peuvent ne pas être synchronisés sur vos autres appareils</string>
+    <string name="couldnt_open_website">Impossible d\'ouvrir le site Web</string>
+    <string name="draft_prefix">Brouillon :</string>
+    <string name="and_x_more">et %1$d de plus</string>
+    <string name="unnamed_contact_index">Contact %1$d</string>
+    <string name="crash_title">Cinnamon a planté lors de la dernière utilisation !</string>
+    <string name="crash_subtitle">Vous pouvez envoyer le rapport d\'erreur si vous le souhaitez</string>
+    <string name="choose_email_client">Choisir une application d\'e-mail</string>
+    <string name="scheduled_msg_not_exists">Le message programmé n\'existe pas</string>
+    <string name="not_default_sms_app">Cinnamon n\'est pas l\'application SMS par défaut</string>
+    <string name="unknown_error">Erreur inconnue</string>
+    <string name="about_contact">À propos de %1$s</string>
+    <plurals name="delete_x_conversations_confirm">
+        <item quantity="one">Voulez-vous vraiment supprimer %1$d conversation ? Cette action est irréversible !</item>
+        <item quantity="other">Voulez-vous vraiment supprimer %1$d conversations ? Cette action est irréversible !</item>
+    </plurals>
 </resources>
