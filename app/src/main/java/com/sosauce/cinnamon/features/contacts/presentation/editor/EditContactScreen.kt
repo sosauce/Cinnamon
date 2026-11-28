@@ -100,6 +100,8 @@ import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.core.ui.components.buttons.CuteNavigationButtonSurface
+import com.sosauce.cinnamon.features.contacts.presentation.crop.CropMode
+import com.sosauce.cinnamon.features.contacts.presentation.crop.ImageCropperDialog
 import com.sosauce.cinnamon.core.utils.copyMutate
 import com.sosauce.cinnamon.core.utils.formateEventDate
 import com.sosauce.cinnamon.core.utils.getItemShape
@@ -174,36 +176,54 @@ fun SharedTransitionScope.EditContactScreen(
     val context = LocalContext.current
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
-    val imagePicker =
-        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+    var pendingCrop by remember { mutableStateOf<Pair<Uri, CropMode>?>(null) }
 
-            if (uri == null) return@rememberLauncherForActivityResult
+    fun savePoster(uri: Uri) {
+        scope.launch(Dispatchers.IO) {
 
-            scope.launch(Dispatchers.IO) {
+            File(state.settings.poster).delete()
 
-                File(state.settings.poster).delete()
+            val file = File(
+                context.filesDir,
+                "poster_${state.rawContact.contactId}_${System.currentTimeMillis()}.jpg"
+            )
 
-                val file = File(
-                    context.filesDir,
-                    "poster_${state.rawContact.contactId}_${System.currentTimeMillis()}.jpg"
-                )
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                file.outputStream().use { output -> input.copyTo(output) }
+            }
 
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    file.outputStream().use { output -> input.copyTo(output) }
-                }
-
-                onHandleContactSettingsAction(
-                    ContactSettingsActions.UpsertContactSettings(
-                        state.settings.copy(
-                            poster = file.path
-                        )
+            onHandleContactSettingsAction(
+                ContactSettingsActions.UpsertContactSettings(
+                    state.settings.copy(
+                        poster = file.path
                     )
                 )
+            )
+        }
+    }
+
+    pendingCrop?.let { (uri, mode) ->
+        ImageCropperDialog(
+            uri = uri,
+            mode = mode,
+            onDismissRequest = { pendingCrop = null },
+            onCropped = { cropped ->
+                pendingCrop = null
+                when (mode) {
+                    CropMode.ProfilePicture -> rawContact = rawContact.copy(photoString = cropped.toString())
+                    CropMode.Poster -> savePoster(cropped)
+                }
             }
+        )
+    }
+
+    val imagePicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            uri?.let { pendingCrop = it to CropMode.Poster }
         }
     val pfpPicker =
         rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-            uri?.let { rawContact = rawContact.copy(photoString = it.toString()) }
+            uri?.let { pendingCrop = it to CropMode.ProfilePicture }
         }
     // index of the event being edited, -1 when adding a new one
     var eventPickerIndex by remember { mutableStateOf<Int?>(null) }

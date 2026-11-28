@@ -109,6 +109,11 @@
     <string name="unknown_ringtone">Unknown ringtone</string>
     <string name="set_ringtone_error">Couldn\'t set ringtone</string>
     <string name="choose_image">Choose image</string>
+    <string name="rotate_left">Rotate left</string>
+    <string name="rotate_right">Rotate right</string>
+    <string name="flip_horizontal">Flip horizontally</string>
+    <string name="flip_vertical">Flip vertically</string>
+    <string name="reset">Reset</string>
     <string name="remove_image">Remove image</string>
     <string name="about">About</string>
     <string name="website">Website</string>
